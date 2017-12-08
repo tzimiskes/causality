@@ -10,7 +10,7 @@ test_that("length testing works", {
   expect_error(partial_correlation(x, y, z))
 })
 
-test_that("NAs are dectected", {
+test_that("NAs are detected", {
   x <- rnorm(1000)
   y <- rnorm(1000)
   z <- runif(1000)
@@ -26,7 +26,7 @@ test_that("coercison works", {
   int <- seq(1:1000)
   y <- rnorm(1000)
   z <- runif(1000)
-  # check to see if integer coercing works correctly
+  # check to see if coercing integers works correctly
   expect_message(partial_correlation(int, y, z))
   expect_message(partial_correlation(x, int, z))
   expect_message(partial_correlation(x, y, int))
@@ -47,31 +47,44 @@ test_that("constant vectors throw errors", {
   const <- rep(0,1000)
   y <- rnorm(1000)
   z <- runif(1000)
-  # check to see if integer coercing works correctly
+
   expect_error(partial_correlation(const, y, z))
   expect_error(partial_correlation(x, const, z))
   expect_error(partial_correlation(x, y, const))
 })
 
-#TODO replace this with statisitcal independce tests once fisher z transform is implemented
-test_that(" the partial correlations make sense", {
+test_that("the partial correlations make sense", {
   set.seed(1)
   n <- 1e6
   x <- rnorm(n, sd = .1)
   y <- rnorm(n, sd = .1)
   z <- rnorm(n, sd = .1)
 
-  expect_equal(partial_correlation(x,y,z), 0, tolerance = .01)
 
+  r_hat <-partial_correlation(x,y,z)
+  z_score <- fisher_z_score(r_hat, n)
+  expect_identical(is_independent(z_score, .01), TRUE)
+
+  # x -> y
+  # rho_{x,y|z} = rho(x,y) != 0
   y <- x + rnorm(n, sd = .05)
-  expect_equal(partial_correlation(x, y, z), correlation(x,y), tolerance = .01)
+  # test rho_{x,y|z} = rho_{x,y}
+  expect_equal(partial_correlation(x,y,z), correlation(x,y), tolerance = 1e-5)
+  # test rho{x,y|z} != 0
+  r_hat <- partial_correlation(x,y,z)
+  z_score <- fisher_z_score(r_hat, n)
+  expect_identical(is_independent(z_score, .01), FALSE)
   # x -> y -> z
   z <- y + rnorm(n, sd = .05)
-  expect_equal(partial_correlation(x,z,y), 0, tolerance = .01)
+  r_hat <-partial_correlation(x,z,y)
+  z_score <- fisher_z_score(r_hat, n)
+  expect_identical(is_independent(z_score, .01), TRUE)
   # x-> y <- z
   z <- rnorm(n, sd = .1)
   y <- x + z + rnorm(n, sd = .05)
-  expect_gt(abs(partial_correlation(x,y,z)), 0)
+  r_hat <-partial_correlation(x,z,y)
+  z_score <- fisher_z_score(r_hat, n)
+  expect_identical(is_independent(z_score, .01), FALSE)
 
   y <- rnorm(n, sd = .1)
   x <- y + rnorm(n, sd = .05)

@@ -1,3 +1,5 @@
 exportPattern("^[[:alpha:]]+")
 useDynLib(causality, c_pearson_correlation)
 useDynLib(causality, c_partial_correlation)
+useDynLib(causality, c_fisher_transformation_z_score)
+useDynLib(causality, c_is_independent)
