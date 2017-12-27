@@ -2,9 +2,9 @@
 # super alpha version of a data structure that can be used to hold a general graph.
 # TBD if I want to extend this class instead of having a 'type' field
 # also, names is probably unnecessary
-cgraph <- function(type = character(), names = c(character()), skeleton = matrix(), edges = list(c())) {
+cgraph <- function(names = c(character()), skeleton = matrix(), edges = list(c())) {
   return(
-    structure(list(type = type , names = names, skeleton = skeleton, edges = edges), class = "cgraph")
+    structure(list(names = names, skeleton = skeleton, edges = edges), class = "cgraph")
   )
 }
 
@@ -21,7 +21,7 @@ bn_learn_to_cgraph <- function(bn_graph) {
   names(skeleton) <- names
   # get the edges
   edges <- cbind(unname(bn_graph$arcs), "-->")
-  return(cgraph("G", names, skeleton, edges))
+  return(cgraph(names, skeleton, edges))
 }
 
 
@@ -46,6 +46,11 @@ import_from_tetrad_file <- function(file) {
     edges[i, 1] <- tmp_file[[i]][1]
     edges[i, 2] <- tmp_file[[i]][3]
     edges[i, 3] <- tmp_file[[i]][2]
+    # after the edges are copied over, check for bi directed edges
+  #   if (edges[i,3] == "<->") {
+  #     edges[i,3] = "-->"
+  #     edges <- rbind(edges, c(edges[i, 2], edges[i, 1], "-->"))
+  #   }
   }
   # get the skeleton from the edge representation
   # loop over the nodes
@@ -64,21 +69,24 @@ import_from_tetrad_file <- function(file) {
   }
   )
   names(skeleton) <- nodes
-  return(cgraph("G", nodes, skeleton, edges))
+  return(cgraph(nodes, skeleton, edges))
 }
 
 adjacency_precision <- function(true_graph, est_graph) {
   # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
   #   stop("at least of the graphs are not the correct type!")
-  # if (!setequal(true_graph$names,est_graph$names))
-  #   stop ("the nodes do not match!")
+
   # get the number of predicted adjacencies
   n_pred_adjs <- sum(lengths(est_graph$skeleton))
   n_correct <- 0
   # for each node, calculate the intersection true graph neighborhood and the estimated graph neighborhood
   # the cardinality is the number correctly predicted for that node
   for (node in names(true_graph$skeleton)) {
-    n_correct <- n_correct + length(intersect(true_graph$skeleton[[node]], est_graph$skeleton[[node]]))
+    # get the size for intersection of the adjacencies of 'node'
+    # in est graph and true graph
+    n_correct <- n_correct + length(
+      intersect(true_graph$skeleton[[node]], est_graph$skeleton[[node]])
+      )
   }
   return(n_correct/n_pred_adjs)
 }
@@ -93,30 +101,62 @@ adjacency_recall <- function(true_graph, est_graph) {
   # for each node, calculate the intersection true graph neighborhood and the estimated graph neighborhood
   # the cardinality is the number correctly predicted for that node
   for (node in names(true_graph$skeleton)) {
-    n_correct <- n_correct + length(intersect(true_graph$skeleton[[node]], est_graph$skeleton[[node]]))
+    n_correct <- n_correct + length(
+      intersect(true_graph$skeleton[[node]], est_graph$skeleton[[node]])
+    )
   }
   return(n_correct/n_true_adjs)
 }
 
 # helper function to determine wether or not a row is in a matrix
-is_row_in_matrix <- function(matrix, row) {
+.is_row_in_matrix <- function(matrix, row) {
+  # if the edge is undirected, return FALSE. This essentially prevents
+  # the comparison of undirected edges in the true graph to undirected edges in the
+  # estimated graph
+  if(row[3] == "---")
+    return(FALSE)
   any(
     apply(matrix, 1, function(x) isTRUE(all.equal(x, row))
     )
   )
 }
 
+
 arrowhead_precision <- function(true_graph, est_graph) {
   # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
   #   stop("at least of the graphs are not the correct type!")
   # if (!setequal(true_graph$names,est_graph$names))
   #   stop ("names of the nodes do not match!")
-  n_pred_arrows <- length(est_graph$edges[,1])
+  n_predicted_arrows <- 0
+  for (i in 1:length(est_graph$edges[, 3])) {
+    edge_type <- est_graph$edges[i, 3]
+    if (edge_type == "-->")
+      n_predicted_arrows <- n_predicted_arrows + 1
+    if (edge_type == "<->")
+      n_predicted_arrows <- n_predicted_arrows + 2
+    if (edge_type == "o->")
+      n_predicted_arrows <- n_predicted_arrows + 1
+    }
   # TODO(arix) comment this later
-  n_correct <- sum(apply(true_graph$edges, 1, function(edge_in_tg) {
-    ifelse(is_row_in_matrix(est_graph$edges, edge_in_tg), 1, 0)
-  }))
-  n_correct/n_pred_arrows
+
+  n_correct <- 0
+  for (i in 1:length(est_graph$edges[, 1])) {
+    eg_edge <- est_graph$edges[i, ]
+    for (j in 1:length(true_graph$edges[, 1])) {
+      tg_edge <- true_graph$edges[j, ]
+      # check to see if the edges have the same edge type
+      if (eg_edge[3] == tg_edge[3] && eg_edge[3] != "---") {
+        if (eg_edge[1] == tg_edge[1] && eg_edge[2] == tg_edge[2])
+          n_correct <- n_correct + 1
+      } else if (eg_edge[3] == "<->" && tg_edge[3] == "-->" ) {
+        if (eg_edge[1] == tg_edge[1] && eg_edge[2] == tg_edge[2] ) {
+          n_correct <- n_correct + 1
+        } else if (eg_edge[1] == tg_edge[2] && eg_edge[2] && tg_edge[1])
+          n_correct <- n_correct + 1
+      }
+    }
+  }
+  n_correct/n_predicted_arrows
 }
 
 arrowhead_recall <- function(true_graph, est_graph) {
@@ -124,12 +164,27 @@ arrowhead_recall <- function(true_graph, est_graph) {
   #   stop("at least of the graphs are not the correct type!")
   # if (!setequal(true_graph$names,est_graph$names))
   #   stop ("names of the nodes do not match!")
-  n_true_arrows <- length(true_graph$edges[,1])
+  n_true_arrows <- sum(
+    ifelse(true_graph$edges[, 3] %in% c("---", "o-o"), 0, 1)
+  )
   # TODO(arix) comment this later
-  n_correct <- sum(apply(true_graph$edges, 1, function(edge_in_tg) {
-    ifelse(is_row_in_matrix(est_graph$edges, edge_in_tg), 1, 0)
-  }))
+
+  n_correct <- 0
+  for (i in 1:length(est_graph$edges[, 1])) {
+    eg_edge <- est_graph$edges[i, ]
+    for (j in 1:length(true_graph$edges[, 1])) {
+      tg_edge <- true_graph$edges[j, ]
+      # check to see if the edges have the same edge type
+      if (eg_edge[3] == tg_edge[3] && eg_edge[3] != "---") {
+        if (eg_edge[1] == tg_edge[1] && eg_edge[2] == tg_edge[2])
+          n_correct <- n_correct + 1
+      } else if (eg_edge[3] == "<->" && tg_edge[3] == "-->" ) {
+        if (eg_edge[1] == tg_edge[1] && eg_edge[2] == tg_edge[2] ) {
+          n_correct <- n_correct + 1
+        } else if (eg_edge[1] == tg_edge[2] && eg_edge[2] && tg_edge[1])
+          n_correct <- n_correct + 1
+      }
+    }
+  }
   n_correct/n_true_arrows
 }
-
-

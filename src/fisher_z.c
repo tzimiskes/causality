@@ -12,7 +12,7 @@ SEXP c_is_independent(SEXP z_score, SEXP alpha) {
 // H0 rho =0
   double a = asReal(alpha);
 
-  double p = 1 + erf((0 - asReal(z_score)) * M_SQRT1_2);
+  double p = 1 + erf(0 - fabs(asReal(z_score)) * M_SQRT1_2);
   // fail to reject
   if(a < p)
     return(ScalarLogical(1));
