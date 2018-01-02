@@ -6,6 +6,7 @@ test_that("Comparing DAG-Patterns works", {
 
   expect_equal(adjacency_precision(true_pattern, est_pattern) , 10/10)
   expect_equal(adjacency_recall(true_pattern, est_pattern), 9/10)
+
   # the test graphs contain bidirected edges, so both function should throw
   # warnings, and compute the following numbers
   expect_warning(

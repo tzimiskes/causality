@@ -25,7 +25,7 @@ bn_learn_to_cgraph <- function(bn_graph) {
 }
 
 
-import_from_tetrad_file <- function(file) {
+import_from_tetrad_file <- function(file, type = NULL) {
 
   # this function imports a tetrad graph
   # parse the tetrad file as a list of character vectors
@@ -70,5 +70,11 @@ import_from_tetrad_file <- function(file) {
   }
   )
   names(skeleton) <- nodes
-  return(cgraph(nodes, skeleton, edges))
+  tmp_cgraph <- cgraph(nodes, skeleton, edges)
+  # if subclass field isn't NULL, then add the subclass to class(tmp_cgraph).
+  # coerce to subclass to character.
+  if (!is.null(type)) {
+    class(tmp_cgraph) <- c(as.character(type), class(tmp_cgraph))
+  }
+  return(tmp_cgraph)
 }

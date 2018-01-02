@@ -1,16 +1,22 @@
-#' Determine how many arrows in graph 1 are in graph2.
+#' Determine the percentage of arrows in a graph are in the true graph
 #'
-#' \code{test_fisher_independence} returns whether or not the \code{z_score} implies independence at the given signifigence level \code{alpha}
-#' @param true_graph Fisher z-score from (ideally) \code{fisher_z_score}, or elsewhere
-#' @param est_graph The signifigence level of the test, i.e., .05, .01, .001 etc
-#' @return A number between 0 and 1.
-#' \code{arrowhead_precision} returns \code{NA} if there are no orriented edges (arrow) in \code{est_graph}
-#' @details
-#' The test is H0: x, y are independent and H1: x,y are dependent.
+#' \code{arrowhead_precision} calculates the arrowhead precison between a graph
+#' and an oracle.
+#' @param true_graph graph being treated as the truth.
+#' @param est_graph The graph being compared to \code{true_graph}
+#' @return Length one numeric between 0 and 1. If there are no oriented edges in
+#'   \code{est_graph}, \code{NA} is returned. 1 implies that every directed edge
+#'   in \code{est_graph} is also in \code{true_graph}, while 0 implies that no
+#'   directed ege in \code{est_graph} is in \code{true_graph}
+#' @details \code{arrowhead_precision} counts the number of directed edges
+#'   (\code{"<--"},\code{"-->"}) in \code{est_graph} and then counts how many
+#'   directed edges in \code{est_graph} are also in \code{true_graph}. Then, the
+#'   ratio is returned.
 #' @examples
-#' test_fisher_independence(5, .05)
-#' test_fisher_independence(100,.001)
-#' @seealso fisher_z_score
+#' TODO(arix)
+#' @seealso \code{\link{arrowhead_recall}}
+#' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
+#'   Variables”, 2015; \url{http://arxiv.org/abs/1507.07749} [cs.AI].
 arrowhead_precision <- function(true_graph, est_graph) {
   # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
   #   stop("at least of the graphs are not the correct type!")
@@ -61,13 +67,28 @@ arrowhead_precision <- function(true_graph, est_graph) {
                   (eg_edge[3] == "-->" && tg_edge[3] == "<--") ) {
         if (eg_edge[1] == tg_edge[2] && eg_edge[2] == tg_edge[1])
           n_correctly_predicted <- n_correctly_predicted + 1
-        # now, check to see if the eg_edge is a double sided edge
       }
     }
   }
   return(n_correctly_predicted/n_predicted_arrows)
 }
 
+#' Determine how many arrows in graph 1 are in graph2.
+#'
+#' \code{arrowhead_recall} calculates the arrowhead recall between a graph and an oracle
+#' @param true_graph graph being treated as as the truth.
+#' @param est_graph The graph being compared to the \code{true_graph}
+#' @return Numeric between 0 and 1;
+#' \code{arrowhead_recall} returns \code{NA} if there are
+#'   no orriented edges (arrows) in \code{true_graph}
+#' @details \code{arrowhead_recall} counts the number of directed edges (<--,
+#' -->) in \code{true_graph} and then counts how many directed edges in
+#' \code{est_graph} are in \code{true_graph}. Then, the ratio is returned. 1
+#' implies that every directed edge in \code{true_graph} is also in
+#' \code{est_graph}
+#' @examples
+#' TODO(arix)
+#' @seealso arrowhead_precision
 arrowhead_recall <- function(true_graph, est_graph) {
   #TODO(arix) implement type checking
 
@@ -119,7 +140,6 @@ arrowhead_recall <- function(true_graph, est_graph) {
                   (eg_edge[3] == "-->" && tg_edge[3] == "<--") ) {
         if (eg_edge[1] == tg_edge[2] && eg_edge[2] == tg_edge[1])
           n_correctly_predicted <- n_correctly_predicted + 1
-        # now, check to see if the eg_edge is a double sided edge
       }
     }
   }
