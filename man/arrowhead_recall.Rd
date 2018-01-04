@@ -29,6 +29,10 @@ implies that every directed edge in \code{true_graph} is also in
 \examples{
 TODO(arix)
 }
+\references{
+Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
+  Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
+}
 \seealso{
 arrowhead_precision
 }

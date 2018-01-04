@@ -11,12 +11,12 @@
 #' @details \code{arrowhead_precision} counts the number of directed edges
 #'   (\code{"<--"},\code{"-->"}) in \code{est_graph} and then counts how many
 #'   directed edges in \code{est_graph} are also in \code{true_graph}. Then, the
-#'   ratio is returned.
+#'   ratio is returned.)
 #' @examples
 #' TODO(arix)
 #' @seealso \code{\link{arrowhead_recall}}
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
-#'   Variables”, 2015; \url{http://arxiv.org/abs/1507.07749} [cs.AI].
+#'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
 arrowhead_precision <- function(true_graph, est_graph) {
   # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
   #   stop("at least of the graphs are not the correct type!")
@@ -88,6 +88,8 @@ arrowhead_precision <- function(true_graph, est_graph) {
 #' \code{est_graph}
 #' @examples
 #' TODO(arix)
+#' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
+#'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
 #' @seealso arrowhead_precision
 arrowhead_recall <- function(true_graph, est_graph) {
   #TODO(arix) implement type checking

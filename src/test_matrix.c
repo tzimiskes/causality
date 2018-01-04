@@ -1,10 +1,15 @@
 #include<R.h>
 #include<Rinternals.h>
+#include<string.h>
 
-SEXP test_matrix(SEXP x, SEXP y, SEXP z) {
-  int n = length(x);
-  int n_cols = ncols(z);
-  double r_hat;
+#define NCOL 3
+SEXP c_topological_order(SEXP edges) {
+  R_xlen_t n = nrows(edges);
 
-  return(ScalarReal(r_hat));
+SEXP children = PROTECT(allocVector(VECSXP, n));
+
+
+  return(ScalarReal(1));
 }
+
+void visit() {}

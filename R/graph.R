@@ -44,14 +44,17 @@ import_from_tetrad_file <- function(file, type = NULL) {
   edges <- matrix(nrow = n_edges, ncol = 3)
   # fill it in!
   for (i in 1:n_edges) {
-    edges[i, 1] <- tmp_file[[i]][1]
-    edges[i, 2] <- tmp_file[[i]][3]
-    edges[i, 3] <- tmp_file[[i]][2]
-    # after the edges are copied over, check for bi directed edges
-  #   if (edges[i,3] == "<->") {
-  #     edges[i,3] = "-->"
-  #     edges <- rbind(edges, c(edges[i, 2], edges[i, 1], "-->"))
-  #   }
+    # if edge is of type <--, change it to --> and earn the user
+    if(tmp_file[[i]][2] == "<--") {
+      warning(sprintf("edge %i is of type '<--' in %s; converting to type '-->", i, file) )
+      edges[i, 1] <- tmp_file[[i]][3]
+      edges[i, 2] <- tmp_file[[i]][1]
+      edges[i, 3] <- "-->"
+    } else {
+      edges[i, 1] <- tmp_file[[i]][1]
+      edges[i, 2] <- tmp_file[[i]][3]
+      edges[i, 3] <- tmp_file[[i]][2]
+    }
   }
   # get the skeleton from the edge representation
   # loop over the nodes

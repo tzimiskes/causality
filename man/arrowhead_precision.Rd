@@ -25,14 +25,14 @@ and an oracle.
 \code{arrowhead_precision} counts the number of directed edges
   (\code{"<--"},\code{"-->"}) in \code{est_graph} and then counts how many
   directed edges in \code{est_graph} are also in \code{true_graph}. Then, the
-  ratio is returned.
+  ratio is returned.)
 }
 \examples{
 TODO(arix)
 }
 \references{
 Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
-  Variables”, 2015; \url{http://arxiv.org/abs/1507.07749} [cs.AI].
+  Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
 }
 \seealso{
 \code{\link{arrowhead_recall}}
