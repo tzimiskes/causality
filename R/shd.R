@@ -1,4 +1,4 @@
-shd(true_pattern, est_pattern) {
+shd <- function(true_pattern, est_pattern) {
   if (!("pattern" %in% class(true_pattern))) {
     if ("dag" %in% class(true_pattern))
       stop("true_pattern is of class dag, not pattern. Convert it to pattern via dag_to_pattern first")

@@ -21,7 +21,7 @@ Convert a DAG to a Pattern
 pattern
 }
 \details{
-The algortihm is due to Chickering(1995). See reference for details
+The algortihm is due to Chickering(1995). See reference for details.
 }
 \examples{
 TODO(arix)

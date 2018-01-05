@@ -4,7 +4,7 @@
 #' @param dag An object of class dag that is to be converted
 #' @return A `causality` pattern. In the event that \code{dag} is not actually a
 #'   dag, an error is thrown.
-#' @details The algortihm is due to Chickering(1995). See reference for details
+#' @details The algortihm is due to Chickering(1995). See reference for details.
 #' @examples
 #' TODO(arix)
 #' @references David Maxwell Chickering: “A Transformational Characterization of
