@@ -4,7 +4,7 @@
 #' @param dag An object of class dag that is to be converted
 #' @return A `causality` pattern. In the event that \code{dag} is not actually a
 #'   dag, an error is thrown.
-#' @details The algortihm is due to Chickering(1995). See reference for details.
+#' @details The algorithm is due to Chickering(1995). See reference for details. The first step of the function is to perform a topoligical sort, which is only possible if \code{dag} is a dag.
 #' @examples
 #' TODO(arix)
 #' @references David Maxwell Chickering: “A Transformational Characterization of
@@ -91,14 +91,14 @@ dag_to_pattern <- function(dag) {
     if(hash_table[[edge[1]]][[edge[2]]] == -1)
       pattern$edges[i,3] <- "---"
   }
-  class(pattern) <- c("pattern", "cgraph")
+  class(pattern) <- c("pattern","pdag", "cgraph")
   return(pattern)
 }
 
   #find-compelled
 
 # Topological sorting algorithm is the one described in CLRS;
-.topoligical_sort <- function(dag) {
+.topological_sort <- function(dag) {
   # generate the children of each node
   children <- list()
   for (i in 1:nrow(dag$edges))
@@ -139,7 +139,7 @@ dag_to_pattern <- function(dag) {
 
 .order_edges  <- function(dag, parents) {
 
-  top_order <- .topoligical_sort(dag)
+  top_order <- .topological_sort(dag)
 
   n_edges <- nrow(dag$edges)
 
@@ -159,3 +159,23 @@ dag_to_pattern <- function(dag) {
   }
   return(ordered_edges[-1,])
 }
+
+
+topological_sort <- function(dag) {
+  hash <- list()
+  for (i in 1:length(dag$names))
+    hash[[dag$names[[i]]]] <- i - 1
+  for (i in 1:nrow(dag$edges)) {
+    dag$edges[i,1] <- hash[[dag$edges[i,1]]]
+    dag$edges[i,2] <- hash[[dag$edges[i,2]]]
+    dag$edges[i,3] <- 1
+  }
+  nc <- ncol(dag$edges)
+  nr <- nrow(dag$edges)
+  dag$edges <- as.integer(dag$edges)
+  dim(dag$edges) <- c(nr, nc)
+
+  tmp<-.Call("c_topological_sort", dag)
+  return(dag$names[tmp+1])
+}
+

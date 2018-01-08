@@ -21,7 +21,7 @@ Convert a DAG to a Pattern
 pattern
 }
 \details{
-The algortihm is due to Chickering(1995). See reference for details.
+The algorithm is due to Chickering(1995). See reference for details. The first step of the function is to perform a topoligical sort, which is only possible if \code{dag} is a dag.
 }
 \examples{
 TODO(arix)
