@@ -68,7 +68,7 @@ adjacency_recall <- function(true_graph, est_graph) {
   # if (!setequal(true_graph$names,est_graph$names))
   #   stop ("the nodes do not match!")
   n_true_adjs <- sum(lengths(true_graph$skeleton))
-  if(n_pred_adjs == 0) {
+  if(n_true_adjs == 0) {
     warning("true_graph has no adjacencies")
     return(NA)
   }
