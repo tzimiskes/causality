@@ -1,60 +1,80 @@
-shd <- function(true_pattern, est_pattern) {
-  if (!any(c("pattern", "pdag") %in% class(true_pattern))) {
-    if ("dag" %in% class(true_pattern))
-      stop("true_pattern is of class dag, not pattern. Convert it to pattern via dag_to_pattern first")
+#' Calculate the Structural Hamming Distance between two PDAGS
+#'
+#' \code{adjacency_precision} calculates the adjacency precison between a graph
+#' and an oracle.
+#' @param pdag1 A causality pdag being used as the "true" pdag
+#' @param pdag2 A causality pdag that is being compared to \code{pdag1}
+#' @return Length one numeric between 0 and \eqn{n^2}, where n is the number of
+#'   nodes.
+#' @details \code{shd} takes in objects of class pdag and calculates the
+#'   structural hamming distance between them as defined in Tsamardinos et
+#'   al(2006). Note that patterns are a subset of dpags, so inputing these
+#'   objects works as well. If the event the at least 1 of the inputs is a dag,
+#'   shd returns an error and states that you need to run \code{dag_to_pattern}
+#'   to coerce the dag to a pattern first.
+#' @examples
+#' TODO(arix)
+#' @references Tsamardinos I, Brown LE, Aliferis CF (2006). "The Max-Min
+#'   Hill-Climbing Bayesian Network Structure Learning Algorithm". Machine
+#'   Learning, 65(1), 31-78.
+#' @seealso \code{\link{dag_to_pattern}}
+shd <- function(pdag1, pdag2) {
+  if (!any(c("pattern", "pdag") %in% class(pdag1))) {
+    if ("dag" %in% class(pdag1))
+      stop("pdag1 is of class dag, not pattern. Convert it to pattern via dag_to_pattern first")
     else
-      stop("true_pattern is not a pattern or pdag")
+      stop("pdag1 is not a pattern or pdag")
   }
-  if (!any(c("pattern", "pdag") %in% class(est_pattern))) {
-    if ("dag" %in% class(est_pattern))
-      stop("est_pattern is of class dag, not pattern. Convert it to pattern via dag_to_pattern first")
+  if (!any(c("pattern", "pdag") %in% class(pdag2))) {
+    if ("dag" %in% class(pdag2))
+      stop("pdag2 is of class dag, not pattern. Convert it to pattern via dag_to_pattern first")
     else
-      stop("est_pattern is not a pattern or pdag")
+      stop("pdag2 is not a pattern or pdag")
   }
   true_children <- list()
-  for (i in 1:nrow(true_pattern$edges)) {
-    true_edge <- true_pattern$edges[i,]
-    true_children[[true_edge[1]]][[true_edge[2]]] <- true_edge[3]
+  for (i in 1:nrow(pdag1$edges)) {
+    pdag1_edge <- pdag1$edges[i,]
+    true_children[[pdag1_edge[1]]][[pdag1_edge[2]]] <- pdag1_edge[3]
   }
   est_children <- list()
-  for (j in 1:nrow(est_pattern$edges)) {
-    est_edge <- est_pattern$edges[j,]
-    est_children[[est_edge[1]]][[est_edge[2]]] <- est_edge[3]
+  for (j in 1:nrow(pdag2$edges)) {
+    pdag2_edge <- pdag2$edges[j,]
+    est_children[[pdag2_edge[1]]][[pdag2_edge[2]]] <- pdag2_edge[3]
   }
   distance <- 0
-  for (i in 1:nrow(true_pattern$edges)) {
-    true_edge <- true_pattern$edges[i, ]
-    est_edge <- as.list(est_children[[true_edge[1]]])[[true_edge[2]]]
-    if (is.null(est_edge)) {
-      if (true_edge[3] == "-->") {
-        print(true_edge)
+  for (i in 1:nrow(pdag1$edges)) {
+    pdag1_edge <- pdag1$edges[i, ]
+    pdag2_edge <- as.list(est_children[[pdag1_edge[1]]])[[pdag1_edge[2]]]
+    if (is.null(pdag2_edge)) {
+      if (pdag1_edge[3] == "-->") {
+        print(pdag1_edge)
         distance <- distance + 1
       }
-      # if true_edge is not of type -->, it is ---
+      # if pdag1_edge is not of type -->, it is ---
       # since (true_src, true_dst, ---) is not in true graph, we ned to check to see if (true_dst, true_src, ---) is
       else {
-        est_edge <- as.list(est_children[[true_edge[2]]])[[true_edge[1]]]
+        pdag2_edge <- as.list(est_children[[pdag1_edge[2]]])[[pdag1_edge[1]]]
         # nope
-        if (is.null(est_edge) || est_edge != "---") {
-          print(true_edge)
+        if (is.null(pdag2_edge) || pdag2_edge != "---") {
+          print(pdag1_edge)
           distance <- distance + 1
         }
       }
-      # est_edge is not null
-      # if the orientations don't match, est_edge in not oriented in
-    } else if( est_edge != true_edge[3]) {
-      print(true_edge)
+      # pdag2_edge is not null
+      # if the orientations don't match, pdag2_edge in not oriented in
+    } else if( pdag2_edge != pdag1_edge[3]) {
+      print(pdag1_edge)
       distance <- distance + 1
     }
   }
-  # we only need to see if est_edge is extra in the true pdagsj
-  for(i in 1:nrow(est_pattern$edges)) {
-    est_edge <- est_pattern$edges[i, ]
-    true_edge <- as.list(true_children[[est_edge[1]]])[[est_edge[2]]]
-    if (is.null(true_edge)) {
-      true_edge <- as.list(true_children[[est_edge[2]]])[[est_edge[1]]]
-      if (is.null(true_edge)) {
-        print(est_edge)
+  # we only need to see if pdag2_edge is extra in the true pdagsj
+  for(i in 1:nrow(pdag2$edges)) {
+    pdag2_edge <- pdag2$edges[i, ]
+    pdag1_edge <- as.list(true_children[[pdag2_edge[1]]])[[pdag2_edge[2]]]
+    if (is.null(pdag1_edge)) {
+      pdag1_edge <- as.list(true_children[[pdag2_edge[2]]])[[pdag2_edge[1]]]
+      if (is.null(pdag1_edge)) {
+        print(pdag2_edge)
         distance <- distance + 1
       }
     }

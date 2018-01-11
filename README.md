@@ -17,7 +17,10 @@ TODO:
 - [ ] extend cgraph to include DAG, Patterns, PAGs, PDAGs
 - [ ] wrap AP, AHP etc in a function that directs the objects being compared to the correct version of AP etc. eg DAG/Patterns should go to ap.dag and PAGs go to ap.pag
 - [ ] add override so we can compare dags to patterns etc
-- [ ]Implement SHD
+- [X] Implement SHD
+  - [ ] document
+  - [ ] tests
+  - [ ] comment
 * DAG to Pattern Algorithm
 - [X] Topological Ordering
 - [X] Edge Ordering
