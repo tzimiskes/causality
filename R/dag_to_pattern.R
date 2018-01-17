@@ -46,7 +46,7 @@ dag_to_pattern <- function(dag) {
     for (parent_of_parent in parents[[parent]]) {
       if (hash_table[[parent_of_parent]][[parent]] == 1) {
         if(parent_of_parent %in% parents[[child]]) {
-          hash_table[[parent_of_parent]][[child]] <-
+          hash_table[[parent_of_parent]][[child]] <- 1
             n_unknown <- n_unknown -1
         } else {
           for (parent_of_child in parents[[child]]) {
@@ -175,7 +175,7 @@ topological_sort <- function(dag) {
   dag$edges <- as.integer(dag$edges)
   dim(dag$edges) <- c(nr, nc)
 
-  tmp<-.Call("c_topological_sort", dag)
-  return(dag$names[tmp+1])
+  tmp<-.Call("c_dag_to_pattern", dag)
+  return(tmp)
 }
 
