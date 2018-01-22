@@ -23,7 +23,7 @@ shd <- function(pdag1, pdag2) {
     if ("dag" %in% class(pdag1))
       stop("pdag1 is of class dag, not pattern. Convert it to pattern via dag_to_pattern first")
     else
-      stop("pdag1 is not a pattern or pdag")
+      stop("pdag1 is not a pattern or pdag.")
   }
   if (!any(c("pattern", "pdag") %in% class(pdag2))) {
     if ("dag" %in% class(pdag2))
@@ -31,17 +31,20 @@ shd <- function(pdag1, pdag2) {
     else
       stop("pdag2 is not a pattern or pdag")
   }
+  # generate the adjacency list of the children of pdag1
   true_children <- list()
   for (i in 1:nrow(pdag1$edges)) {
     pdag1_edge <- pdag1$edges[i,]
     true_children[[pdag1_edge[1]]][[pdag1_edge[2]]] <- pdag1_edge[3]
   }
+  # now, do the same for pdag2
   est_children <- list()
   for (j in 1:nrow(pdag2$edges)) {
     pdag2_edge <- pdag2$edges[j,]
     est_children[[pdag2_edge[1]]][[pdag2_edge[2]]] <- pdag2_edge[3]
   }
   distance <- 0
+  # loop through the pdag1 edges to see if pdag1 is missing edges, or misoriented edges.
   for (i in 1:nrow(pdag1$edges)) {
     pdag1_edge <- pdag1$edges[i, ]
     pdag2_edge <- as.list(est_children[[pdag1_edge[1]]])[[pdag1_edge[2]]]
@@ -50,11 +53,12 @@ shd <- function(pdag1, pdag2) {
         print(pdag1_edge)
         distance <- distance + 1
       }
-      # if pdag1_edge is not of type -->, it is ---
-      # since (true_src, true_dst, ---) is not in true graph, we ned to check to see if (true_dst, true_src, ---) is
+      # if pdag1_edge is not of type -->, it is --- since (true_src, true_dst,
+      # ---) is not in true graph, we ned to check to see if (true_dst,
+      # true_src, ---) is
       else {
         pdag2_edge <- as.list(est_children[[pdag1_edge[2]]])[[pdag1_edge[1]]]
-        # nope
+        # it isn't
         if (is.null(pdag2_edge) || pdag2_edge != "---") {
           print(pdag1_edge)
           distance <- distance + 1
@@ -67,7 +71,7 @@ shd <- function(pdag1, pdag2) {
       distance <- distance + 1
     }
   }
-  # we only need to see if pdag2_edge is extra in the true pdagsj
+  # we only need to see if pdag2_edge is extra in the true pdags
   for(i in 1:nrow(pdag2$edges)) {
     pdag2_edge <- pdag2$edges[i, ]
     pdag1_edge <- as.list(true_children[[pdag2_edge[1]]])[[pdag2_edge[2]]]
@@ -81,4 +85,3 @@ shd <- function(pdag1, pdag2) {
   }
   return(distance)
 }
-

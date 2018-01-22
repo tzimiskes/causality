@@ -20,10 +20,12 @@
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
 #'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
 adjacency_precision <- function(true_graph, est_graph) {
-  # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
-  #   stop("at least of the graphs are not the correct type!")
+  if(!is.cgraph(true_graph))
+    stop("true_graph is not of type cgraph")
+  if(!is.cgraph(est_graph))
+    stop("est_graph is not of type cgraph")
 
-  # get the number of predicted adjacencies
+
   n_pred_adjs <- sum(lengths(est_graph$skeleton))
   if(n_pred_adjs == 0) {
     warning("est_graph has no adjacencies")
@@ -63,10 +65,11 @@ adjacency_precision <- function(true_graph, est_graph) {
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
 #'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
 adjacency_recall <- function(true_graph, est_graph) {
-  # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
-  #   stop("at least of the graphs are not the correct type!")
-  # if (!setequal(true_graph$names,est_graph$names))
-  #   stop ("the nodes do not match!")
+  if(!is.cgraph(true_graph))
+    stop("true_graph is not of type cgraph")
+  if(!is.cgraph(est_graph))
+    stop("est_graph is not of type cgraph")
+
   n_true_adjs <- sum(lengths(true_graph$skeleton))
   if(n_true_adjs == 0) {
     warning("true_graph has no adjacencies")

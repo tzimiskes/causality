@@ -2,9 +2,7 @@
 % Please edit documentation in R/dag_to_pattern.R
 \name{dag_to_pattern}
 \alias{dag_to_pattern}
-\title{Convert a DAG to a Pattern
-\code{dag_to_pattern} converts a `causality` dag to a `causality`
-pattern}
+\title{Convert a DAG to a Pattern}
 \usage{
 dag_to_pattern(dag)
 }
@@ -16,12 +14,12 @@ A `causality` pattern. In the event that \code{dag} is not actually a
   dag, an error is thrown.
 }
 \description{
-Convert a DAG to a Pattern
-\code{dag_to_pattern} converts a `causality` dag to a `causality`
-pattern
+\code{dag_to_pattern} converts a causality dag to a pattern
 }
 \details{
-The algorithm is due to Chickering(1995). See reference for details. The first step of the function is to perform a topoligical sort, which is only possible if \code{dag} is a dag.
+The algorithm is due to Chickering(1995). See reference for details.
+  The first step of the function is to perform a topoligical sort, which is
+  only possible if \code{dag} is a dag.
 }
 \examples{
 TODO(arix)
@@ -29,5 +27,6 @@ TODO(arix)
 \references{
 David Maxwell Chickering: “A Transformational Characterization of
   Equivalent Bayesian Network Structures”, 1995;
-  \href{https://arxiv.org/abs/1302.4938}{arXiv:1302.4938 [cs.AI]}
+  \href{https://arxiv.org/abs/1302.4938}{arXiv:1302.4938 [cs.AI]} Cormen,
+  Thomas H., et al. Introduction to Algorithms. The MIT Press, 2014.
 }

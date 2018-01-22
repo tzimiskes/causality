@@ -1,15 +1,18 @@
 #' Convert a DAG to a Pattern
-#' \code{dag_to_pattern} converts a `causality` dag to a `causality`
-#' pattern
+#'
+#' \code{dag_to_pattern} converts a causality dag to a pattern
 #' @param dag An object of class dag that is to be converted
 #' @return A `causality` pattern. In the event that \code{dag} is not actually a
 #'   dag, an error is thrown.
-#' @details The algorithm is due to Chickering(1995). See reference for details. The first step of the function is to perform a topoligical sort, which is only possible if \code{dag} is a dag.
+#' @details The algorithm is due to Chickering(1995). See reference for details.
+#'   The first step of the function is to perform a topoligical sort, which is
+#'   only possible if \code{dag} is a dag.
 #' @examples
 #' TODO(arix)
 #' @references David Maxwell Chickering: “A Transformational Characterization of
 #'   Equivalent Bayesian Network Structures”, 1995;
-#'   \href{https://arxiv.org/abs/1302.4938}{arXiv:1302.4938 [cs.AI]}
+#'   \href{https://arxiv.org/abs/1302.4938}{arXiv:1302.4938 [cs.AI]} Cormen,
+#'   Thomas H., et al. Introduction to Algorithms. The MIT Press, 2014.
 dag_to_pattern <- function(dag) {
   if (!("dag" %in% class(dag)))
     stop("Input is not a dag!")
@@ -98,44 +101,44 @@ dag_to_pattern <- function(dag) {
   #find-compelled
 
 # Topological sorting algorithm is the one described in CLRS;
-.topological_sort <- function(dag) {
-  # generate the children of each node
-  children <- list()
-  for (i in 1:nrow(dag$edges))
-      children[[dag$edges[i ,1]]] <- c(children[[dag$edges[i, 1]]], dag$edges[i, 2])
-
-  order <- c()
-  marked <- rep(0, length(dag$names))
-  nodes <- dag$names
-  i <- 1
-  while (sum(marked) < length(dag$names)) {
-  if (marked[i] == 0) {
-    tmp <- .visit(nodes[i], nodes, marked, children, order)
-    order <- tmp[[1]]
-    marked <- tmp[[2]]
-  }
-  else
-    i <- i + 1
-  }
-  return(order)
-}
-
-.visit <- function(node, nodes, marked, children, order) {
-  i <- match(node, nodes)
-  if (marked[i] == 1)
-    return(list(order, marked))
-  if (marked[i] == -1)
-    stop("dag contains a cycle, so it cannot be of class \"dag\"")
-  marked[i] <- -1
-  for (child in children[[node]]) {
-    tmp <- .visit(child, nodes, marked, children, order)
-    order <- tmp[[1]]
-    marked <- tmp[[2]]
-  }
-  marked[i] <- 1
-  order <- c(node, order)
-  return(list(order, marked))
-}
+# .topological_sort <- function(dag) {
+#   # generate the children of each node
+#   children <- list()
+#   for (i in 1:nrow(dag$edges))
+#       children[[dag$edges[i ,1]]] <- c(children[[dag$edges[i, 1]]], dag$edges[i, 2])
+#
+#   order <- c()
+#   marked <- rep(0, length(dag$names))
+#   nodes <- dag$names
+#   i <- 1
+#   while (sum(marked) < length(dag$names)) {
+#   if (marked[i] == 0) {
+#     tmp <- .visit(nodes[i], nodes, marked, children, order)
+#     order <- tmp[[1]]
+#     marked <- tmp[[2]]
+#   }
+#   else
+#     i <- i + 1
+#   }
+#   return(order)
+# }
+#
+# .visit <- function(node, nodes, marked, children, order) {
+#   i <- match(node, nodes)
+#   if (marked[i] == 1)
+#     return(list(order, marked))
+#   if (marked[i] == -1)
+#     stop("dag contains a cycle, so it cannot be of class \"dag\"")
+#   marked[i] <- -1
+#   for (child in children[[node]]) {
+#     tmp <- .visit(child, nodes, marked, children, order)
+#     order <- tmp[[1]]
+#     marked <- tmp[[2]]
+#   }
+#   marked[i] <- 1
+#   order <- c(node, order)
+#   return(list(order, marked))
+# }
 
 .order_edges  <- function(dag, parents) {
 
@@ -161,7 +164,38 @@ dag_to_pattern <- function(dag) {
 }
 
 
+#' Get the topological ordering of a dag
+#'
+#' \code{topological_order} calculates the topological ordering of dag.
+#' @param dag causality dag that you wish to calculate the topological ordering
+#'   of
+#' @return A charcter vector that contains the nodes of the dag ordered
+#'   according to their topological order. In the event that \code{dag} contains
+#'   a cycle (ie isn't actually a dag) a error is thrown and NA is teturned
+#'
+#' @details \code{topological_sort} generates a topological ordering of the
+#'   given dag by using a depth first search as described in CLRS. The underlying
+#'   C implementation of this function is used in the function
+#'   \code{\link{dag_to_pattern}} and a slightly different version is used in \code{\link{as.dag}}: see below.
+#' @examples
+#' TODO(arix)
+#' @note This function is designed to get the topological order from a dag, not
+#'   determine whether or not a function is a dag. If you wish to test whether
+#'   or not a cgraph object is a dag or not, use the function \code{\link{as.dag}}
+#'   instead. It performs additional checking on top of performing a topological
+#'   ordering.
+#' @seealso   \code{\link{as.dag}} \code{\link{dag_to_pattern}}
+#' @references Cormen, Thomas H., et al. Introduction to Algorithms. The MIT
+#'   Press, 2014.
 topological_sort <- function(dag) {
+  if(!is.cgraph(dag)) {
+    stop("input dag is not of type cgraph")
+  }
+  if(!is.dag(dag)) {
+    stop("input is not of type dag. try, as.dag(dag) to
+          try to coerce dag to class dag")
+  }
+  # creating a "hash table" makes the next operation faster
   hash <- list()
   for (i in 1:length(dag$names))
     hash[[dag$names[[i]]]] <- i - 1
@@ -175,7 +209,32 @@ topological_sort <- function(dag) {
   dag$edges <- as.integer(dag$edges)
   dim(dag$edges) <- c(nr, nc)
 
-  tmp<-.Call("c_dag_to_pattern", dag)
-  return(tmp)
+  tmp<-tryCatch(.Call("c_topological_sort", dag), error = function(e) NA)
+  return(dag$names[tmp+1])
 }
 
+# this is a private version of topological order that is used by as.dag()
+# to check whether or not a cgraph object is a dag or not. This is sort of a bad use of code, but
+# I didn't want to make topoloigcal sort have the formals be dag, force = F because topological sort is
+# supposed to give the gvie the topological ordering of a **DAG**, not test whether or not it is one
+# as.dag will try to convert an object to a dag, by running topological sort to see if it feasable
+.topological_sort <- function(dag) {
+# creating a "hash table" makes the next operation faster
+  hash <- list()
+  for (i in 1:length(dag$names))
+    hash[[dag$names[[i]]]] <- i - 1
+  # convert the matrix of edges, which is a character vector, to an integer
+  # vector. This is done so the C end is simpler
+  for (i in 1:nrow(dag$edges)) {
+    dag$edges[i,1] <- hash[[dag$edges[i,1]]]
+    dag$edges[i,2] <- hash[[dag$edges[i,2]]]
+    dag$edges[i,3] <- 1
+  }
+  nc <- ncol(dag$edges)
+  nr <- nrow(dag$edges)
+  dag$edges <- as.integer(dag$edges)
+  dim(dag$edges) <- c(nr, nc)
+  # now that we have an integer matrix, call the C function
+  tmp<-tryCatch(.Call("c_topological_sort", dag), error = function(e) NA)
+  return(dag$names[tmp+1])
+}

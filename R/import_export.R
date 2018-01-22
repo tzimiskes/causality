@@ -1,13 +1,3 @@
-
-# super alpha version of a data structure that can be used to hold a general graph.
-# TBD if I want to extend this class instead of having a 'type' field
-# also, names is probably unnecessary
-cgraph <- function(names = c(character()), skeleton = matrix(), edges = list(c())) {
-  return(
-    structure(list(names = names, skeleton = skeleton, edges = edges), class = "cgraph")
-  )
-}
-
 bn_learn_to_cgraph <- function(bn_graph) {
   # converts a learned graph of bn-class to a grpah of cgraph-class
   if (!(class(bn_graph) == "bn")) stop("Input is not of class bn!")
@@ -74,6 +64,10 @@ import_from_tetrad_file <- function(file, type = NULL) {
   )
   names(skeleton) <- nodes
   tmp_cgraph <- cgraph(nodes, skeleton, edges)
+
+  if(validate_cgraph(tmp_cgraph) == FALSE)
+    stop("imported graph is not a valid cgraph object")
+
   # if subclass field isn't NULL, then add the subclass to class(tmp_cgraph).
   # coerce to subclass to character.
   if (!is.null(type)) {
