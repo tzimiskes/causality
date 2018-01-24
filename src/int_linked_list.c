@@ -22,9 +22,24 @@ int_ll_ptr int_ll_instantiate(R_xlen_t key, int value) {
 }
 
 void int_ll_insert(int_ll_ptr root, R_xlen_t key, int value) {
-  while(root->child != NULL)
-    root = root->child;
+  if(root != NULL) {
+    while(root->child != NULL)
+      root = root->child;
+    root->child = int_ll_instantiate(key, value);
+  } else
+    root = int_ll_instantiate(key, value);
+}
+
+void int_ll_insert_by_top_order(int_ll_ptr root, R_xlen_t key, int value, int* top_order) {
+  while(root != NULL) {
+    if(root->value > value)
+      break;
+    else
+      root = root->child;
+  }
+  int_ll_ptr tmp = root->child;
   root->child = int_ll_instantiate(key, value);
+  root->child->child = tmp;
 }
 
 int_ll_ptr int_ll_next(int_ll_ptr root) {

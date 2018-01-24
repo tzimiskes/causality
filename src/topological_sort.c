@@ -78,12 +78,7 @@ SEXP c_topological_sort(SEXP dag) {
   for(R_xlen_t i = 0; i < n_edges; ++i) {
     R_xlen_t parent = edges_ptr[i];
     R_xlen_t child = edges_ptr[i + n_edges];
-    if(hash_table[parent] == NULL) {
-      hash_table[parent] = int_ll_instantiate(child, EMPTY);
-    }
-    else {
-      int_ll_insert(hash_table[parent], child, EMPTY);
-    }
+    int_ll_insert(hash_table[parent], child, EMPTY);
   }
   //we no longer need edges
   UNPROTECT(1);
@@ -201,12 +196,7 @@ SEXP c_dag_to_pattern(SEXP dag) {
   for(R_xlen_t i = 0; i < n_edges; ++i) {
     R_xlen_t parent = edges_ptr[i];
     R_xlen_t child = edges_ptr[i + n_edges];
-    if(parents[child] == NULL) {
-      parents[child] = int_ll_instantiate(parent, UNORDERED);
-    }
-    else {
-      int_ll_insert(parents[child], parent, UNORDERED);
-    }
+    int_ll_insert(parents[child],parent, UNORDERED);
   }
   //we no longer need edges
   UNPROTECT(1);
