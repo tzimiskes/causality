@@ -4,7 +4,7 @@ bn_learn_to_cgraph <- function(bn_graph) {
 
   names <- names(bn_graph$nodes)
   # get the skeleton
-  skeleton <- lapply(nm, function(x) {
+  skeleton <- lapply(names, function(x) {
     bn_graph$nodes[[x]]$nbr
   }
   )
@@ -14,6 +14,23 @@ bn_learn_to_cgraph <- function(bn_graph) {
   return(cgraph(names, skeleton, edges))
 }
 
+export_bnlearn_object_to_tetrad <- function(file, model) {
+  # This function exports an object of bn-class in a TETRAD compatible form
+  write("Graph Nodes:", file = file, append = F)
+  cat(names(model$nodes), file = file, append = T, sep = ",")
+  write('\n', file = file, append = T)
+  write("Graph Edges:", file = file, append = T)
+
+  n <- 1
+  for (i in 1:length(model$nodes)) {
+    node <- names(model$nodes)[i]
+    for (child in model$nodes[[i]]$children) {
+      write(sprintf("%i. %s --> %s", n, node, child), file = file, append = T)
+      n <- n + 1
+    }
+  }
+  cat('\n', file = file, append = T)
+}
 
 import_from_tetrad_file <- function(file, type = NULL) {
 
@@ -34,7 +51,7 @@ import_from_tetrad_file <- function(file, type = NULL) {
   edges <- matrix(nrow = n_edges, ncol = 3)
   # fill it in!
   for (i in 1:n_edges) {
-    # if edge is of type <--, change it to --> and earn the user
+    # if edge is of type <--, change it to --> and warn the user
     if(tmp_file[[i]][2] == "<--") {
       warning(sprintf("edge %i is of type '<--' in %s; converting to type '-->", i, file) )
       edges[i, 1] <- tmp_file[[i]][3]
@@ -63,15 +80,24 @@ import_from_tetrad_file <- function(file, type = NULL) {
   }
   )
   names(skeleton) <- nodes
+
   tmp_cgraph <- cgraph(nodes, skeleton, edges)
-
-  if(validate_cgraph(tmp_cgraph) == FALSE)
+  # check to see if input is a legal cgraph object
+  if(is_valid_cgraph(tmp_cgraph) == FALSE)
     stop("imported graph is not a valid cgraph object")
-
-  # if subclass field isn't NULL, then add the subclass to class(tmp_cgraph).
-  # coerce to subclass to character.
-  if (!is.null(type)) {
-    class(tmp_cgraph) <- c(as.character(type), class(tmp_cgraph))
+  # if type filed isn't empty, attempt to parse it as the proposed type
+  if(!is.null(type)) {
+    if(type == "dag") {
+      tmp_dag <- tryCatch(as.dag(tmp_cgraph), error = function(e) {message(paste(e)); NULL})
+      if(is.null(tmp_dag))
+         stop(sprintf("imported object is not a valid dag,
+                      so it cannot be imported as a dag.
+                      call the function with type = NULL to import it"
+                      ))
+      else
+        return(tmp_dag)
+    }
   }
-  return(tmp_cgraph)
+  else
+    return(tmp_cgraph)
 }

@@ -1,7 +1,7 @@
 #' Convert a DAG to a Pattern
 #'
 #' \code{dag_to_pattern} converts a causality dag to a pattern
-#' @param dag An object of class dag that is to be converted
+#' @param dag A cgraph of type dag that is to be converted
 #' @return A `causality` pattern. In the event that \code{dag} is not actually a
 #'   dag, an error is thrown.
 #' @details The algorithm is due to Chickering(1995). See reference for details.
@@ -24,7 +24,7 @@ dag_to_pattern <- function(dag) {
   for (i in 1:n_edges)
     parents[[dag$edges[i, 2]]] <- c(parents[[dag$edges[i, 2]]], dag$edges[i, 1])
 
-  ordered_edges <- .order_edges(dag, parents)
+  ordered_edges <- order_edges(dag)$edges
 
   # 0 means unknown, 1 means compelled, -1 means reverseable
   hash_table <- list(list())
@@ -98,71 +98,6 @@ dag_to_pattern <- function(dag) {
   return(pattern)
 }
 
-  #find-compelled
-
-# Topological sorting algorithm is the one described in CLRS;
-# .topological_sort <- function(dag) {
-#   # generate the children of each node
-#   children <- list()
-#   for (i in 1:nrow(dag$edges))
-#       children[[dag$edges[i ,1]]] <- c(children[[dag$edges[i, 1]]], dag$edges[i, 2])
-#
-#   order <- c()
-#   marked <- rep(0, length(dag$names))
-#   nodes <- dag$names
-#   i <- 1
-#   while (sum(marked) < length(dag$names)) {
-#   if (marked[i] == 0) {
-#     tmp <- .visit(nodes[i], nodes, marked, children, order)
-#     order <- tmp[[1]]
-#     marked <- tmp[[2]]
-#   }
-#   else
-#     i <- i + 1
-#   }
-#   return(order)
-# }
-#
-# .visit <- function(node, nodes, marked, children, order) {
-#   i <- match(node, nodes)
-#   if (marked[i] == 1)
-#     return(list(order, marked))
-#   if (marked[i] == -1)
-#     stop("dag contains a cycle, so it cannot be of class \"dag\"")
-#   marked[i] <- -1
-#   for (child in children[[node]]) {
-#     tmp <- .visit(child, nodes, marked, children, order)
-#     order <- tmp[[1]]
-#     marked <- tmp[[2]]
-#   }
-#   marked[i] <- 1
-#   order <- c(node, order)
-#   return(list(order, marked))
-# }
-
-.order_edges  <- function(dag, parents) {
-
-  top_order <- .topological_sort(dag)
-
-  n_edges <- nrow(dag$edges)
-
-  ordered_edges <- matrix(ncol = 3)
-  for (node in top_order) {
-    node_parents <- parents[[node]]
-    marked <- rep(0, length(node_parents))
-    while(sum(marked) < length(node_parents)) {
-      max <- node_parents[match(0, marked)]
-      for(parent in node_parents) {
-        if ((match(parent, top_order) > match(max, top_order)) && !marked[match(parent, node_parents)])
-          max <- parent
-      }
-      marked[match(max, node_parents)] <- 1
-      ordered_edges <- rbind(ordered_edges, c(max, node, "-->"))
-    }
-  }
-  return(ordered_edges[-1,])
-}
-
 
 #' Get the topological ordering of a dag
 #'
@@ -208,7 +143,6 @@ topological_sort <- function(dag) {
   nr <- nrow(dag$edges)
   dag$edges <- as.integer(dag$edges)
   dim(dag$edges) <- c(nr, nc)
-
   tmp<-tryCatch(.Call("c_topological_sort", dag), error = function(e) NA)
   return(dag$names[tmp+1])
 }
@@ -235,6 +169,40 @@ topological_sort <- function(dag) {
   dag$edges <- as.integer(dag$edges)
   dim(dag$edges) <- c(nr, nc)
   # now that we have an integer matrix, call the C function
-  tmp<-tryCatch(.Call("c_topological_sort", dag), error = function(e) NA)
-  return(dag$names[tmp+1])
+  tmp <- tryCatch(.Call("c_topological_sort", dag), error = function(e) NULL)
+  if(is.null(tmp))
+    return(NULL)
+  else
+    return(dag$names[tmp+1])
+}
+
+order_edges <- function(dag) {
+  # creating a "hash table" makes the next operation faster
+  hash <- list()
+  for (i in 1:length(dag$names))
+    hash[[dag$names[[i]]]] <- i - 1
+  # convert the matrix of edges, which is a character vector, to an integer
+  # vector. This is done so the C end is simpler
+  for (i in 1:nrow(dag$edges)) {
+    dag$edges[i,1] <- hash[[dag$edges[i,1]]]
+    dag$edges[i,2] <- hash[[dag$edges[i,2]]]
+    dag$edges[i,3] <- 1
+  }
+  nc <- ncol(dag$edges)
+  nr <- nrow(dag$edges)
+  dag$edges <- as.integer(dag$edges)
+  dim(dag$edges) <- c(nr, nc)
+  # now that we have an integer matrix, call the C function
+  tmp <- tryCatch(.Call("c_order_edges", dag),  error = function(e) NULL)
+  if(is.null(tmp))
+    return(NULL)
+  else {
+    for(i in 1:nrow(dag$edges)) {
+      tmp[i,1] <- dag$names[as.numeric(tmp[i, 1]) + 1]
+      tmp[i,2] <- dag$names[as.numeric(tmp[i, 2]) + 1]
+      tmp[i,3] <- "-->"
+    }
+    dag$edges <- tmp
+    return(dag)
+    }
 }

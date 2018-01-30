@@ -48,29 +48,23 @@ is.pdag <-function(pdag) {
 
 # attempt to coerce a graph of type cgraph to a dag
 as.dag <- function(graph) {
-  if (!is.cgraph(graph)) {
-    warning("graph is not of type cgraph")
-    return(graph)
-  }
+  if (!is.cgraph(graph))
+    stop("graph is not of type cgraph")
 
   for (i in 1:nrow(graph$edges)) {
     if (graph$edges[i,3] != "-->") {
-      warning("Cannot coerce graph to dag due to incompatable edge type")
-      return(graph)
+      stop("Cannot coerce graph to dag due to incompatable edge type")
     }
   }
   # implementation is contained in dag_to_pattern.R
+  # check to see if a topological sort is possible
+  # if it is, it is a dag
   sort <- .topological_sort(graph)
   if (is.null(sort)) {
-    warning("Cannot coerce graph to dag because graph contains a cycle")
-    return(graph)
+    stop("Cannot coerce graph to dag because graph contains a cycle")
   }
-  if (is.dag(graph))
-    return(graph)
-  else {
-    class(graph) <- c("dag", class(graph))
-    return(graph)
-  }
+  class(graph) <- c("dag", class(graph))
+  return(graph)
 }
 
 as.pattern <- function(dag) {
@@ -86,25 +80,25 @@ print.cgraph <- function(graph) {
   print.default(graph)
 }
 
-validate_cgraph <- function(graph) {
+is_valid_cgraph <- function(graph) {
   n_edges <- nrow(graph$edges)
 
   parents = list()
   for (i in 1:n_edges) {
     edge <- graph$edges[i,]
     if (edge[1] == edge[2]) {
-      warning("graph contains a self loop")
+      message("graph contains a self loop")
       return(FALSE)
     }
     if (!is.null(as.list(parents[[edge[2]]])[[edge[1]]])) {
-      warning("graph is a multigraph")
+      message("graph is a multigraph")
       return(FALSE)
     }
     else
       parents[[edge[2]]][[edge[1]]] <- 1
     if (!(edge[1] %in% graph$names) || (!edge[2] %in% graph$names)) {
-      warning("graph contains node that are not in the node list")
-      return(NA)
+      message("graph contains nodes that are not in the node list")
+      return(FALSE)
     }
   }
   return(TRUE)

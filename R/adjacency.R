@@ -19,6 +19,9 @@
 #' @seealso   \code{\link{adjacency_recall}} \code{\link{arrowhead_precision}} \code{\link{arrowhead_recall}}
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
 #'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
+#'
+#'   Spirtes et al: “Causation, Prediction, and Search.”, Mit Press,
+#'   2001, p. 109.
 adjacency_precision <- function(true_graph, est_graph) {
   if(!is.cgraph(true_graph))
     stop("true_graph is not of type cgraph")
@@ -64,6 +67,9 @@ adjacency_precision <- function(true_graph, est_graph) {
 #' @seealso   \code{\link{adjacency_precision}} \code{\link{arrowhead_precision}} \code{\link{arrowhead_recall}}
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
 #'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
+#'
+#'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
+#'   2001, p. 109.
 adjacency_recall <- function(true_graph, est_graph) {
   if(!is.cgraph(true_graph))
     stop("true_graph is not of type cgraph")

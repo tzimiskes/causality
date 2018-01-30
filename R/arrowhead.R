@@ -14,19 +14,25 @@
 #'   ratio is returned.)
 #' @examples
 #' TODO(arix)
-#' @seealso \code{\link{arrowhead_recall}}
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
-#'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
+#'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749
+#'   [cs.AI]}.
+#'
+#'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
+#'   2001, p. 109.
+#' @seealso \code{\link{arrowhead_recall}}
 arrowhead_precision <- function(true_graph, est_graph) {
   # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
   #   stop("at least of the graphs are not the correct type!")
   # if (!setequal(true_graph$names,est_graph$names))
   #   stop ("names of the nodes do not match!")
   n_predicted_arrows <- 0
-  for (i in 1:length(est_graph$edges[, 3])) {
-    edge_type <- est_graph$edges[i, 3]
-    if (edge_type == "-->" || edge_type == "<--")
-      n_predicted_arrows <- n_predicted_arrows + 1
+  for (i in 1:nrow(est_graph$edges)) {
+     edge <- est_graph$edges[i, ]
+    if (edge[3] == "-->") {
+    # if (edge[1] %in% true_graph$skeleton[[edge[2]]])
+        n_predicted_arrows <- n_predicted_arrows + 1
+    }
   }
   if(n_predicted_arrows == 0) {
     warning("est_graph contains no oriented edges. Returning NA")
@@ -44,6 +50,8 @@ arrowhead_precision <- function(true_graph, est_graph) {
                       Treating the edge as ---", i))
       next
     }
+    if(!(eg_edge[2] %in% true_graph$skeleton[[eg_edge[1]]]))
+      next
     for (j in 1:length(true_graph$edges[, 1])) {
       tg_edge <- true_graph$edges[j, ]
       # if the edge is unoriented, skip
@@ -90,6 +98,9 @@ arrowhead_precision <- function(true_graph, est_graph) {
 #' TODO(arix)
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
 #'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
+#'
+#'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
+#'   2001, p. 109.
 #' @seealso arrowhead_precision
 arrowhead_recall <- function(true_graph, est_graph) {
   #TODO(arix) implement type checking
@@ -97,9 +108,11 @@ arrowhead_recall <- function(true_graph, est_graph) {
   # calculate the number of arrow in the true graph
   n_true_arrows <- 0
   for (i in 1:length(true_graph$edges[, 3])) {
-    edge_type <- true_graph$edges[i, 3]
-    if (edge_type == "-->" || edge_type == "<--")
-      n_true_arrows <- n_true_arrows + 1
+    edge <- true_graph$edges[i, ]
+    if (edge[3] == "-->") {
+      # if (edge[1] %in% est_graph$skeleton[[edge[2]]])
+        n_true_arrows <- n_true_arrows + 1
+    }
   }
   if(n_true_arrows == 0) {
     warning("true_graph contains no oriented edges. Returning NA")
