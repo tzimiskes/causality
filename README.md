@@ -22,16 +22,19 @@ TODO:
   - [ ] comment
 * DAG to Pattern Algorithm
 - [X] Topological Ordering
+  - [X] C
 - [X] Edge Ordering
+  - [X] C
 - [X] Find Compelled
+  - [X] C
 - [ ] Write tests
 - [ ] Comment
-- [ ] Document
+- [X] Document
 - [ ] Examples
 * Import and Utils
 - [ ] Document
 - [X] change import_from_tetrad_file so that the user includes the type of graph being imported
-- [ ] write tests for import from tetrad
+- [X] write tests for import from tetrad
 - [ ] add in type checking
 * Bootstrapping
 * Sensitivity Analysis

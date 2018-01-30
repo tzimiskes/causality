@@ -34,6 +34,9 @@ TODO(arix)
 \references{
 Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
+
+  Spirtes et al: “Causation, Prediction, and Search.”, Mit Press,
+  2001, p. 109.
 }
 \seealso{
 \code{\link{adjacency_recall}} \code{\link{arrowhead_precision}} \code{\link{arrowhead_recall}}
