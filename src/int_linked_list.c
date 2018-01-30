@@ -2,51 +2,65 @@
 #include<R.h>
 #include<Rinternals.h>
 
-
 typedef struct int_ll* int_ll_ptr;
 // definition of each node in a linked list
 typedef struct int_ll {
-  R_xlen_t key;
+  int key;
   int value;
   int_ll_ptr child;
 } int_ll;
 
-int_ll_ptr int_ll_instantiate(R_xlen_t key, int value) {
+int_ll_ptr int_ll_instantiate(int key, int value) {
   int_ll_ptr tmp = malloc(sizeof(int_ll));
   if(tmp == NULL)
     error("Failed to instaniate linked list!\n");
-  tmp->key = key;
+  tmp->key =  key;
   tmp->value = value;
   tmp->child = NULL;
   return(tmp);
 }
 
-void int_ll_insert(int_ll_ptr root, R_xlen_t key, int value) {
+void int_ll_insert(int_ll_ptr root, int key, int value) {
   if(root != NULL) {
     while(root->child != NULL)
       root = root->child;
     root->child = int_ll_instantiate(key, value);
-  } else
-    root = int_ll_instantiate(key, value);
+  }
 }
 
-void int_ll_insert_by_top_order(int_ll_ptr root, R_xlen_t key, int value, int* top_order) {
+// this function inserts nodes into the linked list by descending value
+// I guess its strange that I don't do this by key; I might rewrite it
+// if a node goes before root, it changes the values of root to the new node,
+// and the makes a new int_ll and sets it to root,
+void int_ll_insert_by_value(int_ll_ptr root, int key, int value) {
+  // declare these variables up here in an attempt to save some cycle by
+  // encouraging the compliler to store them in register
+  // not sure if this works though
+  int root_value;
+  int_ll_ptr child;
   while(root != NULL) {
-    if(root->value > value)
-      break;
-    else
-      root = root->child;
+    child = root->child;
+    if ((root_value = root->value) < value) {
+      int root_key = root->key;
+      int_ll_ptr tmp = int_ll_instantiate(root_key, root_value);
+      tmp->child = child;
+      root->key = key;
+      root->value = value;
+      root->child = tmp;
+      return;
+    } else if(child == NULL) {
+      root->child = int_ll_instantiate(key, value);
+      return;
+    } else
+      root = child;
   }
-  int_ll_ptr tmp = root->child;
-  root->child = int_ll_instantiate(key, value);
-  root->child->child = tmp;
 }
 
 int_ll_ptr int_ll_next(int_ll_ptr root) {
   return(root->child);
 }
 
-R_xlen_t int_ll_key(int_ll_ptr root) {
+int int_ll_key(int_ll_ptr root) {
   return(root->key);
 }
 
@@ -62,8 +76,8 @@ void int_ll_free(int_ll_ptr root) {
   }
 }
 
-R_xlen_t int_ll_size(int_ll_ptr root) {
-  R_xlen_t n = 1;
+int int_ll_size(int_ll_ptr root) {
+  int n = 1;
   if(root == NULL)
     return(0);
   else {
