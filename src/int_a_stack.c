@@ -2,7 +2,7 @@
 #include<Rinternals.h>
 #include<stdlib.h>
 // this implementation of a stack uses an array as the underlying data structure
-// in this case, knowing the max size of the stack
+// we know the max size of the stack, we should be good
 typedef struct int_a_stack {
   int* stack;
   int n;

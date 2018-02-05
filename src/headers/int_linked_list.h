@@ -1,3 +1,6 @@
+#ifndef INT_LL_H
+#define INT_LL_H
+
 typedef struct int_ll* int_ll_ptr;
 typedef struct int_ll int_ll;
 void int_ll_insert(int_ll_ptr root, int key, int value);
@@ -9,3 +12,5 @@ int_ll_ptr int_ll_instantiate(int key, int value);
 void int_ll_free(int_ll_ptr root);
 int int_ll_size(int_ll_ptr root);
 void int_ll_set_value(int_ll_ptr root, int value);
+
+#endif

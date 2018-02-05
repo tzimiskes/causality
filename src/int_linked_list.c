@@ -87,10 +87,9 @@ int int_ll_size(int_ll_ptr root) {
   return(n);
 }
 
-void int_ll_set_value(int_ll_ptr root, int value) {
+void int_ll_set_value(int_ll_ptr root, int new_value) {
   if(root != NULL)
-    root->value = value;
+    root->value = new_value;
   else
     error("Cannot assign value to a NULL pointer!\n");
 }
-
