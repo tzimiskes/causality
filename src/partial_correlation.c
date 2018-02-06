@@ -1,5 +1,4 @@
-#include <R.h>
-#include <Rinternals.h>
+#include"headers/rapi.h"
 
 #include<math.h>
 #include<stdlib.h>
@@ -9,8 +8,8 @@ SEXP c_pearson_correlation(SEXP x, SEXP y);
 SEXP c_partial_correlation(SEXP x, SEXP y, SEXP z);
 
 SEXP c_nth_order_partial_correlation(SEXP x, SEXP y, SEXP z) {
-  R_xlen_t n_obs = Rf_nrows(z);
-  R_xlen_t n_vars = Rf_ncols(z);
+  R_xlen_t n_obs = nrows(z);
+  R_xlen_t n_vars = ncols(z);
 
   if(n_vars == 0)
     return(c_pearson_correlation(x, y));

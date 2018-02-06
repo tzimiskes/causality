@@ -1,5 +1,4 @@
-#include <R.h>
-#include <Rinternals.h>
+#include"headers/rapi.h"
 
 #include<math.h>
 #include<stdlib.h>
@@ -10,8 +9,8 @@ SEXP c_pearson_correlation(SEXP x, SEXP y) {
   // int is 32 bit in R. R_xlen_t appears to be 64
   R_xlen_t n = length(x);
   // create a copy of x/y data on the heap and protect it from the R garbageman
-  double* x_dup_ptr = REAL(PROTECT(duplicate(x)));
-  double* y_dup_ptr = REAL(PROTECT(duplicate(y)));
+  double* restrict x_dup_ptr = REAL(PROTECT(duplicate(x)));
+  double* restrict y_dup_ptr = REAL(PROTECT(duplicate(y)));
  // calculate the means of x and y
   double mu_x = 0;
   double mu_y = 0;
@@ -27,12 +26,12 @@ SEXP c_pearson_correlation(SEXP x, SEXP y) {
     y_dup_ptr[i] -= mu_y;
   }
   // calculate the standard deviations and numerator
-  double sd_x = 0;
-  double sd_y = 0;
+  double sd_x  = 0;
+  double sd_y  = 0;
   double numer = 0;
   for (R_xlen_t i = 0; i < n; ++i) {
-    sd_x += x_dup_ptr[i] * x_dup_ptr[i];
-    sd_y += y_dup_ptr[i] * y_dup_ptr[i];
+    sd_x   += x_dup_ptr[i] * x_dup_ptr[i];
+    sd_y   += y_dup_ptr[i] * y_dup_ptr[i];
     numer  += x_dup_ptr[i] * y_dup_ptr[i];
   }
   // unprotect the dup_ptrs so the garbageman can take them away
@@ -42,7 +41,7 @@ SEXP c_pearson_correlation(SEXP x, SEXP y) {
     error("x standard deviation too small! sd(x) < 1e-11");
   if (sd_y < 1e-11)
     error("y standard deviation too small! sd(y) < 1e-11");
-   return(ScalarReal(numer /sqrt(sd_x) / sqrt(sd_y)));
+   return(ScalarReal(numer /sqrt(sd_x * sd_y)));
 }
 
 SEXP c_partial_correlation(SEXP x, SEXP y, SEXP z) {

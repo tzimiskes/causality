@@ -28,7 +28,7 @@ TODO:
 - [X] Find Compelled
   - [X] C
 - [ ] Write tests
-- [ ] Comment
+- [X] Comment
 - [X] Document
 - [ ] Examples
 * Import and Utils

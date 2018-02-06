@@ -1,5 +1,4 @@
-#include<R.h>
-#include<Rinternals.h>
+#include"headers/rapi.h"
 
 SEXP c_fisher_transformation_z_score(SEXP rho, SEXP n) {
   double r = asReal(rho);

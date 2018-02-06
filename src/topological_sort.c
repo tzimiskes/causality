@@ -1,8 +1,4 @@
-#ifndef _R
-#define _R
-#include<R.h>
-#include<Rinternals.h>
-#endif
+#include"headers/rapi.h"
 
 #include<stdlib.h>
 #include<string.h>
@@ -26,15 +22,14 @@
 // second key is represented by linked list
 // I guess red black trees could be used instead,
 // but I'm skeptical of the performance advantages in this case
-int_ll_ptr* make_int_ll_hash_table(const int n) {
-  int_ll_ptr* hash_table = malloc(n*sizeof(int_ll_ptr));
-  if(hash_table == NULL)
-    error("Failed to allocate pointer for hash_table.");
-  for(int i = 0; i < n; ++i)
-    hash_table[i] = NULL;
-  return(hash_table);
-}
 
+int_ll_ptr* make_int_ll_hash_table(const int n);
+
+// These two functions implement the topological sort as described in CLRS
+// topological sort returns a SEXP because there's an R fuction which
+// the user can call to get the topoligical sort
+
+SEXP c_topological_sort(SEXP dag);
 void visit(const int i,
            int* const restrict marked,
            int* const restrict n_marked,
@@ -42,9 +37,12 @@ void visit(const int i,
            int_a_stack_ptr restrict stack_ptr
           );
 
-SEXP c_topological_sort(SEXP dag);
+// These two functions (along with the above) implement the algorithm that
+// converts DAGs to Patterns (aka CPDAGs). The Algorithm is due to Chickering
+// c_dag_to_pattern returns the "patterned" edge list to R,
+// so its return type is SEXP
 
-int_ll_ptr* order_edges(SEXP dag, SEXP top_sort);
+int_ll_ptr* order_edges(SEXP dag, SEXP top_sort, const int n_nodes);
 SEXP c_dag_to_pattern(SEXP dag);
 
 // The following two functions implement the topological sort
@@ -136,8 +134,7 @@ SEXP c_topological_sort(SEXP dag) {
   return(order);
 }
 
-int_ll_ptr* order_edges(SEXP dag, SEXP top_order) {
-  const int n_nodes  = length(VECTOR_ELT(dag, 0));
+int_ll_ptr* order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
 
   // get the topological order pointer
   const int* const top_order_ptr = INTEGER(top_order);
@@ -187,7 +184,8 @@ SEXP c_dag_to_pattern(SEXP dag) {
   const int* const top_order_ptr = INTEGER(top_order);
 
   // get the parent list of each node from the function order edges
-  int_ll_ptr* parents = order_edges(dag, top_order);
+  int_ll_ptr* parents = order_edges(dag, top_order, n_nodes);
+
   // order edges sets the value parameter for each edge, so we need to
   // change the value for everything to UNKNOWN
   for(int i = 0; i < n_nodes; ++i) {
@@ -305,7 +303,6 @@ SEXP c_dag_to_pattern(SEXP dag) {
   // with the structure of cgraph objects in R
   int index = 0;
   for(int i = 0; i < n_nodes; ++i) {
-
     int_ll_ptr node_parents_ptr = parents[i];
     while(node_parents_ptr != NULL) {
       edges_ptr[index            ] = int_ll_key(node_parents_ptr);
@@ -323,4 +320,13 @@ SEXP c_dag_to_pattern(SEXP dag) {
   // unprotect top_order and edges
   UNPROTECT(2);
   return(edges);
+}
+// helper function, nothing interesting going on
+int_ll_ptr* make_int_ll_hash_table(const int n) {
+  int_ll_ptr* hash_table = malloc(n*sizeof(int_ll_ptr));
+  if(hash_table == NULL)
+    error("Failed to allocate pointer for hash_table.");
+  for(int i = 0; i < n; ++i)
+    hash_table[i] = NULL;
+  return(hash_table);
 }
