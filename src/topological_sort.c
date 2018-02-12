@@ -93,7 +93,7 @@ SEXP c_topological_sort(SEXP dag) {
   UNPROTECT(1);
   edges_ptr = NULL;
 
-// create a stack to store the topological order
+  // create a stack to store the topological order
   int_a_stack_ptr stack_ptr = int_a_stack_instantiate(n_nodes);
 
   // instantiate the topological order. It will be returned at the end of the
@@ -112,7 +112,7 @@ SEXP c_topological_sort(SEXP dag) {
   int index = 0;
   while(n_marked < n_nodes) {
     if(marked[index] == UNMARKED)
-      // need to pass n_marked by reference since it is not a pointer
+      // need to pass the adress of n_marked since it is not a pointer
       visit(index, marked, &n_marked, children, stack_ptr);
     else
       index++;
@@ -123,7 +123,6 @@ SEXP c_topological_sort(SEXP dag) {
   memcpy(order_ptr, stack_contents_ptr, n_nodes*sizeof(int));
 
   // free all the malloc'd memory
-  int_a_stack_free(stack_ptr);
   free(stack_ptr);
   for(int i = 0; i < n_nodes; ++i)
     int_ll_free(children[i]);

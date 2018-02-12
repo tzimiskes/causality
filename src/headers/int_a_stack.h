@@ -9,6 +9,5 @@ void int_a_stack_push(int_a_stack_ptr stack_ptr, int foo);
 int int_a_stack_peek(int_a_stack_ptr stack_ptr);
 void int_a_stack_pop(int_a_stack_ptr stack_ptr);
 int* int_a_stack_get_stack(int_a_stack_ptr stack_ptr);
-void int_a_stack_free(int_a_stack_ptr stack_ptr);
 
 #endif
