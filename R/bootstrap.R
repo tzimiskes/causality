@@ -8,7 +8,7 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
 
   base <- dags[[1]]
   for(dag in dags) {
-    if (!isTRUE(all.equal(base$names, dag$nodes)))
+    if (!isTRUE(all.equal(base$nodes, dag$nodes)))
       stop('at least one of the dags contains a different names
            field than the others')
   }
@@ -35,9 +35,10 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   dim(dag$edges) <- c(nr, nc)
   return(dag)
   })
-  time <- system.time(table <- .Call("c_dag_to_rbt", dags))
+  table <- .Call("c_dag_to_rbt", dags)
 
   table <- as.data.frame(table)
+
   dag <- dags[[1]]
   table[[1]] <- dag$nodes[table[[1]]]
   table[[2]] <- dag$nodes[table[[2]]]
@@ -52,35 +53,73 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   else {
     # TODO(aritable)
   }
-  print(time)
   output <- list(names = dag$nodes, table = table)
   class(output) <- c("aggregated-pdags")
   return(output)
 }
 
-foo <- function(agg_pdags, threshold) {
+vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
+                  "relative_majority", "sq_relative_majority"))
+  {
+
+  plurality <- function(x) {
+    return(match(max(x), x))
+  }
+
+  majority <- function(x) {
+    index <- x[x > .5]
+    if (length(index) == 0)
+      return(0)
+    else
+    return(index)
+  }
+
+  relative_majority <- function(x) {
+    for (i in 1:length(x)) {
+      if (x[i] > sum(x[-i]))
+        return(i)
+    }
+    return(0)
+  }
+
+  square_relative_majority <- function(x, y, z) {
+    for (i in 1:length(x)) {
+      if (x[i]^2 > sum(x[-i]^2))
+        return(i)
+      }
+    return(0)
+  }
+
+  method <- match.arg(method)
+
+  voting_method <-
+    switch (method,
+      "plurality"                = plurality,
+      "majority"                 = majority,
+      "relative_majority"        = relative_majority,
+      "square_relative_majority" = square_relative_majority
+    )
+  calculate_edge <- function(src, dst, x) {
+    # these need to be chars because R is dumb
+    switch (x,
+      "0" = c(src, dst, "---"),
+      "1" = c(dst, src, "-->"),
+      "2" = c(src, dst, "-->"),
+      "3" = c(src, dst, "---")
+    )
+  }
 
   df <- agg_pdags$table
-  df <-df[which(df$'<--' + df$"---" +
-                         df$"-->" >= threshold), names(df)]
+  df <- df[ifelse ( rowMeans(df[,3:5]) > threshold , T , F),]
   nodes <- agg_pdags$nodes
   n_edges <- nrow(df)
+  if (n_edges == 0) {
+    warning("Threshold too high, resulting graph is empty! Returning NA")
+    return(NA)
+  }
   edges <- matrix(data = "", nrow = n_edges, ncol = 3)
   for (i in 1:n_edges) {
-    if(df[i, 3] > df[i, 4] + df[i, 5]) {
-    edges[i , 1] <- df[i, 2]
-    edges[i , 2] <- df[i, 1]
-    edges[i , 3] <- "-->"
-    }
-    else if(df[i, 4] > df[i, 3] + df[i, 5]) {
-      edges[i , 1] <- df[i, 1]
-      edges[i , 2] <- df[i, 2]
-      edges[i , 3] <- "-->"
-    } else {
-      edges[i , 1] <- df[i, 1]
-      edges[i , 2] <- df[i, 2]
-      edges[i , 3] <- "---"
-    }
+     edges[i,] <- calculate_edge(df[i,1], df[i,2], voting_method(df[i, 3:5]))
   }
   adjacencies <- .calculate_adjcanencies_from_edges(edges, nodes)
   return(cgraph(nodes, adjacencies, edges))

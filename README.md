@@ -20,7 +20,10 @@ import_export.R
 - [ ] continue to build out the file to facilitate more boostrapping
 - [ ] document
 - [ ] tests
-
+* adjacency.R
+- [ ] look at implementation to see why i index over names of skeleton
+* shd.R
+- [ ] redo type checking
 
 * Alg Comparison stuff
 - [ ] F1 Statistics
