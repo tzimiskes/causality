@@ -23,8 +23,8 @@ dag_to_pattern <- function(dag) {
   }
   # creating a "hash table" makes the next operation faster
   hash <- list()
-  for (i in 1:length(dag$names))
-    hash[[dag$names[[i]]]] <- i - 1
+  for (i in 1:length(dag$nodes))
+    hash[[dag$nodes[[i]]]] <- i - 1
   for (i in 1:nrow(dag$edges)) {
     dag$edges[i,1] <- hash[[dag$edges[i,1]]]
     dag$edges[i,2] <- hash[[dag$edges[i,2]]]
@@ -35,8 +35,8 @@ dag_to_pattern <- function(dag) {
   dag$edges <- as.integer(dag$edges)
   dim(dag$edges) <- c(nr, nc)
   tmp<-.Call("c_dag_to_pattern", dag)
-  dag$edges[, 1] <- dag$names[tmp[, 1] + 1]
-  dag$edges[, 2] <- dag$names[tmp[, 2] + 1]
+  dag$edges[, 1] <- dag$nodes[tmp[, 1] + 1]
+  dag$edges[, 2] <- dag$nodes[tmp[, 2] + 1]
   dag$edges[, 3] <- c("-->","---")[tmp[, 3]]
   return(dag)
 }
@@ -75,8 +75,8 @@ topological_sort <- function(dag) {
   }
   # creating a "hash table" makes the next operation faster
   hash <- list()
-  for (i in 1:length(dag$names))
-    hash[[dag$names[[i]]]] <- i - 1
+  for (i in 1:length(dag$nodes))
+    hash[[dag$nodes[[i]]]] <- i - 1
   for (i in 1:nrow(dag$edges)) {
     dag$edges[i, 1] <- hash[[dag$edges[i, 1]]]
     dag$edges[i, 2] <- hash[[dag$edges[i, 2]]]
@@ -87,7 +87,7 @@ topological_sort <- function(dag) {
   dag$edges <- as.integer(dag$edges)
   dim(dag$edges) <- c(nr, nc)
   tmp<-tryCatch(.Call("c_topological_sort", dag), error = function(e) NA)
-  return(dag$names[tmp + 1])
+  return(dag$nodes[tmp + 1])
 }
 
 # this is a private version of topological order that is used by as.dag() to
@@ -100,8 +100,8 @@ topological_sort <- function(dag) {
 .topological_sort <- function(dag) {
 # creating a "hash table" makes the next operation faster
   hash <- list()
-  for (i in 1:length(dag$names))
-    hash[[dag$names[[i]]]] <- i - 1
+  for (i in 1:length(dag$nodes))
+    hash[[dag$nodes[[i]]]] <- i - 1
   # convert the matrix of edges, which is a character vector, to an integer
   # vector. This is done so the C end is simpler
   for (i in 1:nrow(dag$edges)) {
@@ -118,5 +118,5 @@ topological_sort <- function(dag) {
   if(is.null(tmp))
     return(NULL)
   else
-    return(dag$names[tmp + 1])
+    return(dag$nodes[tmp + 1])
 }

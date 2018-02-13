@@ -18,6 +18,7 @@
 #'   Hill-Climbing Bayesian Network Structure Learning Algorithm". Machine
 #'   Learning, 65(1), 31-78.
 #' @seealso \code{\link{dag_to_pattern}}
+# TODO(arix) redo type checking
 shd <- function(pdag1, pdag2) {
   if (!any(c("pattern", "pdag") %in% class(pdag1))) {
     if ("dag" %in% class(pdag1))

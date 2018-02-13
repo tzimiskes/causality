@@ -8,7 +8,7 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
 
   base <- dags[[1]]
   for(dag in dags) {
-    if (!isTRUE(all.equal(base$names, dag$names)))
+    if (!isTRUE(all.equal(base$names, dag$nodes)))
       stop('at least one of the dags contains a different names
            field than the others')
   }
@@ -19,8 +19,8 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   }
   # creating a "hash table" makes the next operation faster
   hash <- list()
-  for (i in 1:length(dag$names))
-    hash[[dag$names[[i]]]] <- i - 1
+  for (i in 1:length(dag$nodes))
+    hash[[dag$nodes[[i]]]] <- i - 1
   for (i in 1:nrow(dag$edges)) {
     dag$edges[i,1] <- hash[[dag$edges[i,1]]]
     dag$edges[i,2] <- hash[[dag$edges[i,2]]]
@@ -38,10 +38,9 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   time <- system.time(table <- .Call("c_dag_to_rbt", dags))
 
   table <- as.data.frame(table)
-  print(table)
   dag <- dags[[1]]
-  table[[1]] <- dag$names[table[[1]]]
-  table[[2]] <- dag$names[table[[2]]]
+  table[[1]] <- dag$nodes[table[[1]]]
+  table[[2]] <- dag$nodes[table[[2]]]
   if (ncol(table) == 5) {
     names(table) <- c("node1", "node2", "<--", "-->", "---")
     if(raw == FALSE) {
@@ -54,7 +53,7 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
     # TODO(aritable)
   }
   print(time)
-  output <- list(names = dag$names, table = table)
+  output <- list(names = dag$nodes, table = table)
   class(output) <- c("aggregated-pdags")
   return(output)
 }
@@ -64,7 +63,7 @@ foo <- function(agg_pdags, threshold) {
   df <- agg_pdags$table
   df <-df[which(df$'<--' + df$"---" +
                          df$"-->" >= threshold), names(df)]
-  nodes <- agg_pdags$names
+  nodes <- agg_pdags$nodes
   n_edges <- nrow(df)
   edges <- matrix(data = "", nrow = n_edges, ncol = 3)
   for (i in 1:n_edges) {
@@ -83,21 +82,7 @@ foo <- function(agg_pdags, threshold) {
       edges[i , 3] <- "---"
     }
   }
-  skeleton <- lapply(nodes, function(node) {
-    neighborhood <- c()
-    # loop over the edges
-    for (i in 1:n_edges) {
-      # if a node is in an edge, find its partner (neighbor)
-      if( node %in% edges[i, 1:2]) {
-        neighbor <- edges[i, c(node != edges[i,1:2], F)]
-        if (!(neighbor %in% neighborhood))
-          neighborhood <- c(neighborhood, neighbor)
-      }
-    }
-    return(neighborhood)
-  }
-  )
-  names(skeleton) <- nodes
-  return(cgraph(nodes, skeleton, edges))
+  adjacencies <- .calculate_adjcanencies_from_edges(edges, nodes)
+  return(cgraph(nodes, adjacencies, edges))
 }
 

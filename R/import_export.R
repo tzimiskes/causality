@@ -1,17 +1,18 @@
 bn_learn_to_cgraph <- function(bn_graph) {
   # converts a learned graph of bn-class to a grpah of cgraph-class
-  if (!(class(bn_graph) == "bn")) stop("Input is not of class bn!")
+  if (!(class(bn_graph) == "bn"))
+    stop("Input is not of class bn!")
 
   names <- names(bn_graph$nodes)
-  # get the skeleton
-  skeleton <- lapply(names, function(x) {
+  # get the adjacencies
+  adjacencies <- lapply(names, function(x) {
     bn_graph$nodes[[x]]$nbr
   }
   )
-  names(skeleton) <- names
+  names(adjacencies) <- names
   # get the edges
   edges <- cbind(unname(bn_graph$arcs), "-->")
-  return(cgraph(names, skeleton, edges))
+  return(cgraph(names, adjacencies, edges))
 }
 
 export_bnlearn_object_to_tetrad <- function(file, model) {
@@ -32,13 +33,19 @@ export_bnlearn_object_to_tetrad <- function(file, model) {
   cat('\n', file = file, append = T)
 }
 
-import_from_tetrad_file <- function(file, type = NULL) {
+import_from_tetrad_file <- function(file, type = "cgraph", sort = F) {
+  if (!file.exists(file))
+    stop(sprintf("file does not exist!\n"))
+  if(!is.logical(sort))
+    stop("stop does not take on a boolean value!")
 
   # this function imports a tetrad graph
   # parse the tetrad file as a list of character vectors
   tmp_file <- read_lines(file)
   # get the names of the nodes from
   nodes <- strsplit(tmp_file[2], ",")[[1]]
+  if (sort)
+    nodes <- sort(nodes)
   # strip out first 4 lines and last line
   tmp_file <- tmp_file[5:( length(tmp_file) - 1)]
   # remove the number of the edge
@@ -63,25 +70,11 @@ import_from_tetrad_file <- function(file, type = NULL) {
       edges[i, 3] <- tmp_file[[i]][2]
     }
   }
-  # get the skeleton from the edge representation
-  # loop over the nodes
-  skeleton <- lapply(nodes, function(node) {
-    neighborhood <- c()
-    # loop over the edges
-    for (i in 1:n_edges) {
-      # if a node is in an edge, find its partner (neighbor)
-      if( node %in% edges[i, 1:2]) {
-        neighbor <- edges[i, c(node != edges[i,1:2], F)]
-        if (!(neighbor %in% neighborhood))
-          neighborhood <- c(neighborhood, neighbor)
-      }
-    }
-    return(neighborhood)
-  }
-  )
-  names(skeleton) <- nodes
 
-  tmp_cgraph <- cgraph(nodes, skeleton, edges)
+  # get the adjacencies from the edge representation
+  adjacencies <- .calculate_adjcanencies_from_edges(edges, nodes)
+
+  tmp_cgraph <- cgraph(nodes, adjacencies, edges)
   # check to see if input is a legal cgraph object
   if(is_valid_cgraph(tmp_cgraph) == FALSE)
     stop("imported graph is not a valid cgraph object")
@@ -96,6 +89,9 @@ import_from_tetrad_file <- function(file, type = NULL) {
                       ))
       else
         return(tmp_dag)
+    }
+    if(type == "cgraph") {
+      return(tmp_cgraph)
     }
   }
   else

@@ -22,6 +22,8 @@
 #'
 #'   Spirtes et al: “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
+
+# TODO(arix) look at implementation to see why i index over names of skeleton
 adjacency_precision <- function(true_graph, est_graph) {
   if(!is.cgraph(true_graph))
     stop("true_graph is not of type cgraph")
@@ -29,7 +31,7 @@ adjacency_precision <- function(true_graph, est_graph) {
     stop("est_graph is not of type cgraph")
 
 
-  n_pred_adjs <- sum(lengths(est_graph$skeleton))
+  n_pred_adjs <- sum(lengths(est_graph$adjacencies))
   if(n_pred_adjs == 0) {
     warning("est_graph has no adjacencies")
     return(NA)
@@ -37,11 +39,11 @@ adjacency_precision <- function(true_graph, est_graph) {
   n_correct <- 0
   # for each node, calculate the intersection true graph neighborhood and the estimated graph neighborhood
   # the cardinality is the number correctly predicted for that node
-  for (node in names(true_graph$skeleton)) {
+  for (node in names(true_graph$adjacencies)) {
     # get the size for intersection of the adjacencies of 'node'
     # in est graph and true graph
     n_correct <- n_correct + length(
-      intersect(true_graph$skeleton[[node]], est_graph$skeleton[[node]])
+      intersect(true_graph$adjacencies[[node]], est_graph$adjacencies[[node]])
     )
   }
   return(n_correct/n_pred_adjs)
@@ -76,7 +78,7 @@ adjacency_recall <- function(true_graph, est_graph) {
   if(!is.cgraph(est_graph))
     stop("est_graph is not of type cgraph")
 
-  n_true_adjs <- sum(lengths(true_graph$skeleton))
+  n_true_adjs <- sum(lengths(true_graph$adjacencies))
   if(n_true_adjs == 0) {
     warning("true_graph has no adjacencies")
     return(NA)
@@ -84,9 +86,9 @@ adjacency_recall <- function(true_graph, est_graph) {
   n_correct <- 0
   # for each node, calculate the intersection true graph neighborhood and the estimated graph neighborhood
   # the cardinality is the number correctly predicted for that node
-  for (node in names(true_graph$skeleton)) {
+  for (node in names(true_graph$adjacencies)) {
     n_correct <- n_correct + length(
-      intersect(true_graph$skeleton[[node]], est_graph$skeleton[[node]])
+      intersect(true_graph$adjacencies[[node]], est_graph$adjacencies[[node]])
     )
   }
   return(n_correct/n_true_adjs)

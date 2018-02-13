@@ -1,10 +1,7 @@
-
-# super alpha version of a data structure that can be used to hold a general graph.
-# TBD if I want to extend this class instead of having a 'type' field
-# also, names is probably unnecessary
-cgraph <- function(names = c(character()), skeleton = matrix(), edges = list(c())) {
+# alpha version of a data structure that can be used to hold a general graph.
+cgraph <- function(nodes = c(character()), adjacencies = matrix(), edges = list(c())) {
   return(
-    structure(list(names = names, skeleton = skeleton, edges = edges), class = "cgraph")
+    structure(list(nodes = nodes, adjacencies = adjacencies, edges = edges), class = "cgraph")
   )
 }
 
@@ -50,12 +47,16 @@ is.pdag <-function(pdag) {
 as.dag <- function(graph) {
   if (!is.cgraph(graph))
     stop("graph is not of type cgraph")
-
   for (i in 1:nrow(graph$edges)) {
     if (graph$edges[i,3] != "-->") {
       stop("Cannot coerce graph to dag due to incompatable edge type")
     }
   }
+
+  if(is.pattern(graph) || is.pdag(graph)) {
+    # TODO(arix)
+  }
+
   # implementation is contained in dag_to_pattern.R
   # check to see if a topological sort is possible
   # if it is, it is a dag
@@ -70,10 +71,23 @@ as.dag <- function(graph) {
 as.pattern <- function(dag) {
   if (is.dag(dag))
     return(dag_to_pattern(dag))
-  else
-    stop("currently, only dags can be coerced to patterns")
+  else if (is.cgraph(dag)) {
+    message("input is not labeled as a dag, calling as.dag to see if it is.")
+    dag <- as.dag(dag)
+    message("success! converting to pattern...")
+    return(dag_to_pattern(dag))
+  } else if(is.pdag(dag)) {
+    # TODO(arix)
+    message("this is yet to be implemented")
+  }
+  stop("input can not be converted to pattern")
 }
-
+# TODO(arix)
+as.pdag <- function(graph) {
+  if(is.pattern(graph)) {
+    class(graph) <- c("pdag", "cgraph")
+  }
+}
 
 # might change this
 print.cgraph <- function(graph) {
@@ -81,6 +95,18 @@ print.cgraph <- function(graph) {
 }
 
 is_valid_cgraph <- function(graph) {
+  # check for duplicate nodes
+  nodes <- sort(graph$nodes)
+  for (i in 1:(length(nodes)-1)) {
+    if ( nodes[i] == nodes[i + 1]) {
+      message("graph contains duplicate nodes")
+      return(FALSE)
+    }
+  }
+
+  # TODO(arix) check adjacencies
+
+  # check for invalid edges
   n_edges <- nrow(graph$edges)
 
   parents = list()
@@ -96,7 +122,7 @@ is_valid_cgraph <- function(graph) {
     }
     else
       parents[[edge[2]]][[edge[1]]] <- 1
-    if (!(edge[1] %in% graph$names) || (!edge[2] %in% graph$names)) {
+    if (!(edge[1] %in% graph$nodes) || (!edge[2] %in% graph$nodes)) {
       message("graph contains nodes that are not in the node list")
       return(FALSE)
     }
