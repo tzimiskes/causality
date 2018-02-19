@@ -76,13 +76,25 @@ void int_ll_free(int_ll_ptr root) {
   }
 }
 
+int_ll_ptr int_ll_delete(int_ll_ptr root, const int key) {
+  if(root != NULL) {
+    if(root->key == key) {
+      int_ll_ptr tmp = root->child;
+      free(root);
+      return(tmp);
+    } else
+      return(int_ll_delete(root->child, key));
+  }
+  error("cannot find key to delete in linked list!\n");
+}
+
 int int_ll_size(int_ll_ptr root) {
   int n = 1;
   if(root == NULL)
     return(0);
   else {
     while((root = root->child) != NULL)
-      ++n;
+      n++;
   }
   return(n);
 }

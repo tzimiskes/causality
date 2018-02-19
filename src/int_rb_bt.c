@@ -104,7 +104,7 @@ void int_rbt_print_tree(int_rbt_node_ptr root, const int n) {
   if(root != NULL) {
     Rprintf("Key: %i Value(s):", int_rbt_key(root));
     for(int i = 0; i < n; ++i)
-      printf(" %i" , root->values[i]);
+      Rprintf(" %i" , root->values[i]);
     Rprintf("\n");
     int_rbt_print_tree(root->child[LEFT], n);
     int_rbt_print_tree(root->child[RIGHT], n);

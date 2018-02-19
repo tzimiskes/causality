@@ -48,9 +48,9 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
     const int n_edges_t2 = 2*n_edges;
     const int* const edges_ptr = INTEGER(edges);
     for(int i = 0; i < n_edges; ++i) {
-      const int parent = edges_ptr[i];
-      const int child = edges_ptr[i + n_edges];
-      const int edge = edges_ptr[i + n_edges_t2];
+      const int parent = edges_ptr[i             ];
+      const int child  = edges_ptr[i + n_edges   ];
+      const int edge   = edges_ptr[i + n_edges_t2];
       int * count_to_add;
 
       switch(edge) {
