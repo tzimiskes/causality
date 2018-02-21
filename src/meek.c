@@ -15,7 +15,9 @@ inline int meek3(const int grandparent, const int node1, const int node2,
                  int_ll_ptr* parents, int* edges_ptr, const int i,
                  const int n_edges);
 inline int meek4(const int node1, const int node2, int_ll_ptr* parents,
-                 int* edges_ptr, const int i, const int n_edges);
+                 int* edges_ptr, const int i, const int n_edges) {
+  return 1;
+}
 
 
 // helper function, nothing interesting going on
@@ -147,6 +149,7 @@ inline int meek123(const int node1, const int node2, int_ll_ptr* parents,
 
 inline int meek3(const int grandparent, const int node1, const int node2, int_ll_ptr* parents,
                  int* edges_ptr, const int i, const int n_edges) {
+  /*
     int_ll_ptr pop_ptr = parents[node1];
     // index through the parents of parents (pop_ptr) and
     // look for the chain node1 <-- erich -- node2
@@ -180,5 +183,7 @@ inline int meek3(const int grandparent, const int node1, const int node2, int_ll
       pop_ptr_cpy = int_ll_next(pop_ptr_cpy);
     }
   }
+   */
+  return TRUE;
 }
 

@@ -37,7 +37,7 @@ is.pag <-function(pag) {
 }
 
 is.pdag <-function(pdag) {
-  if ("pdag" %in% class(pag))
+  if ("pdag" %in% class(pdag))
     return(TRUE)
   else
     return(FALSE)

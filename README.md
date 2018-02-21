@@ -8,6 +8,8 @@ TODO:
  - [ ] is_valid_cgraph: needs to check to make sure if the adjacencies are legal
  - [ ] need to make man pages for the entire cgraph.R file
  - [ ] write more tests, eventually
+    - [X] is.foo tests
+    - [ ] as.foo tests
 * dag_to_pattern.R
 - [ ] consider making dag_to_pattern private. If so, figure out what to 
       do with all the documentation

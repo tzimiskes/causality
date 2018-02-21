@@ -55,7 +55,7 @@ test_that("constant vectors throw errors", {
 
 test_that("the partial correlations make sense", {
   set.seed(1)
-  n <- 1e6
+  n <- 1e5
   x <- rnorm(n, sd = .1)
   y <- rnorm(n, sd = .1)
   z <- rnorm(n, sd = .1)
@@ -63,7 +63,7 @@ test_that("the partial correlations make sense", {
 
   r_hat <- partial_correlation(x,y,z)
   z_score <- fisher_z_score(r_hat, n)
-  expect_identical(test_fisher_independence(z_score, .01), TRUE)
+  expect_true(test_fisher_independence(z_score, .05))
 
   # x -> y
   # rho_{x,y|z} = rho(x,y) != 0
@@ -74,25 +74,25 @@ test_that("the partial correlations make sense", {
   # test rho{x,y|z} != 0
   r_hat <- partial_correlation(x, y, z)
   z_score <- fisher_z_score(r_hat, n)
-  expect_identical(test_fisher_independence(z_score, .01), FALSE)
+  expect_false(test_fisher_independence(z_score, .01))
   # x -> y -> z
   z <- y + rnorm(n, sd = .05)
   r_hat <- partial_correlation(x, z, y)
   z_score <- fisher_z_score(r_hat, n)
-  expect_identical(test_fisher_independence(z_score, .01), TRUE)
+  expect_true(test_fisher_independence(z_score, .01))
   # x-> y <- z
   z <- rnorm(n, sd = .1)
   y <- x + z + rnorm(n, sd = .05)
   r_hat <- partial_correlation(x, z, y)
 
   z_score <- fisher_z_score(r_hat, n)
-  expect_identical(test_fisher_independence(z_score, .01), FALSE)
+  expect_false(test_fisher_independence(z_score, .01))
   # z <- y -> x
   y <- rnorm(n, sd = .1)
   x <- y + rnorm(n, sd = .05)
   z <- y + rnorm(n, sd = .05)
   r_hat <- partial_correlation(x, z, y)
   z_score <- fisher_z_score(r_hat, n)
-  expect_identical(test_fisher_independence(z_score, .01), TRUE)
+  expect_true(test_fisher_independence(z_score, .01))
 })
 

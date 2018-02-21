@@ -17,4 +17,5 @@ adjacency <- lapply(nodes, function(node) {
 }
 )
 names(adjacency) <- nodes
+return(adjacency)
 }

@@ -30,7 +30,7 @@ arrowhead_precision <- function(true_graph, est_graph) {
   for (i in 1:nrow(est_graph$edges)) {
      edge <- est_graph$edges[i, ]
     if (edge[3] == "-->") {
-    # if (edge[1] %in% true_graph$skeleton[[edge[2]]])
+    # if (edge[1] %in% true_graph$adjacencies[[edge[2]]])
         n_predicted_arrows <- n_predicted_arrows + 1
     }
   }
@@ -50,7 +50,7 @@ arrowhead_precision <- function(true_graph, est_graph) {
                       Treating the edge as ---", i))
       next
     }
-    if(!(eg_edge[2] %in% true_graph$skeleton[[eg_edge[1]]]))
+    if(!(eg_edge[2] %in% true_graph$adjacencies[[eg_edge[1]]]))
       next
     for (j in 1:length(true_graph$edges[, 1])) {
       tg_edge <- true_graph$edges[j, ]
@@ -110,7 +110,7 @@ arrowhead_recall <- function(true_graph, est_graph) {
   for (i in 1:length(true_graph$edges[, 3])) {
     edge <- true_graph$edges[i, ]
     if (edge[3] == "-->") {
-      # if (edge[1] %in% est_graph$skeleton[[edge[2]]])
+      # if (edge[1] %in% est_graph$adjacencies[[edge[2]]])
         n_true_arrows <- n_true_arrows + 1
     }
   }
