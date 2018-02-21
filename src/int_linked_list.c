@@ -1,6 +1,5 @@
 #include<stdlib.h>
-#include<R.h>
-#include<Rinternals.h>
+#include"headers/rapi.h"
 
 typedef struct int_ll* int_ll_ptr;
 // definition of each node in a linked list
@@ -20,11 +19,15 @@ int_ll_ptr int_ll_instantiate(int key, int value) {
   return(tmp);
 }
 
-void int_ll_insert(int_ll_ptr root, int key, int value) {
-  if(root != NULL) {
-    while(root->child != NULL)
-      root = root->child;
-    root->child = int_ll_instantiate(key, value);
+int_ll_ptr int_ll_insert(int_ll_ptr root, int key, int value) {
+  if(root == NULL)
+    return(int_ll_instantiate(key, value));
+  else {
+    int_ll_ptr tmp = root;
+    while(tmp->child != NULL)
+      tmp = tmp->child;
+    tmp->child = int_ll_instantiate(key, value);
+    return(root);
   }
 }
 
@@ -32,28 +35,30 @@ void int_ll_insert(int_ll_ptr root, int key, int value) {
 // I guess its strange that I don't do this by key; I might rewrite it
 // if a node goes before root, it changes the values of root to the new node,
 // and the makes a new int_ll and sets it to root,
-void int_ll_insert_by_value(int_ll_ptr root, int key, int value) {
-  // declare these variables up here in an attempt to save some cycle by
-  // encouraging the compliler to store them in register
-  // not sure if this works though
-  int root_value;
-  int_ll_ptr child;
-  while(root != NULL) {
-    child = root->child;
-    if ((root_value = root->value) < value) {
-      int root_key = root->key;
-      int_ll_ptr tmp = int_ll_instantiate(root_key, root_value);
-      tmp->child = child;
-      root->key = key;
-      root->value = value;
-      root->child = tmp;
-      return;
-    } else if(child == NULL) {
-      root->child = int_ll_instantiate(key, value);
-      return;
-    } else
-      root = child;
+int_ll_ptr int_ll_insert_by_value(int_ll_ptr root, int key, int value) {
+  // if root is null, instantiate
+  if(root == NULL)
+    return(int_ll_instantiate(key, value));
+  // if new node should be before root, make new node root
+  if(root->value < value) {
+    int_ll_ptr new_root = int_ll_instantiate(key, value);
+    new_root->child = root;
+    return(new_root);
   }
+  // else loop through the nodes
+  int_ll_ptr tmp = root;
+  while(tmp->child != NULL) {
+    if(tmp->child->value < value) {
+      int_ll_ptr new_node = int_ll_instantiate(key, value);
+      new_node->child = tmp->child;
+      tmp->child = new_node;
+      return(root);
+    }
+    tmp = tmp->child;
+  }
+  // if child is NULL instantiate it
+  tmp->child = int_ll_instantiate(key, value);
+  return(root);
 }
 
 int_ll_ptr int_ll_next(int_ll_ptr root) {

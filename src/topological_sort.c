@@ -84,10 +84,7 @@ SEXP c_topological_sort(SEXP dag) {
     // matrices are stored as 1d arrays in R, with column major ordering
     int parent = edges_ptr[i];
     int child = edges_ptr[i + n_edges];
-    if(children[parent] == NULL)
-      children[parent] = int_ll_instantiate(child, EMPTY);
-    else
-      int_ll_insert(children[parent], child, EMPTY);
+    children[parent] = int_ll_insert(children[parent], child, EMPTY);
   }
   // we no longer need edges
   UNPROTECT(1);
@@ -161,13 +158,9 @@ int_ll_ptr* order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
   for(int i = 0; i < n_edges; ++i) {
     int parent = edges_ptr[i          ];
     int child  = edges_ptr[i + n_edges];
-    if(parents[child] == NULL) {
-      parents[child] = int_ll_instantiate(parent, top_order_hash[parent]);
+    parents[child] = int_ll_insert_by_value(parents[child],
+                     parent, top_order_hash[parent]);
     }
-    else {
-      int_ll_insert_by_value(parents[child], parent, top_order_hash[parent]);
-    }
-  }
   // free all the malloc'd memory
   free(top_order_hash);
   UNPROTECT(1);

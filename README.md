@@ -11,8 +11,8 @@ TODO:
     - [X] is.foo tests
     - [ ] as.foo tests
 * dag_to_pattern.R
-- [ ] consider making dag_to_pattern private. If so, figure out what to 
-      do with all the documentation
+- [X] make dag_to_pattern private.
+- [ ] Figure out what to do with all the documentation
 import_export.R
 - [ ] add in support to convert R-causal output to cgraph
 - [ ] rewrite import_from_tetrad_file so it doesn't suck

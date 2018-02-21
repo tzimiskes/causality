@@ -44,10 +44,7 @@ SEXP meek_rules(SEXP pdag) {
     const int node1  = edges_ptr[i];
     const int node2  = edges_ptr[i + n_edges];
     const int edge   = edges_ptr[i + 2*n_edges];
-    if(parents[node2] == NULL)
-      parents[node2] = int_ll_instantiate(node1, edge);
-    else
-      int_ll_insert(parents[node2], node1, edge);
+    parents[node2] = int_ll_insert(parents[node2], node1, edge);
   }
   int changes_occur;
   do {
