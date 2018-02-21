@@ -7,11 +7,13 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
     stop("raw does not take on a logical value")
 
   base <- dags[[1]]
-  for(dag in dags) {
-    if (!isTRUE(all.equal(base$nodes, dag$nodes)))
-      stop('at least one of the dags contains a different names
-           field than the others')
-  }
+  # see if all the graphs have the EXACT same nodes
+  same_nodes <- lapply(dags, function(dag) {
+    isTRUE(all.equal(base$nodes, dag$nodes))
+  })
+  same_nodes <- isTRUE(all.equal(unlist(same_nodes), rep(T, length(dags))))
+  if (!same_nodes)
+    stop("Not all the graphs have the same nodes")
 
   dags <- lapply(dags, function(dag) {
   if(!is.cgraph(dag)) {
@@ -51,7 +53,7 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
     }
   }
   else {
-    # TODO(aritable)
+    # TODO(arix)
   }
   output <- list(names = dag$nodes, table = table)
   class(output) <- c("aggregated-pdags")
@@ -92,21 +94,21 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
 
   method <- match.arg(method)
 
-  voting_method <-
-    switch (method,
-      "plurality"                = plurality,
-      "majority"                 = majority,
-      "relative_majority"        = relative_majority,
-      "square_relative_majority" = square_relative_majority
-    )
+  voting_method <- switch (method,
+                           "plurality"                = plurality,
+                           "majority"                 = majority,
+                           "relative_majority"        = relative_majority,
+                           "square_relative_majority" = square_relative_majority
+                           )
+
   calculate_edge <- function(src, dst, x) {
     # these need to be chars because R is dumb
-    switch (x,
+    return(switch (x,
       "0" = c(src, dst, "---"),
       "1" = c(dst, src, "-->"),
       "2" = c(src, dst, "-->"),
       "3" = c(src, dst, "---")
-    )
+    ))
   }
 
   df <- agg_pdags$table
@@ -121,7 +123,7 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
   for (i in 1:n_edges) {
      edges[i,] <- calculate_edge(df[i,1], df[i,2], voting_method(df[i, 3:5]))
   }
-  adjacencies <- .calculate_adjcanencies_from_edges(edges, nodes)
+  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
   return(cgraph(nodes, adjacencies, edges))
 }
 

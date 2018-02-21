@@ -13,14 +13,8 @@
 #'   Equivalent Bayesian Network Structures”, 1995;
 #'   \href{https://arxiv.org/abs/1302.4938}{arXiv:1302.4938 [cs.AI]} Cormen,
 #'   Thomas H., et al. Introduction to Algorithms. The MIT Press, 2014.
-dag_to_pattern <- function(dag) {
-  if(!is.cgraph(dag)) {
-    stop("input dag is not of type cgraph")
-  }
-  if(!is.dag(dag)) {
-    stop("input is not of type dag. try, as.dag(dag) to
-          try to coerce dag to class dag")
-  }
+.dag_to_pattern <- function(dag) {
+
   # creating a "hash table" makes the next operation faster
   hash <- list()
   for (i in 1:length(dag$nodes))

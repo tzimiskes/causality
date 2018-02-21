@@ -75,7 +75,7 @@ as.pattern <- function(dag) {
     message("input is not labeled as a dag, calling as.dag to see if it is.")
     dag <- as.dag(dag)
     message("success! converting to pattern...")
-    return(dag_to_pattern(dag))
+    return(.dag_to_pattern(dag))
   } else if(is.pdag(dag)) {
     # TODO(arix)
     message("this is yet to be implemented")

@@ -72,7 +72,7 @@ import_from_tetrad_file <- function(file, type = "cgraph", sort = F) {
   }
 
   # get the adjacencies from the edge representation
-  adjacencies <- .calculate_adjcanencies_from_edges(edges, nodes)
+  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
 
   tmp_cgraph <- cgraph(nodes, adjacencies, edges)
   # check to see if input is a legal cgraph object
