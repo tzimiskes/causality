@@ -97,3 +97,26 @@ import_from_tetrad_file <- function(file, type = "cgraph", sort = F) {
   else
     return(tmp_cgraph)
 }
+
+convert_rcausal_to_cgraph <-function(graph) {
+
+  edges <- graph$edges
+  new_edges <- matrix("", nrow = length(edges), ncol = 3)
+
+  for(i in 1:length(edges)) {
+    foo <- strsplit(edges[i], " ")[[1]]
+    new_edges[i, 1] <- foo[1]
+    new_edges[i, 2] <- foo[3]
+    if(foo[2] == "<->")
+      new_edges[i, 3] <- "---"
+    else
+      new_edges[i, 3] <- foo[2]
+  }
+  adjacencies = .calculate_adjacencies_from_edges(new_edges, graph$nodes)
+  cgraph <- cgraph(names = graph$nodes, skeleton = NULL, edges = new_edges)
+
+  if(!is_valid_cgraph(cgraph))
+    stop("Input is not a valid cgraph object")
+
+  return(cgraph)
+}

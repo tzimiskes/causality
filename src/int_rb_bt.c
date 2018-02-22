@@ -1,4 +1,6 @@
 #include"headers/causality_stdlib.h"
+// This RBT implementation is adapted from the Eternally Confuzzled tutorial
+// http://www.eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx
 
 #define LEFT 0
 #define RIGHT 1
@@ -10,7 +12,7 @@ typedef struct int_rbt_node {
   int values []; /* this is a Flexible Array Member -- use with caution! */
 }int_rbt_node;
 
-static inline int IS_RED(int_rbt_ptr node){
+static inline int IS_RED(int_rbt_ptr node) {
   if(node == NULL) {
     return 0;
   }
@@ -27,11 +29,11 @@ static inline int ABS(int x) {
     return(x);
 }
 
-static inline void SET_TO_RED(int_rbt_ptr node){
+static inline void SET_TO_RED(int_rbt_ptr node) {
   node->key = ABS(node->key);
 }
 
-static inline void SET_TO_BLACK(int_rbt_ptr node){
+static inline void SET_TO_BLACK(int_rbt_ptr node) {
   node->key = -ABS(node->key);
 }
 
@@ -39,9 +41,8 @@ int int_rbt_key(int_rbt_ptr root) {
   return(ABS(root->key) - 1);
 }
 
-static inline int_rbt_ptr int_rbt_instantiate_node(const int key,
-                                                        const int n,
-                                          const int * const values)
+static inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
+                                                   const int * const values)
   {
   int_rbt_ptr tmp = malloc(sizeof(int_rbt_node) + n*sizeof(int));
   if(tmp == NULL) {
@@ -55,30 +56,29 @@ static inline int_rbt_ptr int_rbt_instantiate_node(const int key,
   return(tmp);
 }
 
-static inline int_rbt_ptr single_rotation(int_rbt_ptr root,
-                                               int direction)
-{
-  int_rbt_ptr tmp = root->child[!direction];
+static inline int_rbt_ptr single_rotation(int_rbt_ptr root, int dir) {
 
-  root->child[!direction] = tmp->child[direction];
-  tmp->child[direction]   = root;
+  int_rbt_ptr tmp = root->child[!dir];
+
+  root->child[!dir] = tmp->child[dir];
+  tmp->child[dir]   = root;
 
   SET_TO_RED(root);
   SET_TO_BLACK(tmp);
   return tmp;
 }
 
-static inline int_rbt_ptr double_rotation(int_rbt_ptr root, int direction) {
+static inline int_rbt_ptr double_rotation(int_rbt_ptr root, int dir) {
 
-  root->child[!direction] = single_rotation(root->child[!direction],
-                                            !direction);
-  return single_rotation(root, direction);
+  root->child[!dir] = single_rotation(root->child[!dir], !dir);
+
+  return single_rotation(root, dir);
 }
 
 static inline int_rbt_ptr int_rbt_insert_recurvise(int_rbt_ptr root,
-                                                 const int key,
-                                                 const int n,
-                                                 const int* const values)
+                                                   const int key,
+                                                   const int n,
+                                                   const int* const values)
 {
   if(root == NULL) {
     root = int_rbt_instantiate_node(key, n, values);
@@ -93,7 +93,6 @@ static inline int_rbt_ptr int_rbt_insert_recurvise(int_rbt_ptr root,
                                                       key, n, values);
 
     if(IS_RED(root->child[direction])) {
-
       if(IS_RED(root->child[!direction])) {
 
         SET_TO_RED(root);
@@ -112,7 +111,7 @@ static inline int_rbt_ptr int_rbt_insert_recurvise(int_rbt_ptr root,
 }
 
 int_rbt_ptr int_rbt_insert(int_rbt_ptr root, const int key, const int n,
-                                const int * const values)
+                           const int * const values)
 {
   int_rbt_ptr tmp = int_rbt_insert_recurvise(root, key ,n, values);
   SET_TO_BLACK(tmp);
@@ -138,8 +137,7 @@ void int_rbt_free(int_rbt_ptr root) {
   }
 }
 
-int_rbt_ptr int_rbt_merge_trees(int_rbt_ptr dst, int_rbt_ptr src,
-                          const int n)
+int_rbt_ptr int_rbt_merge_trees(int_rbt_ptr dst, int_rbt_ptr src, const int n)
 {
   if(src != NULL) {
     dst = int_rbt_merge_trees(dst, src->child[LEFT], n);
