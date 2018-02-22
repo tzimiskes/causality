@@ -1,6 +1,4 @@
-#include<R.h>
-#include<Rinternals.h>
-#include<stdlib.h>
+#include"headers/causality_stdlib.h"
 // this implementation of a stack uses an array as the underlying data structure
 // we know the max size of the stack, we should be good
 typedef struct int_a_stack {

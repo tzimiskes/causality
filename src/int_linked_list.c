@@ -1,5 +1,4 @@
-#include<stdlib.h>
-#include"headers/rapi.h"
+#include"headers/causality_stdlib.h"
 
 typedef struct int_ll* int_ll_ptr;
 // definition of each node in a linked list
@@ -9,7 +8,7 @@ typedef struct int_ll {
   int_ll_ptr child;
 } int_ll;
 
-int_ll_ptr int_ll_instantiate(int key, int value) {
+static inline int_ll_ptr int_ll_instantiate(int key, int value) {
   int_ll_ptr tmp = malloc(sizeof(int_ll));
   if(tmp == NULL)
     error("Failed to instaniate linked list!\n");
@@ -83,14 +82,27 @@ void int_ll_free(int_ll_ptr root) {
 
 int_ll_ptr int_ll_delete(int_ll_ptr root, const int key) {
   if(root != NULL) {
+    int_ll_ptr tmp = root;
     if(root->key == key) {
-      int_ll_ptr tmp = root->child;
+      tmp = root->child;
       free(root);
       return(tmp);
-    } else
-      return(int_ll_delete(root->child, key));
+    }
+    else {
+      while(tmp->child != NULL) {
+        if(tmp->child->key == key) {
+          int_ll_ptr new_child = tmp->child->child;
+          free(tmp->child);
+          tmp->child = new_child;
+          return root;
+        }
+      }
+      error("key not found in linked list!\n");
+    }
   }
-  error("cannot find key to delete in linked list!\n");
+  else {
+    return root; /* aka NULL */
+  }
 }
 
 int int_ll_size(int_ll_ptr root) {

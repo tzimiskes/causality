@@ -1,8 +1,4 @@
-#include"headers/rapi.h"
-
-#include<math.h>
-#include<stdlib.h>
-#include<stdio.h>
+#include"headers/causality_stdlib.h"
 
 SEXP c_pearson_correlation(SEXP x, SEXP y);
 SEXP c_partial_correlation(SEXP x, SEXP y, SEXP z);

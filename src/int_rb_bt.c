@@ -1,32 +1,49 @@
-#include"headers/rapi.h"
-
-#include<stdlib.h>
-#include<string.h>
-#include <stdio.h>
-
-#define IS_RED(node) ((node) == NULL ? 0 : ((node)->key > 0 ? 1: 0))
-#define ABS(x) ((x) > 0 ? (x): -(x))
-
-#define SET_TO_RED(node) ((node)->key = ABS((node)->key))
-#define SET_TO_BLACK(node) ((node)->key = -ABS((node)->key))
+#include"headers/causality_stdlib.h"
 
 #define LEFT 0
 #define RIGHT 1
 
-typedef struct int_rbt_node* int_rbt_node_ptr;
+typedef struct int_rbt_node* int_rbt_ptr;
 typedef struct int_rbt_node {
   int key;
-  int_rbt_node_ptr child[2];
-  int values [];
+  int_rbt_ptr child[2];
+  int values []; /* this is a Flexible Array Member -- use with caution! */
 }int_rbt_node;
 
-int int_rbt_key(int_rbt_node_ptr root) {
+static inline int IS_RED(int_rbt_ptr node){
+  if(node == NULL) {
+    return 0;
+  }
+  else if(node->key > 0)
+    return 1;
+  else
+    return 0;
+}
+
+static inline int ABS(int x) {
+  if(x < 0)
+    return(-x);
+  else
+    return(x);
+}
+
+static inline void SET_TO_RED(int_rbt_ptr node){
+  node->key = ABS(node->key);
+}
+
+static inline void SET_TO_BLACK(int_rbt_ptr node){
+  node->key = -ABS(node->key);
+}
+
+int int_rbt_key(int_rbt_ptr root) {
   return(ABS(root->key) - 1);
 }
 
-inline int_rbt_node_ptr int_rbt_instantiate_node(const int key, const int n,
-                                          const int * const values) {
-  int_rbt_node_ptr tmp = malloc(sizeof(int_rbt_node) + n*sizeof(int));
+static inline int_rbt_ptr int_rbt_instantiate_node(const int key,
+                                                        const int n,
+                                          const int * const values)
+  {
+  int_rbt_ptr tmp = malloc(sizeof(int_rbt_node) + n*sizeof(int));
   if(tmp == NULL) {
     error("failed to allocate memory for rbt pointer\n");
   }
@@ -38,8 +55,10 @@ inline int_rbt_node_ptr int_rbt_instantiate_node(const int key, const int n,
   return(tmp);
 }
 
-inline int_rbt_node_ptr single_rotation(int_rbt_node_ptr root, int direction) {
-  int_rbt_node_ptr tmp = root->child[!direction];
+static inline int_rbt_ptr single_rotation(int_rbt_ptr root,
+                                               int direction)
+{
+  int_rbt_ptr tmp = root->child[!direction];
 
   root->child[!direction] = tmp->child[direction];
   tmp->child[direction]   = root;
@@ -49,14 +68,14 @@ inline int_rbt_node_ptr single_rotation(int_rbt_node_ptr root, int direction) {
   return tmp;
 }
 
-inline int_rbt_node_ptr double_rotation(int_rbt_node_ptr root, int direction) {
+static inline int_rbt_ptr double_rotation(int_rbt_ptr root, int direction) {
 
   root->child[!direction] = single_rotation(root->child[!direction],
                                             !direction);
   return single_rotation(root, direction);
 }
 
-int_rbt_node_ptr int_rbt_insert_recurvise(int_rbt_node_ptr root,
+static inline int_rbt_ptr int_rbt_insert_recurvise(int_rbt_ptr root,
                                                  const int key,
                                                  const int n,
                                                  const int* const values)
@@ -92,15 +111,15 @@ int_rbt_node_ptr int_rbt_insert_recurvise(int_rbt_node_ptr root,
   return root;
 }
 
-int_rbt_node_ptr int_rbt_insert(int_rbt_node_ptr root, const int key, const int n,
+int_rbt_ptr int_rbt_insert(int_rbt_ptr root, const int key, const int n,
                                 const int * const values)
 {
-  int_rbt_node_ptr tmp = int_rbt_insert_recurvise(root, key ,n, values);
+  int_rbt_ptr tmp = int_rbt_insert_recurvise(root, key ,n, values);
   SET_TO_BLACK(tmp);
   return tmp;
 }
 
-void int_rbt_print_tree(int_rbt_node_ptr root, const int n) {
+void int_rbt_print_tree(int_rbt_ptr root, const int n) {
   if(root != NULL) {
     Rprintf("Key: %i Value(s):", int_rbt_key(root));
     for(int i = 0; i < n; ++i)
@@ -111,7 +130,7 @@ void int_rbt_print_tree(int_rbt_node_ptr root, const int n) {
   }
 }
 
-void int_rbt_free(int_rbt_node_ptr root) {
+void int_rbt_free(int_rbt_ptr root) {
   if(root != NULL) {
     int_rbt_free(root->child[LEFT]);
     int_rbt_free(root->child[RIGHT]);
@@ -119,7 +138,7 @@ void int_rbt_free(int_rbt_node_ptr root) {
   }
 }
 
-int_rbt_node_ptr int_rbt_merge_trees(int_rbt_node_ptr dst, int_rbt_node_ptr src,
+int_rbt_ptr int_rbt_merge_trees(int_rbt_ptr dst, int_rbt_ptr src,
                           const int n)
 {
   if(src != NULL) {
@@ -131,7 +150,7 @@ int_rbt_node_ptr int_rbt_merge_trees(int_rbt_node_ptr dst, int_rbt_node_ptr src,
     return dst;
 }
 
-int int_rbt_size(int_rbt_node_ptr root) {
+int int_rbt_size(int_rbt_ptr root) {
   if(root != NULL)
     return(1 + int_rbt_size(root->child[LEFT]) +
             int_rbt_size(root->child[RIGHT]));
@@ -139,14 +158,14 @@ int int_rbt_size(int_rbt_node_ptr root) {
     return 0;
 }
 
-int* int_rbt_values_ptr(int_rbt_node_ptr root) {
+int* int_rbt_values_ptr(int_rbt_ptr root) {
   return (root->values);
 }
 
-int_rbt_node_ptr int_rbt_left_child(int_rbt_node_ptr root) {
+int_rbt_ptr int_rbt_left_child(int_rbt_ptr root) {
   return (root->child[LEFT]);
 }
 
-int_rbt_node_ptr int_rbt_right_child(int_rbt_node_ptr root) {
+int_rbt_ptr int_rbt_right_child(int_rbt_ptr root) {
   return (root->child[RIGHT]);
 }

@@ -1,9 +1,7 @@
-#include"headers/rapi.h"
-
-#include<stdlib.h>
-#include<string.h>
+#include"headers/causality_stdlib.h"
 
 #include"headers/int_linked_list.h"
+
 #include"headers/int_a_stack.h"
 
 // macros used in topological sort

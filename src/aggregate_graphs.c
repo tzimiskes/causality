@@ -1,4 +1,4 @@
-#include"headers/rapi.h"
+#include"headers/causality_stdlib.h"
 #include"headers/int_rbt.h"
 
 #define FORWARD 1 // -->
@@ -14,8 +14,8 @@ const int ARR_BACKDIRECTED [3] = {1, 0, 0};
 const int ARR_DIRECTED     [3] = {0, 1, 0};
 const int ARR_UNDIRECTED   [3] = {0, 0, 1};
 
-int_rbt_node_ptr* make_int_rbt_hash_table(const int n) {
-  int_rbt_node_ptr* hash_table = malloc(n*sizeof(int_rbt_node_ptr));
+int_rbt_ptr* make_int_rbt_hash_table(const int n) {
+  int_rbt_ptr* hash_table = malloc(n*sizeof(int_rbt_ptr));
   if(hash_table == NULL)
     error("Failed to allocate pointer for hash_table.\n");
   for(int i = 0; i < n; ++i)
@@ -25,14 +25,14 @@ int_rbt_node_ptr* make_int_rbt_hash_table(const int n) {
 
 void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             const int n_rows , const int parent, int* index,
-                            int_rbt_node_ptr root);
+                            int_rbt_ptr root);
 
 SEXP c_dag_to_rbt(SEXP cgraphs) {
 
   const int n_graphs = length(cgraphs);
   const int n_nodes = length(VECTOR_ELT(VECTOR_ELT(cgraphs, 0), 0));
 
-  int_rbt_node_ptr** trees = malloc(n_graphs * sizeof(int_rbt_node_ptr*));
+  int_rbt_ptr** trees = malloc(n_graphs * sizeof(int_rbt_ptr*));
   // can parallelize
   for(int j = 0; j < length(cgraphs); ++j) {
 
@@ -40,7 +40,7 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
 
     trees[j] = make_int_rbt_hash_table(n_nodes);
     // create alias for trees[j]
-    int_rbt_node_ptr* rbt_hash = trees[j];
+    int_rbt_ptr* rbt_hash = trees[j];
 
     SEXP edges = PROTECT(VECTOR_ELT(cgraph, 2));
     const int n_edges = nrows(edges);
@@ -83,10 +83,10 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
   }
   //reduce  all trees to the base tree, which is an alias for tree[0]
   // "easy" to parallelize
-  int_rbt_node_ptr* base = trees[0];
+  int_rbt_ptr* base = trees[0];
   for(int i = 1; i < n_graphs; ++i) {
     // create alias for trees[i]
-    int_rbt_node_ptr* src = trees[i];
+    int_rbt_ptr* src = trees[i];
     for( int j = 0; j < n_nodes; ++j) {
       base[j] = int_rbt_merge_trees(base[j], src[j], N_EDGETYPES);
     }
@@ -123,7 +123,7 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
 
 void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             const int n_rows , const int parent, int* index,
-                            int_rbt_node_ptr root)
+                            int_rbt_ptr root)
 {
   if( root != NULL) {
   matrix_ptr[*index + 0*n_rows] = parent + 1;
