@@ -70,7 +70,7 @@ as.dag <- function(graph) {
 
 as.pattern <- function(dag) {
   if (is.dag(dag))
-    return(dag_to_pattern(dag))
+    return(.dag_to_pattern(dag))
   else if (is.cgraph(dag)) {
     message("input is not labeled as a dag, calling as.dag to see if it is.")
     dag <- as.dag(dag)

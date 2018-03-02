@@ -113,7 +113,7 @@ convert_rcausal_to_cgraph <-function(graph) {
       new_edges[i, 3] <- foo[2]
   }
   adjacencies = .calculate_adjacencies_from_edges(new_edges, graph$nodes)
-  cgraph <- cgraph(names = graph$nodes, skeleton = NULL, edges = new_edges)
+  cgraph <- cgraph(graph$nodes, adjacencies, new_edges)
 
   if(!is_valid_cgraph(cgraph))
     stop("Input is not a valid cgraph object")

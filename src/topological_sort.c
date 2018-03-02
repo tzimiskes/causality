@@ -159,6 +159,15 @@ int_ll_ptr* order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
     parents[child] = int_ll_insert_by_value(parents[child],
                      parent, top_order_hash[parent]);
     }
+
+  for(int i = 0; i < n_nodes; ++i) {
+    int_ll_ptr tmp = parents[i];
+    Rprintf("Child: %i\n", i);
+    while(tmp != NULL) {
+      Rprintf("Parent: %i Key: %i\n", int_ll_key(tmp), int_ll_value(tmp));
+      tmp = int_ll_next(tmp);
+    }
+  }
   // free all the malloc'd memory
   free(top_order_hash);
   UNPROTECT(1);

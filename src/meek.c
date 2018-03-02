@@ -9,12 +9,12 @@
 #define FALSE 0
 
 
-inline int meek123(const int node1, const int node2, int_ll_ptr* parents,
+static inline int meek123(const int node1, const int node2, int_ll_ptr* parents,
                    int* edges_ptr, const int i, const int n_edges);
-inline int meek3(const int grandparent, const int node1, const int node2,
+static inline int meek3(const int grandparent, const int node1, const int node2,
                  int_ll_ptr* parents, int* edges_ptr, const int i,
                  const int n_edges);
-inline int meek4(const int node1, const int node2, int_ll_ptr* parents,
+static inline int meek4(const int node1, const int node2, int_ll_ptr* parents,
                  int* edges_ptr, const int i, const int n_edges) {
   return 1;
 }
@@ -85,19 +85,18 @@ SEXP meek_rules(SEXP pdag) {
   UNPROTECT(1);
   return(edges);
 }
+
 inline int meek123(const int node1, const int node2, int_ll_ptr* parents,
                    int* edges_ptr, const int i, const int n_edges)
 {
-  // parents of parents
   int_ll_ptr node1_parents_ptr = parents[node1];
 
-  // look for grandparent --> node1
+  // look for node1_parent --> node1
   while(node1_parents_ptr != NULL) {
     if(int_ll_value(node1_parents_ptr) == FORWARD) {
       const int node1_parent = int_ll_key(node1_parents_ptr);
 
       // check to see if node1_parent and node2 are adjacent
-
       // first we need to look for the edges node1_parent -- node2
       // or node1_parent --> node2
       int_ll_ptr node2_parents_ptr = parents[node2];
@@ -121,28 +120,29 @@ inline int meek123(const int node1, const int node2, int_ll_ptr* parents,
             edges_ptr[i            ] = node2;
             edges_ptr[i + n_edges  ] = node1;
             edges_ptr[i + 2*n_edges] = FORWARD;
-            //TODO(arix) rework insert ll to make it easy to insert correct node
-            // as well as delete node
+
+            // insert flipped edge into linked list and delete the wrong edge
+            parents[node2] = int_ll_delete(parents[node2], node1);
+            parents[node1] = int_ll_insert(parents[node1], node2, FORWARD);
+
             return TRUE;
-          } else
+          }
+          else /* node2 --- node1_parent, try meek rule three */
             return meek3(node1_parent, node1, node2, parents,
                          edges_ptr, i, n_edges);
         }
         node1_grandparents_ptr = int_ll_next(node1_grandparents_ptr);
       }
       // node1_parent and node2 are not adjacent, so we have a a chain
+      // set the edge to forward and update the edge in the linked list
       edges_ptr[i + 2*n_edges] = FORWARD;
+      int_ll_set_value(int_ll_search(parents[node1], node2), FORWARD);
       return TRUE;
     }
-    //TODO(arix) rework insert ll to make it easy to insert correct node
-    // as well as delete node
     node1_parents_ptr = int_ll_next(node1_parents_ptr);
   }
   return FALSE;
 }
-
-
-
 
 inline int meek3(const int grandparent, const int node1, const int node2, int_ll_ptr* parents,
                  int* edges_ptr, const int i, const int n_edges) {

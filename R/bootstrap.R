@@ -6,6 +6,11 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   if(!is.logical(raw))
     stop("raw does not take on a logical value")
 
+  dags <- lapply(dags, function(dag) {
+  if(!is.cgraph(dag)) {
+    stop("input dag is not of type cgraph")
+  }
+
   base <- dags[[1]]
   # see if all the graphs have the EXACT same nodes
   same_nodes <- lapply(dags, function(dag) {
@@ -15,10 +20,6 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   if (!same_nodes)
     stop("Not all the graphs have the same nodes")
 
-  dags <- lapply(dags, function(dag) {
-  if(!is.cgraph(dag)) {
-    stop("input dag is not of type cgraph")
-  }
   # creating a "hash table" makes the next operation faster
   hash <- list()
   for (i in 1:length(dag$nodes))
@@ -126,4 +127,3 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
   adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
   return(cgraph(nodes, adjacencies, edges))
 }
-

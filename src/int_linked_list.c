@@ -122,3 +122,13 @@ void int_ll_set_value(int_ll_ptr root, int new_value) {
   else
     error("Cannot assign value to a NULL pointer!\n");
 }
+
+int_ll_ptr int_ll_search(int_ll_ptr root, const int key) {
+  while(root != NULL) {
+    if(root-> key == key)
+      return root;
+    else
+      root = root->child;
+  }
+  return root; /* root is NULL */
+}
