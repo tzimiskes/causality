@@ -6,11 +6,6 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   if(!is.logical(raw))
     stop("raw does not take on a logical value")
 
-  dags <- lapply(dags, function(dag) {
-  if(!is.cgraph(dag)) {
-    stop("input dag is not of type cgraph")
-  }
-
   base <- dags[[1]]
   # see if all the graphs have the EXACT same nodes
   same_nodes <- lapply(dags, function(dag) {
@@ -20,23 +15,27 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   if (!same_nodes)
     stop("Not all the graphs have the same nodes")
 
-  # creating a "hash table" makes the next operation faster
-  hash <- list()
-  for (i in 1:length(dag$nodes))
-    hash[[dag$nodes[[i]]]] <- i - 1
-  for (i in 1:nrow(dag$edges)) {
-    dag$edges[i,1] <- hash[[dag$edges[i,1]]]
-    dag$edges[i,2] <- hash[[dag$edges[i,2]]]
-    if (dag$edges[i, 3] == "-->")
-      dag$edges[i, 3] <- 1
-    else if (dag$edges[i, 3] == "---")
-      dag$edges[i, 3] <- 2
-  }
-  nc <- ncol(dag$edges)
-  nr <- nrow(dag$edges)
-  dag$edges <- as.integer(dag$edges)
-  dim(dag$edges) <- c(nr, nc)
-  return(dag)
+  dags <- lapply(dags, function(dag) {
+    if(!is.cgraph(dag)) {
+      stop("input dag is not of type cgraph")
+    }
+    # creating a "hash table" makes the next operation faster
+    hash <- list()
+    for (i in 1:length(dag$nodes))
+      hash[[dag$nodes[[i]]]] <- i - 1
+    for (i in 1:nrow(dag$edges)) {
+      dag$edges[i,1] <- hash[[dag$edges[i,1]]]
+      dag$edges[i,2] <- hash[[dag$edges[i,2]]]
+      if (dag$edges[i, 3] == "-->")
+        dag$edges[i, 3] <- 1
+      else if (dag$edges[i, 3] == "---")
+        dag$edges[i, 3] <- 2
+    }
+    nc <- ncol(dag$edges)
+    nr <- nrow(dag$edges)
+    dag$edges <- as.integer(dag$edges)
+    dim(dag$edges) <- c(nr, nc)
+    return(dag)
   })
   table <- .Call("c_dag_to_rbt", dags)
 
@@ -48,33 +47,39 @@ aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
   if (ncol(table) == 5) {
     names(table) <- c("node1", "node2", "<--", "-->", "---")
     if(raw == FALSE) {
-    table[[3]] <- table[[3]]/length(dags)
-    table[[4]] <- table[[4]]/length(dags)
-    table[[5]] <- table[[5]]/ length(dags)
+      table[[3]] <- table[[3]]/length(dags)
+      table[[4]] <- table[[4]]/length(dags)
+      table[[5]] <- table[[5]]/ length(dags)
     }
   }
   else {
     # TODO(arix)
   }
-  output <- list(names = dag$nodes, table = table)
+  output <- list(nodes = dag$nodes, table = table)
   class(output) <- c("aggregated-pdags")
   return(output)
 }
 
 vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
-                  "relative_majority", "sq_relative_majority"))
-  {
-
+                  "relative_majority", "square_relative_majority"))
+{
   plurality <- function(x) {
-    return(match(max(x), x))
+    max <- 1
+    for(i in 1:length(x)) {
+      if(x[i] > x[max])
+        max <- i
+      else if (x[i] == x[max])
+        return(0)
+    }
+    return(i)
   }
 
   majority <- function(x) {
-    index <- x[x > .5]
-    if (length(index) == 0)
-      return(0)
-    else
-    return(index)
+    for(i in 1:length(x) ) {
+      if (x[i] > .5)
+        return(i)
+    }
+    return(0)
   }
 
   relative_majority <- function(x) {
@@ -85,11 +90,11 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
     return(0)
   }
 
-  square_relative_majority <- function(x, y, z) {
+  square_relative_majority <- function(x) {
     for (i in 1:length(x)) {
       if (x[i]^2 > sum(x[-i]^2))
         return(i)
-      }
+    }
     return(0)
   }
 
@@ -100,20 +105,20 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
                            "majority"                 = majority,
                            "relative_majority"        = relative_majority,
                            "square_relative_majority" = square_relative_majority
-                           )
+  )
 
   calculate_edge <- function(src, dst, x) {
     # these need to be chars because R is dumb
-    return(switch (x,
-      "0" = c(src, dst, "---"),
-      "1" = c(dst, src, "-->"),
-      "2" = c(src, dst, "-->"),
-      "3" = c(src, dst, "---")
+    return(switch (as.character(x),
+                   "0" = c(src, dst, "---"),
+                   "1" = c(dst, src, "-->"),
+                   "2" = c(src, dst, "-->"),
+                   "3" = c(src, dst, "---")
     ))
   }
 
   df <- agg_pdags$table
-  df <- df[ifelse ( rowMeans(df[,3:5]) > threshold , T , F),]
+  df <- df[ifelse ( rowSums(df[,3:5]) > threshold , T , F),]
   nodes <- agg_pdags$nodes
   n_edges <- nrow(df)
   if (n_edges == 0) {
@@ -122,8 +127,9 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
   }
   edges <- matrix(data = "", nrow = n_edges, ncol = 3)
   for (i in 1:n_edges) {
-     edges[i,] <- calculate_edge(df[i,1], df[i,2], voting_method(df[i, 3:5]))
+    edges[i,] <- calculate_edge(df[i,1], df[i,2], voting_method(df[i, 3:5]))
   }
   adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
   return(cgraph(nodes, adjacencies, edges))
+
 }
