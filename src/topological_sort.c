@@ -21,7 +21,7 @@
 // I guess red black trees could be used instead,
 // but I'm skeptical of the performance advantages in this case
 
-int_ll_ptr* make_int_ll_hash_table(const int n);
+inline int_ll_ptr* make_int_ll_hash_table(const int n);
 
 // These two functions implement the topological sort as described in CLRS
 // topological sort returns a SEXP because there's an R fuction which
@@ -160,14 +160,6 @@ int_ll_ptr* order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
                      parent, top_order_hash[parent]);
     }
 
-  for(int i = 0; i < n_nodes; ++i) {
-    int_ll_ptr tmp = parents[i];
-    Rprintf("Child: %i\n", i);
-    while(tmp != NULL) {
-      Rprintf("Parent: %i Key: %i\n", int_ll_key(tmp), int_ll_value(tmp));
-      tmp = int_ll_next(tmp);
-    }
-  }
   // free all the malloc'd memory
   free(top_order_hash);
   UNPROTECT(1);
@@ -196,97 +188,106 @@ SEXP c_dag_to_pattern(SEXP dag) {
   }
 
   for(int i = 0; i < n_nodes; ++i) {
-    // by lemma 5 in Chickering, all the incident edges on child are unknown
+    // by lemma 5 in Chickering, all the incident edges on y are unknown
     // so we don't need to check to see its unordered
-    // look at the edges that go into the node 'child'
+    // look at the edges that go into y
 
-    const int child             = top_order_ptr[i];
-    int_ll_ptr node_parents_ptr = parents[child];
+    const int y        = top_order_ptr[i];
+    // parents of y
+    int_ll_ptr poy_ptr = parents[y];
 
-    // if there are incident edges into child, run steps 5-8 of the algorithm.
-    // if chil has no icident edges, go to the next node in the
+    // if there are incident edges into y, run steps 5-8 of the algorithm.
+    // if y has no incident edges, go to the next node in the
     // topological order
-    if(node_parents_ptr != NULL) {
+    if(poy_ptr != NULL) {
 
-      const int parent = int_ll_key(node_parents_ptr);
-      int_ll_ptr grandparent_ptr = parents[parent];
+      const int x        = int_ll_key(poy_ptr);
+      int_ll_ptr pox_ptr = parents[x];
 
-      // for each grandparent where grandparent -> parent is compelled
-      // check to see if w forms the chain grandparent -> parent -> child
-      // or shielded collider grandparent -> parent, parent -> child,
-      // and grandparent -> child
-      while(grandparent_ptr != NULL) {
+      // for each parent of x, w, where w -> x is compelled
+      // check to see if w forms the chain w -> x -> y
+      // or shielded collider w -> x -> y,
+      // and w -> x
+      while(pox_ptr != NULL) {
 
-        if (int_ll_value(grandparent_ptr) == COMPELLED) {
-          int_ll_ptr coparents_ptr = node_parents_ptr;
-          // unsure if this is the correct name
+        if (int_ll_value(pox_ptr) == COMPELLED) {
+          const int w = int_ll_key(pox_ptr);
+          // parents of y duplicate
+          int_ll_ptr poy_dup_ptr = poy_ptr;
+
           int chain = 1;
-          while(coparents_ptr != NULL) {
-            if(int_ll_key(coparents_ptr) == int_ll_key(grandparent_ptr)) {
+          while(poy_dup_ptr != NULL) {
+            if(int_ll_key(poy_dup_ptr) == w) {
               // the triple forms a shielded collider so execute step 7
-              int_ll_set_value(coparents_ptr, COMPELLED);
+              // set w -> y compelled
+              int_ll_set_value(poy_dup_ptr, COMPELLED);
               chain = 0;
               break;
             }
             else
-              coparents_ptr = int_ll_next(coparents_ptr);
+              poy_dup_ptr = int_ll_next(poy_dup_ptr);
           }
 
-          // the triple forms a chain so execute step 6
+          // if the triple forms a chain so execute step 6
           if(chain) {
-            coparents_ptr = node_parents_ptr;
-            while(coparents_ptr != NULL) {
-              int_ll_set_value(coparents_ptr, COMPELLED);
-              coparents_ptr = int_ll_next(coparents_ptr);
+            // reset poy_dup
+            poy_dup_ptr = poy_ptr;
+            while(poy_dup_ptr != NULL) {
+              int_ll_set_value(poy_dup_ptr, COMPELLED);
+              poy_dup_ptr = int_ll_next(poy_dup_ptr);
             }
             // jump to the end of the for loop
             goto JMP_TO_EOFL;
           }
         }
         // if step 7 is executed, goto the next grandparent
-        grandparent_ptr = int_ll_next(grandparent_ptr);
-
+        pox_ptr = int_ll_next(pox_ptr);
       }
-
       // now, we need to search for z, where z -> y, x != z,
       // and z is not a parent of x. That is, an unshielded collider
-      int unshielded_collider = 0;
 
       // by starting at the second parent (might not exist),
       // we avoid the need to check to see if z = x
       // STEP 7.5: look for an unshielded collider
-      int_ll_ptr coparent_ptr = int_ll_next(node_parents_ptr);
+      int unshielded_collider = 1;
+      int_ll_ptr poy_dup_ptr = int_ll_next(poy_ptr);
+      if(poy_dup_ptr == NULL) {
+        unshielded_collider = 0;
+      }
+      while(poy_dup_ptr != NULL) {
+        const int z = int_ll_key(poy_dup_ptr);
+        // reset parents of x
+        pox_ptr = parents[x];
+        // if x has no parents, we have an unshielded collider
+        if(pox_ptr == NULL)
+          goto STEP_89;
 
-      while(coparent_ptr != NULL && !unshielded_collider) {
-        // reset grandparents pointer
-        grandparent_ptr = parents[parent];
-        if(grandparent_ptr == NULL) {
-          unshielded_collider = 1;
-          break;
-        }
-        while(grandparent_ptr != NULL) {
-          if(int_ll_key(coparent_ptr) == int_ll_key(grandparent_ptr)) {
-            unshielded_collider = 1;
-            break;
+        // if z is a parent of x, we do not have a shielded collider
+        while(pox_ptr != NULL) {
+          if(int_ll_key(pox_ptr) == z) {
+            unshielded_collider = 0;
+            goto STEP_89;
           }
           else
-            grandparent_ptr = int_ll_next(grandparent_ptr);
+            pox_ptr = int_ll_next(pox_ptr);
         }
-        coparent_ptr = int_ll_next(coparent_ptr);
+        poy_dup_ptr = int_ll_next(poy_dup_ptr);
       }
+
+      STEP_89: {};
       // STEP 8, if there is one, label all incident edges compelled
       if(unshielded_collider) {
-        while(node_parents_ptr != NULL) {
-          int_ll_set_value(node_parents_ptr, COMPELLED);
-          node_parents_ptr = int_ll_next(node_parents_ptr);
+        while(poy_ptr != NULL) {
+          int_ll_set_value(poy_ptr, COMPELLED);
+          poy_ptr = int_ll_next(poy_ptr);
         }
       }
       // STEP 9, label all unknown edges reversable
       else {
-        while(node_parents_ptr != NULL) {
-          if(int_ll_value(node_parents_ptr) == UNKNOWN)
-            int_ll_set_value(node_parents_ptr, REVERSABLE);
-          node_parents_ptr = int_ll_next(node_parents_ptr);
+        while(poy_ptr != NULL) {
+          if(int_ll_value(poy_ptr) == UNKNOWN)
+            int_ll_set_value(poy_ptr, REVERSABLE);
+          poy_ptr = int_ll_next(poy_ptr);
         }
       }
     }

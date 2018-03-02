@@ -41,7 +41,7 @@ int int_rbt_key(int_rbt_ptr root) {
   return(ABS(root->key) - 1);
 }
 
-static inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
+inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
                                                    const int * const values)
   {
   int_rbt_ptr tmp = malloc(sizeof(int_rbt_node) + n*sizeof(int));
@@ -56,7 +56,7 @@ static inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
   return(tmp);
 }
 
-static inline int_rbt_ptr single_rotation(int_rbt_ptr root, int dir) {
+inline int_rbt_ptr single_rotation(int_rbt_ptr root, int dir) {
 
   int_rbt_ptr tmp = root->child[!dir];
 
@@ -75,7 +75,7 @@ static inline int_rbt_ptr double_rotation(int_rbt_ptr root, int dir) {
   return single_rotation(root, dir);
 }
 
-static inline int_rbt_ptr int_rbt_insert_recurvise(int_rbt_ptr root,
+static int_rbt_ptr int_rbt_insert_recurvise(int_rbt_ptr root,
                                                    const int key,
                                                    const int n,
                                                    const int* const values)
