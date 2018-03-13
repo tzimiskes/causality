@@ -1,23 +1,18 @@
-#include"headers/causality_stdlib.h"
+#include"headers/causality.h"
+#include"headers/edgetypes.h"
 #include"headers/int_linked_list.h"
 
-#define FORWARD 1 // -->
-#define UNDIRECTED 2 // ---
+
+#define ORIENT 2
+#define FLIP 1
+#define UNORIENTABLE 0
 
 
-#define TRUE 1
-#define FALSE 0
-
-
-static inline int meek123(const int node1, const int node2, int_ll_ptr* parents,
-                   int* edges_ptr, const int i, const int n_edges);
-static inline int meek3(const int grandparent, const int node1, const int node2,
-                 int_ll_ptr* parents, int* edges_ptr, const int i,
-                 const int n_edges);
-static inline int meek4(const int node1, const int node2, int_ll_ptr* parents,
-                 int* edges_ptr, const int i, const int n_edges) {
-  return 1;
-}
+static int meek12(const int node1, const int node2, int_ll_ptr* parents,
+           SEXP adjacencies);
+static int meek34(const int node1, const int node2, const int node3,
+                  const int node3_edge, int_ll_ptr* parents,
+                 SEXP adjacencies);
 
 
 // helper function, nothing interesting going on
@@ -35,46 +30,61 @@ SEXP meek_rules(SEXP pdag) {
   const int n_nodes   = length(VECTOR_ELT(pdag, 0));
   int_ll_ptr* parents = make_int_ll_hash_table(n_nodes);
   // get edge matrix
-  SEXP edges        = PROTECT(duplicate(VECTOR_ELT(pdag, 2)));
-  int* edges_ptr    = INTEGER(edges);
-  const int n_edges = nrows(edges);
+  SEXP edges          = PROTECT(duplicate(VECTOR_ELT(pdag, 2)));
+  int* edges_ptr      = INTEGER(edges);
+  const int n_edges   = nrows(edges);
+  // get adjacencies
+  SEXP adjacencies    = PROTECT(VECTOR_ELT(pdag, 1));
 
   // fill in the parents hash table
   for(int i = 0; i < n_edges; ++i) {
-    const int node1  = edges_ptr[i];
-    const int node2  = edges_ptr[i + n_edges];
-    const int edge   = edges_ptr[i + 2*n_edges];
-    parents[node2] = int_ll_insert(parents[node2], node1, edge);
+    const int node1  = edges_ptr[i            ];
+    const int node2  = edges_ptr[i + n_edges  ];
+    const int edge_type   = edges_ptr[i + 2*n_edges];
+    parents[node2] = int_ll_insert(parents[node2], node1, edge_type);
   }
+
   int changes_occur;
   do {
     changes_occur = 0;
     for(int i = 0; i < n_edges; ++i) {
+      const int node1  = edges_ptr[i            ];
+      const int node2  = edges_ptr[i + n_edges  ];
+      const int edge_type   = edges_ptr[i + 2*n_edges];
+      int orient;
+      if(edge_type == ET_UNDIRECTED) {
 
-      const int node1 = edges_ptr[i];
-      const int node2 = edges_ptr[i + n_edges];
-      const int edge  = edges_ptr[i + 2*n_edges];
-
-      if(edge == UNDIRECTED) {
-        // apply meek rules 1 and 2 at the same time (its faster)
-        changes_occur = meek123(node1, node2, parents, edges_ptr, i, n_edges);
-        // if we oriented the edge we can goto the end of the loop now
-        // ie skip the reversed case/ meek rule 4
-        if(changes_occur)
-          goto JMP_EOL;
-        // we now need to consider the case which node1 and node2 are reversed
-        changes_occur = meek123(node2, node1, parents, edges_ptr, i, n_edges);
-        if(changes_occur)
-          goto JMP_EOL;
-
-        changes_occur = meek4(node2, node1, parents, edges_ptr, i, n_edges);
-        if(changes_occur)
-          goto JMP_EOL;
-        changes_occur = meek4(node1, node2, parents, edges_ptr, i, n_edges);
-        if(changes_occur)
-          goto JMP_EOL;
+        orient = meek12(node1, node2, parents, adjacencies);
+        if(orient == ORIENT) {
+          edges_ptr[i + 2*n_edges] = ET_FORWARD;
+          int_ll_set_value(parents[node2], ET_FORWARD);
+          changes_occur = 1;
+        }
+        if(orient == FLIP) {
+          edges_ptr[i            ] = node2;
+          edges_ptr[i + n_edges  ] = node1;
+          edges_ptr[i + 2*n_edges] = ET_FORWARD;
+          int_ll_delete(parents[node2], node1);
+          int_ll_insert(parents[node1], node2, ET_FORWARD);
+          changes_occur = 1;
+        }
+        if(orient == UNORIENTABLE) {
+          orient = meek12(node2, node1, parents, adjacencies);
+          if(orient == ORIENT) {
+            edges_ptr[i            ] = node2;
+            edges_ptr[i + n_edges  ] = node1;
+            edges_ptr[i + 2*n_edges] = ET_FORWARD;
+            int_ll_delete(parents[node2], node1);
+            int_ll_insert(parents[node1], node2, ET_FORWARD);
+            changes_occur = 1;
+          }
+          if(orient == FLIP) {
+            edges_ptr[i + 2*n_edges] = ET_FORWARD;
+            int_ll_set_value(parents[node2], ET_FORWARD);
+            changes_occur = 1;
+          }
+        }
       }
-      JMP_EOL:{}
     }
   } while(changes_occur);
   // free malloc'd memory
@@ -82,105 +92,155 @@ SEXP meek_rules(SEXP pdag) {
     int_ll_free(parents[i]);
   free(parents);
 
-  UNPROTECT(1);
+  UNPROTECT(2);
   return(edges);
 }
 
-inline int meek123(const int node1, const int node2, int_ll_ptr* parents,
-                   int* edges_ptr, const int i, const int n_edges)
+static int meek12(const int node1, const int node2, int_ll_ptr* parents,
+                  SEXP adjacencies)
 {
-  int_ll_ptr node1_parents_ptr = parents[node1];
-
-  // look for node1_parent --> node1
-  while(node1_parents_ptr != NULL) {
-    if(int_ll_value(node1_parents_ptr) == FORWARD) {
-      const int node1_parent = int_ll_key(node1_parents_ptr);
-
-      // check to see if node1_parent and node2 are adjacent
-      // first we need to look for the edges node1_parent -- node2
-      // or node1_parent --> node2
-      int_ll_ptr node2_parents_ptr = parents[node2];
-      while(node2_parents_ptr != NULL) {
-        if(int_ll_key(node2_parents_ptr) == node1_parent) {
-          if(int_ll_value(node2_parents_ptr) == FORWARD)
-            return FALSE; /* can't orient */
-          else /* we have node1_parent -- node2; try meek rule3 */
-            return meek3(node1_parent, node1, node2, parents,
-                            edges_ptr, i, n_edges);
-        }
-        node2_parents_ptr = int_ll_next(node2_parents_ptr);
-      }
-
-      // now check for node2 --> node1_parent, or node2 -- node1_parent
-      int_ll_ptr node1_grandparents_ptr = parents[node1_parent];
-      while(node1_grandparents_ptr != NULL) {
-        if(int_ll_key(node1_grandparents_ptr) == node2) {
-          // if node2 --> node1_parent; orient node2 --> node1
-          if(int_ll_value(node1_grandparents_ptr) == FORWARD) {
-            edges_ptr[i            ] = node2;
-            edges_ptr[i + n_edges  ] = node1;
-            edges_ptr[i + 2*n_edges] = FORWARD;
-
-            // insert flipped edge into linked list and delete the wrong edge
-            parents[node2] = int_ll_delete(parents[node2], node1);
-            parents[node1] = int_ll_insert(parents[node1], node2, FORWARD);
-
-            return TRUE;
-          }
-          else /* node2 --- node1_parent, try meek rule three */
-            return meek3(node1_parent, node1, node2, parents,
-                         edges_ptr, i, n_edges);
-        }
-        node1_grandparents_ptr = int_ll_next(node1_grandparents_ptr);
-      }
-      // node1_parent and node2 are not adjacent, so we have a a chain
-      // set the edge to forward and update the edge in the linked list
-      edges_ptr[i + 2*n_edges] = FORWARD;
-      int_ll_set_value(int_ll_search(parents[node1], node2), FORWARD);
-      return TRUE;
+  int_ll_ptr node1_parents = parents[node1];
+  // look for node1_parent (node3) --> node1
+  while(node1_parents != NULL) {
+    if(int_ll_value(node1_parents) == ET_FORWARD) {
+      // if node2 has only one adjacent, we can orient
+      if(length(VECTOR_ELT(adjacencies, node2)) == 1)
+        return ORIENT;
+      break;
     }
-    node1_parents_ptr = int_ll_next(node1_parents_ptr);
+    node1_parents = int_ll_next(node1_parents);
   }
-  return FALSE;
+  if(node1_parents == NULL)
+    return UNORIENTABLE;
+
+  const int node3 = int_ll_key(node1_parents);
+  // we need to check to see if node2 and node3 are adjacent
+  // first we want to try to see if node2 --> node3, which is meek rule two
+  int_ll_ptr node3_parents = parents[node3];
+  while(node3_parents != NULL) {
+    if(int_ll_key(node3_parents) == node2) {
+      if(int_ll_value(node3_parents) == ET_FORWARD)
+        return FLIP; /* ie node2 --> node1 */
+      else {
+        Rprintf("execute 34\n");
+        return meek34(node1, node2, node3, ET_UNDIRECTED, parents,
+                      adjacencies);
+      }
+    }
+    node3_parents = int_ll_next(node3_parents);
+  }
+  // now that we've checked the parents of node3, we need to check the
+  // parents of node2 to look for node3 --> node2, or node3 -- node2
+  int_ll_ptr node2_parents = parents[node2];
+  while(node2_parents != NULL) {
+    if(int_ll_key(node2_parents) == node3) {
+      return meek34(node1, node2, node3, int_ll_value(node2_parents), parents,
+                    adjacencies);
+    }
+    node2_parents = int_ll_next(node2_parents);
+  }
+  // node2 and node3 are not adjacent, so we can return orient
+  return ORIENT;
 }
 
-inline int meek3(const int grandparent, const int node1, const int node2, int_ll_ptr* parents,
-                 int* edges_ptr, const int i, const int n_edges) {
-  /*
-    int_ll_ptr pop_ptr = parents[node1];
-    // index through the parents of parents (pop_ptr) and
-    // look for the chain node1 <-- erich -- node2
-    while(pop_ptr != NULL) {
-      // find node1 <-- erich and make sure erich != grandparent
-      if(int_ll_value(pop_ptr) == FORWARD &&
-         int_ll_key(pop_ptr) != grandparent)
+static int meek34(const int node1, const int node2, const int node3,
+                  const int node3_edge, int_ll_ptr* parents,
+                  SEXP adjacencies)
+  {
+  if(node3_edge == ET_UNDIRECTED && length(VECTOR_ELT(adjacencies, node1)) > 2) {
+    // first, lets try to apply meek rule 3
+    // look for node4 --> node1
+    int_ll_ptr node1_parents = parents[node1];
+    while(node1_parents != NULL) {
+      if(int_ll_value(node1_parents) == ET_FORWARD &&
+         int_ll_key(node1_parents) != node3)
       {
-        const int erich = int_ll_key(pop_ptr);
-        int_ll_ptr poe_ptr = parents[erich];
-        // look for erich -- node2
-        while(poe_ptr != NULL) {
-          if(int_ll_key(poe_ptr) == node2 &&
-             int_ll_value(poe_ptr) == UNDIRECTED)
-          {
-            int_ll_ptr poe_ptr_cpy = int_ll_next(poe_ptr);
-            // found erich -- node2. Now, we just need to make sure
-            // erich and grandparent are not adjacent
-            while(poe_ptr_cpy != NULL) {
-              if(int_ll_key(poe_ptr_cpy) == grandparent)
-                return UNORIENTED;
-              int_ll_ptr poe_ptr_cpy = int_ll_next(poe_ptr_cpy);
+        const int node4 = int_ll_key(node1_parents);
+       // now, we need to check to see if node3 and node 4 are not adjacent
+        SEXP node3_adjs = PROTECT(VECTOR_ELT(adjacencies, node3));
+        const int n_adjs = length(node3_adjs);
+        int* adj_ptr = INTEGER(node3_adjs);
+        // we use the adjacency list to check whether or not node3 and node4 are
+        // non adjacent
+        int non_adjacent = 1;
+        for(int i = 0; i < n_adjs; ++i) {
+          if(adj_ptr[i] == node4) {
+            non_adjacent = 0;
+            break;
+          }
+        }
+        UNPROTECT(1);
+        if(non_adjacent) {
+          // now we need to check to see if node4 -- node2
+          int_ll_ptr node2_parents = parents[node2];
+          while(node2_parents != NULL) {
+            if(int_ll_value(node2_parents) == ET_UNDIRECTED &&
+             int_ll_key(node2_parents) == node4)
+            {
+              return FLIP;
             }
-            edges_ptr[i            ] = node2;
-            edges_ptr[i + n_edges  ] = node1;
-            edges_ptr[i + 2*n_edges] = FORWARD;
-            return ORIENTED;
+            node2_parents = int_ll_next(node2_parents);
+          }
+          // we didn't find it in the parents of node2, so lets look in
+          // the parents of node4
+          int_ll_ptr node4_parents = parents[node4];
+          while(node2_parents != NULL) {
+            if(int_ll_value(node4_parents) == ET_UNDIRECTED &&
+               int_ll_key(node4_parents) == node2)
+            {
+              return FLIP;
+            }
+            node4_parents = int_ll_next(node4_parents);
           }
         }
       }
-      pop_ptr_cpy = int_ll_next(pop_ptr_cpy);
+      node1_parents = int_ll_next(node1_parents);
     }
   }
-   */
-  return TRUE;
-}
+  // meek rule 4
+  // we need to find node4 s.t. node2 -- node4 --> node3
+  int_ll_ptr node3_parent = parents[node3];
+  while(node3_parent != NULL) {
+    if(int_ll_value(node3_parent) == ET_FORWARD) {
+      const int node4 = int_ll_value(node3_parent);
 
+      // now, we need to make sure node1 and node4 are not adjacent
+      SEXP node1_adjs = PROTECT(VECTOR_ELT(adjacencies, node1));
+      const int n_adjs = length(node1_adjs);
+      int* adj_ptr = INTEGER(node1_adjs);
+      int non_adjacent = 1;
+      for(int i = 0; i < n_adjs; ++i) {
+        if(adj_ptr[i] == node4) {
+          non_adjacent = 0;
+          break;
+        }
+      }
+      UNPROTECT(1);
+      if(non_adjacent) {
+        // now we need to check to see if node4 -- node2
+        int_ll_ptr node2_parents = parents[node2];
+        while(node2_parents != NULL) {
+          if(int_ll_value(node2_parents) == ET_UNDIRECTED &&
+             int_ll_key(node2_parents) == node4)
+          {
+            return FLIP;
+          }
+          node2_parents = int_ll_next(node2_parents);
+        }
+        // we didn't find it in the parents of node2, so lets look in
+        // the parents of node4
+        int_ll_ptr node4_parents = parents[node4];
+        while(node2_parents != NULL) {
+          if(int_ll_value(node4_parents) == ET_UNDIRECTED &&
+             int_ll_key(node4_parents) == node2)
+          {
+            return FLIP;
+          }
+          node4_parents = int_ll_next(node4_parents);
+        }
+      }
+    }
+    node3_parent = int_ll_next(node3_parent);
+  }
+  return UNORIENTABLE;
+}

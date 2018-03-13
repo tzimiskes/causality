@@ -1,5 +1,5 @@
-#ifndef INT_LL_H
-#define INT_LL_H
+#ifndef _INT_LL_
+#define _INT_LL_
 
 typedef struct int_ll* int_ll_ptr;
 typedef struct int_ll int_ll;

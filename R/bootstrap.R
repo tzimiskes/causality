@@ -1,61 +1,43 @@
-aggregate_graphs <- function(dags, raw = FALSE, no_pags = TRUE) {
-  if(!is.list(dags))
+aggregate_graphs <- function(cgraphs, raw = FALSE, no_pags = TRUE) {
+  if(!is.list(cgraphs))
     stop("dags is not as list")
-  if (length(dags) == 1)
+  if (length(cgraphs) == 1)
     stop("dags is of length 1")
   if(!is.logical(raw))
     stop("raw does not take on a logical value")
 
-  base <- dags[[1]]
+  base <- cgraphs[[1]]
   # see if all the graphs have the EXACT same nodes
-  same_nodes <- lapply(dags, function(dag) {
-    isTRUE(all.equal(base$nodes, dag$nodes))
+  same_nodes <- lapply(cgraphs, function(cgraph) {
+    isTRUE(all.equal(base$nodes, cgraph$nodes))
   })
-  same_nodes <- isTRUE(all.equal(unlist(same_nodes), rep(T, length(dags))))
+  same_nodes <- isTRUE(all.equal(unlist(same_nodes), rep(T, length(cgraphs))))
   if (!same_nodes)
     stop("Not all the graphs have the same nodes")
 
-  dags <- lapply(dags, function(dag) {
-    if(!is.cgraph(dag)) {
-      stop("input dag is not of type cgraph")
-    }
-    # creating a "hash table" makes the next operation faster
-    hash <- list()
-    for (i in 1:length(dag$nodes))
-      hash[[dag$nodes[[i]]]] <- i - 1
-    for (i in 1:nrow(dag$edges)) {
-      dag$edges[i,1] <- hash[[dag$edges[i,1]]]
-      dag$edges[i,2] <- hash[[dag$edges[i,2]]]
-      if (dag$edges[i, 3] == "-->")
-        dag$edges[i, 3] <- 1
-      else if (dag$edges[i, 3] == "---")
-        dag$edges[i, 3] <- 2
-    }
-    nc <- ncol(dag$edges)
-    nr <- nrow(dag$edges)
-    dag$edges <- as.integer(dag$edges)
-    dim(dag$edges) <- c(nr, nc)
-    return(dag)
+  cgraphs <- lapply(cgraphs, function(cgraph) {
+    .prepare_cgraph_for_call(cgraph, F, T, T)
   })
-  table <- .Call("c_dag_to_rbt", dags)
 
+  table <- .Call("c_dag_to_rbt", cgraphs)
+  print(table)
   table <- as.data.frame(table)
 
-  dag <- dags[[1]]
-  table[[1]] <- dag$nodes[table[[1]]]
-  table[[2]] <- dag$nodes[table[[2]]]
+  cgraph <- cgraphs[[1]]
+  table[[1]] <- cgraph$nodes[table[[1]]]
+  table[[2]] <- cgraph$nodes[table[[2]]]
   if (ncol(table) == 5) {
     names(table) <- c("node1", "node2", "<--", "-->", "---")
     if(raw == FALSE) {
-      table[[3]] <- table[[3]]/length(dags)
-      table[[4]] <- table[[4]]/length(dags)
-      table[[5]] <- table[[5]]/ length(dags)
+      table[[3]] <- table[[3]]/length(cgraphs)
+      table[[4]] <- table[[4]]/length(cgraphs)
+      table[[5]] <- table[[5]]/ length(cgraphs)
     }
   }
   else {
     # TODO(arix)
   }
-  output <- list(nodes = dag$nodes, table = table)
+  output <- list(nodes = cgraph$nodes, table = table)
   class(output) <- c("aggregated-pdags")
   return(output)
 }
@@ -64,14 +46,11 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
                   "relative_majority", "square_relative_majority"))
 {
   plurality <- function(x) {
-    max <- 1
-    for(i in 1:length(x)) {
-      if(x[i] > x[max])
-        max <- i
-      else if (x[i] == x[max])
-        return(0)
-    }
-    return(i)
+    max <- max(x)
+    if (length(max) > 1)
+      return(0)
+    else
+      return(which(max, x))
   }
 
   majority <- function(x) {

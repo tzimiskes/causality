@@ -1,5 +1,5 @@
-#ifndef INT_STACK_H
-#define INT_STACK_H
+#ifndef _INT_A_STACK_
+#define _INT_A_STACK_
 
 typedef struct int_a_stack int_a_stack;
 typedef int_a_stack* int_a_stack_ptr;

@@ -1,4 +1,4 @@
-#include"headers/causality_stdlib.h"
+#include"headers/causality.h"
 
 SEXP c_pearson_correlation(SEXP x, SEXP y);
 SEXP c_partial_correlation(SEXP x, SEXP y, SEXP z);

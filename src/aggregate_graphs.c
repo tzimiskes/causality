@@ -1,18 +1,18 @@
-#include"headers/causality_stdlib.h"
+#include"headers/causality.h"
 #include"headers/int_rbt.h"
+#include"headers/edgetypes.h"
 
-#define FORWARD 1 // -->
-#define UNDIRECTED 2 // ---
-#define BIDIRECTED 4 // <->
-#define CIRCLECIRCLE // o-o
-#define CIRCLEARROW 5 // o->
+// these macros need a better name
 
+// <-- --> ---
+#define NUM_NL_EDGES_STORED 3
 
-#define N_EDGETYPES 3
+// <-- --> <~~ ~~> <++ ++> <-o o-> <-> o-o
+#define NUM_L_EDGES_STORED 10
 
-const int ARR_BACKDIRECTED [3] = {1, 0, 0};
-const int ARR_DIRECTED     [3] = {0, 1, 0};
-const int ARR_UNDIRECTED   [3] = {0, 0, 1};
+static const int ARR_BACKDIRECTED [3] = {1, 0, 0};
+static const int ARR_DIRECTED     [3] = {0, 1, 0};
+static const int ARR_UNDIRECTED   [3] = {0, 0, 1};
 
 int_rbt_ptr* make_int_rbt_hash_table(const int n) {
   int_rbt_ptr* hash_table = malloc(n*sizeof(int_rbt_ptr));
@@ -54,11 +54,11 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
       int * count_to_add;
 
       switch(edge) {
-        case FORWARD: {
+        case ET_FORWARD: {
           count_to_add = (int*) &ARR_DIRECTED[0];
           break;
         }
-        case UNDIRECTED: {
+        case ET_UNDIRECTED: {
           count_to_add = (int*) &ARR_UNDIRECTED[0];
           break;
         }
@@ -67,15 +67,15 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
         }
       }
       if(parent < child) {
-        rbt_hash[parent] = int_rbt_insert(rbt_hash[parent], child, N_EDGETYPES,
+        rbt_hash[parent] = int_rbt_insert(rbt_hash[parent], child, NUM_NL_EDGES_STORED,
                                          count_to_add);
       } else {
         // if we need to put the edge in backwards,
         // then we also need to reverse the edge_type
-        if (edge == FORWARD)
+        if (edge == ET_FORWARD)
           count_to_add = (int*) &ARR_BACKDIRECTED[0];
 
-        rbt_hash[child] = int_rbt_insert(rbt_hash[child], parent, N_EDGETYPES,
+        rbt_hash[child] = int_rbt_insert(rbt_hash[child], parent, NUM_NL_EDGES_STORED,
                                           count_to_add);
       }
     }
@@ -88,7 +88,7 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
     // create alias for trees[i]
     int_rbt_ptr* src = trees[i];
     for( int j = 0; j < n_nodes; ++j) {
-      base[j] = int_rbt_merge_trees(base[j], src[j], N_EDGETYPES);
+      base[j] = int_rbt_merge_trees(base[j], src[j], NUM_NL_EDGES_STORED);
     }
   }
 
@@ -108,13 +108,17 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
   for(int i = 0; i < n_nodes; ++i)
     n_rows += int_rbt_size(base[i]);
 
-  SEXP output_matrix = PROTECT(allocMatrix(REALSXP, n_rows, N_EDGETYPES + 2));
+  SEXP output_matrix = PROTECT(allocMatrix(REALSXP, n_rows, NUM_NL_EDGES_STORED + 2));
   double* output_matrix_ptr = REAL(output_matrix);
+  // 0 the matrix
+  memset(output_matrix_ptr, 0, n_rows*( NUM_NL_EDGES_STORED +2)* sizeof(double));
 
   int index = 0;
   for(int i = 0; i < n_nodes; ++i) {
   convert_tree_to_matrix(output_matrix_ptr, n_rows, i, &index, base[i]);
   }
+
+
   free(base);
   UNPROTECT(1);
   return(output_matrix);
@@ -129,7 +133,7 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
   matrix_ptr[*index + 0*n_rows] = parent + 1;
   matrix_ptr[*index + 1*n_rows] = int_rbt_key(root) + 1;
   const int * const restrict root_values_ptr = int_rbt_values_ptr(root);
-  for(int i = 0; i < N_EDGETYPES; ++i)
+  for(int i = 0; i < NUM_NL_EDGETYPES; ++i)
     matrix_ptr[*index + (i+2)*n_rows] = root_values_ptr[i];
   (*index)++;
   convert_tree_to_matrix(matrix_ptr, n_rows, parent, index,

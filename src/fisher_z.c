@@ -1,4 +1,4 @@
-#include"headers/causality_stdlib.h"
+#include"headers/causality.h"
 
 SEXP c_fisher_transformation_z_score(SEXP rho, SEXP n) {
   double r = asReal(rho);

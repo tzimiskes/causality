@@ -1,5 +1,5 @@
-#ifndef INT_RBT_H
-#define INT_RBT_H
+#ifndef _INT_RBT_
+#define _INT_RBT_
 
 typedef struct int_rbt_node int_rbt_node;
 typedef int_rbt_node* int_rbt_ptr;

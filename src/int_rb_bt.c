@@ -1,4 +1,4 @@
-#include"headers/causality_stdlib.h"
+#include"headers/causality.h"
 // This RBT implementation is adapted from the Eternally Confuzzled tutorial
 // http://www.eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx
 
@@ -48,7 +48,6 @@ inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
   if(tmp == NULL) {
     error("failed to allocate memory for rbt pointer\n");
   }
-
   memcpy(tmp->values, values, n*sizeof(int));
   tmp->key          = key + 1;
   tmp->child[LEFT]  = NULL;
@@ -56,7 +55,7 @@ inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
   return(tmp);
 }
 
-inline int_rbt_ptr single_rotation(int_rbt_ptr root, int dir) {
+static inline int_rbt_ptr single_rotation(int_rbt_ptr root, int dir) {
 
   int_rbt_ptr tmp = root->child[!dir];
 

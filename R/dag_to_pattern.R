@@ -16,19 +16,8 @@
 .dag_to_pattern <- function(dag) {
 
   # creating a "hash table" makes the next operation faster
-  hash <- list()
-  for (i in 1:length(dag$nodes))
-    hash[[dag$nodes[[i]]]] <- i - 1
-  for (i in 1:nrow(dag$edges)) {
-    dag$edges[i,1] <- hash[[dag$edges[i,1]]]
-    dag$edges[i,2] <- hash[[dag$edges[i,2]]]
-    dag$edges[i,3] <- 1
-  }
-  nc <- ncol(dag$edges)
-  nr <- nrow(dag$edges)
-  dag$edges <- as.integer(dag$edges)
-  dim(dag$edges) <- c(nr, nc)
-  tmp<-.Call("c_dag_to_pattern", dag)
+  tmp <-.prepare_cgraph_for_call(dag, nodes = F, edges = T, adj = F)
+  tmp <-.Call("c_dag_to_pattern", tmp)
   dag$edges[, 1] <- dag$nodes[tmp[, 1] + 1]
   dag$edges[, 2] <- dag$nodes[tmp[, 2] + 1]
   dag$edges[, 3] <- c("-->","---")[tmp[, 3]]
@@ -86,8 +75,8 @@ topological_sort <- function(dag) {
 
 # this is a private version of topological order that is used by as.dag() to
 # check whether or not a cgraph object is a dag or not. This is sort of a bad
-# use of code, but I didn't want to make topoloigcal sort have the formals be
-# dag, force = F because topological sort is supposed to give the gvie the
+# use of code, but I didn't want to make topological sort have the formals be
+# dag, force = F because topological sort is supposed to give the give the
 # topological ordering of a **DAG**, not test whether or not it is one as.dag
 # will try to convert an object to a dag, by running topological sort to see if
 # it feasable
