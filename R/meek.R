@@ -3,7 +3,7 @@ pick_dag_from_pdag <- function(pdag) {
     stop("Input is not a pdag!")
 }
 
-meek <- function(pdag) {
+.meek <- function(pdag) {
   tmp <- .prepare_cgraph_for_call(pdag, nodes = F, edges = T, adjacencies = T)
 
   tmp <- .Call("meek_rules", tmp)
@@ -14,4 +14,21 @@ meek <- function(pdag) {
 
   return(pdag)
 
+}
+
+.pick_dag_from_pdag <- function(pdag) {
+
+  n_edges <- nrow(pdag$edges)
+    for (i in 1:n_edges) {
+      if (pdag$edges[i, 3] == "---") {
+        pdag$edges[i, 3] <- "-->"
+        if (runif(1) < .5) {
+          tmp <- pdag$edges[i , 1]
+          pdag$edges[i, 1] <- pdag$edges[i, 2]
+          pdag$edges[i, 2] <- tmp
+      }
+      pdag <- meek(pdag)
+    }
+  }
+  return(pdag)
 }

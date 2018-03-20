@@ -1,4 +1,4 @@
-# alpha version of a data structure that can be used to hold a general graph.
+# beta version of a data structure that can be used to hold a general graph.
 cgraph <- function(nodes, adjacencies, edges) {
   return(structure(list(nodes, adjacencies, edges), class = .CGRAPH_CLASS))}
 
@@ -97,11 +97,14 @@ is.latent <- function(cgraph) {
 as.dag <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
-  if (is.pattern(graph) || is.pdag(graph)) {
-    dag <- .pick_dag_from_pdag(cgraph)
-    class(dag) <- .DAG
-  }
 
+  if(is.dag(cgraph))
+    return(cgraph)
+  if (is.pattern(cgraph) || is.pdag(cgraph)) {
+    cgraph <- .pick_dag_from_pdag(cgraph)
+    class(cgraph) <- .DAG_CLASS
+    return(cgraph)
+  }
   if(is.pag(cgraph))
     stop("not implemented")
 
@@ -109,7 +112,7 @@ as.dag <- function(cgraph) {
   # check check to see if it is directed. and acyclic
   if (is.directed(cgraph)) {
     if (!is.cyclic(cgraph)) {
-      class(cgraph) <- .DAG
+      class(cgraph) <- .DAG_CLASS
       return(cgraph)
     }
     else {
@@ -117,10 +120,8 @@ as.dag <- function(cgraph) {
     }
   }
   else
-    stop("Unable to coerce input to a dag")
+    stop("Unable to coerce input to a dag.")
 }
-
-
 
 as.pattern <- function(cgraph) {
   if(!is.cgraph(cgraph))
@@ -128,39 +129,43 @@ as.pattern <- function(cgraph) {
   if(is.pattern(cgraph))
     return(cgraph)
   if (is.dag(cgraph) || is.pdag(cgraph)) {
-    pattern <- .dag_to_pattern(cgraph)
-    class(pattern) <- .PATTERN
+    cgraph <- .dag_to_pattern(cgraph)
+    class(cgraph) <- .PATTERN_CLASS
     return(pattern)
   }
   if (is.pag(cgraph))
     stop("pags cannot be converted to patterns.")
-   cgraph <- as.dag(cgraph)
 
-   return(.dag_to_pattern(cgraph))
-
+  stop("unable to coerce input to pattern")
 }
 
-#
-# # TODO(arix)
-# as.pdag <- function(cgraph) {
-#   if (is.pattern(cgraph)) {
-#     class(cgraph) <- .PDAG
-#     return(cgraph)
-#   }
-#   if (is.dag(cgraph)) {
-#     pdag <- .dag_to_pattern()
-#   }
-#   if (is.nonlatent(cgraph) {
-#     if (!is.cyclic(cgraph)) {
-#       if(is.directed(cgraph) {
-#         pdag <- .dag_to_pattern(cgraph)
-#         class(pdag) <- .PDAG
-#         return(pdag)
-#       }
-#     }
-#     else
-#       stop("input contains a cycle")
-#   }
+
+as.pdag <- function(cgraph) {
+  if (!is.cgraph(cgraph))
+    stop("input is not a cgraph")
+  if (is.pattern(cgraph)) {
+    class(cgraph) <- .PDAG_CLASS
+    return(cgraph)
+  }
+  if (is.dag(cgraph)) {
+    cgraph <- .dag_to_pattern(cgraph)
+    class(cgraph) <- .PDAG_CLASS
+    return(cgraph)
+  }
+
+  if (is.nonlatent(cgraph)) {
+    if (!is.cyclic(cgraph)) {
+      class(cgraph) <- .CLASS_PDAG
+      return(cgraph)
+    }
+  }
+  else
+    stop("input contains a cycle, so it cannot be coerced to pdag")
+}
+
+as.pag <- function(cgraph) {
+  stop("not implemented")
+}
 
 # might change this
 print.cgraph <- function(graph) {
@@ -177,9 +182,9 @@ is_valid_cgraph <- function(graph) {
     }
   }
 
-  # TODO(arix) check adjacencies
+  .calculate_adjacencies_from_edges(graph$edges)
 
-  # check for invalid edges
+  # check to see if the graph is simple
   n_edges <- nrow(graph$edges)
 
   parents = list()

@@ -3,5 +3,5 @@
 #edges that show up in pdags
 .NONLATENT_EDGE_TYPES <- c("-->", "---")
 
-.DIRECTED -> "-->"
-.UNDIRECTED -> "---"
+.DIRECTED <- "-->"
+.UNDIRECTED <- "---"
