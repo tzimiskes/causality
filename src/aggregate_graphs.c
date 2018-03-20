@@ -7,8 +7,8 @@
 // <-- --> ---
 #define NUM_NL_EDGES_STORED 3
 
-// <-- --> <~~ ~~> <++ ++> <-o o-> <-> o-o
-#define NUM_L_EDGES_STORED 10
+// <-- --- --> <~~ ~~> <++ ++> <-o o-> <-> o-o
+#define NUM_L_EDGES_STORED 11
 
 static const int ARR_BACKDIRECTED [3] = {1, 0, 0};
 static const int ARR_DIRECTED     [3] = {0, 1, 0};

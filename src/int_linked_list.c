@@ -3,9 +3,9 @@
 typedef struct int_ll* int_ll_ptr;
 // definition of each node in a linked list
 typedef struct int_ll {
+  int_ll_ptr child;
   int key;
   int value;
-  int_ll_ptr child;
 } int_ll;
 
 static inline int_ll_ptr int_ll_instantiate(int key, int value) {
