@@ -1,6 +1,9 @@
 # beta version of a data structure that can be used to hold a general graph.
 cgraph <- function(nodes, adjacencies, edges) {
-  return(structure(list(nodes, adjacencies, edges), class = .CGRAPH_CLASS))}
+  return(structure(
+    list(nodes = nodes, adjacencies = adjacencies, edges = edges),
+    class = .CGRAPH_CLASS))
+  }
 
 #these hidden (lol) variables are used to assign (sub)classes to craph objects
 .CGRAPH_CLASS  <- c(                     "causality-graph")
