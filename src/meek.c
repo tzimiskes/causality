@@ -43,17 +43,16 @@ SEXP meek_rules(SEXP pdag) {
     const int edge_type   = edges_ptr[i + 2*n_edges];
     parents[node2] = int_ll_insert(parents[node2], node1, edge_type);
   }
-
   int changes_occur;
   do {
     changes_occur = 0;
     for(int i = 0; i < n_edges; ++i) {
-      const int node1  = edges_ptr[i            ];
-      const int node2  = edges_ptr[i + n_edges  ];
+      const int node1       = edges_ptr[i            ];
+      const int node2       = edges_ptr[i + n_edges  ];
       const int edge_type   = edges_ptr[i + 2*n_edges];
       int orient;
-      if(edge_type == ET_UNDIRECTED) {
 
+      if(edge_type == ET_UNDIRECTED) {
         orient = meek12(node1, node2, parents, adjacencies);
         if(orient == ORIENT) {
           edges_ptr[i + 2*n_edges] = ET_FORWARD;
@@ -74,8 +73,8 @@ SEXP meek_rules(SEXP pdag) {
             edges_ptr[i            ] = node2;
             edges_ptr[i + n_edges  ] = node1;
             edges_ptr[i + 2*n_edges] = ET_FORWARD;
-            int_ll_delete(parents[node2], node1);
             int_ll_insert(parents[node1], node2, ET_FORWARD);
+            int_ll_delete(parents[node2], node1);
             changes_occur = 1;
           }
           if(orient == FLIP) {
@@ -86,6 +85,7 @@ SEXP meek_rules(SEXP pdag) {
         }
       }
     }
+    R_CheckUserInterrupt();
   } while(changes_occur);
   // free malloc'd memory
   for(int i = 0; i < n_nodes; ++i)
@@ -99,6 +99,7 @@ SEXP meek_rules(SEXP pdag) {
 static int meek12(const int node1, const int node2, int_ll_ptr* parents,
                   SEXP adjacencies)
 {
+  Rprintf("first node address: %p\n", parents[node1]);
   int_ll_ptr node1_parents = parents[node1];
   // look for node1_parent (node3) --> node1
   while(node1_parents != NULL) {
