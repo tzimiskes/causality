@@ -128,7 +128,7 @@ as.pattern <- function(cgraph) {
   if (is.dag(cgraph) || is.pdag(cgraph)) {
     cgraph <- .dag_to_pattern(cgraph)
     class(cgraph) <- .PATTERN_CLASS
-    return(pattern)
+    return(cgraph)
   }
   if (is.pag(cgraph))
     stop("pags cannot be converted to patterns.")
