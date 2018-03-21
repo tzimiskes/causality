@@ -97,9 +97,6 @@ is.latent <- function(cgraph) {
 
 # attempt to coerce a graph of type cgraph to a dag
 as.dag <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
-
   if(is.dag(cgraph))
     return(cgraph)
   if (is.pattern(cgraph) || is.pdag(cgraph)) {
@@ -126,8 +123,6 @@ as.dag <- function(cgraph) {
 }
 
 as.pattern <- function(cgraph) {
-  if(!is.cgraph(cgraph))
-    stop("input is not a cgraph")
   if(is.pattern(cgraph))
     return(cgraph)
   if (is.dag(cgraph) || is.pdag(cgraph)) {
@@ -142,8 +137,6 @@ as.pattern <- function(cgraph) {
 }
 
 as.pdag <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
   if (is.pattern(cgraph)) {
     class(cgraph) <- .PDAG_CLASS
     return(cgraph)
