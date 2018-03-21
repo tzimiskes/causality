@@ -149,7 +149,7 @@ as.pdag <- function(cgraph) {
 
   if (is.nonlatent(cgraph)) {
     if (!is.cyclic(cgraph)) {
-      class(cgraph) <- .CLASS_PDAG
+      class(cgraph) <- .PDAG_CLASS
       return(cgraph)
     }
   }

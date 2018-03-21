@@ -96,6 +96,7 @@ int_ll_ptr int_ll_delete(int_ll_ptr root, const int key) {
           tmp->child = new_child;
           return root;
         }
+        tmp = tmp->child;
       }
       error("key not found in linked list!\n");
     }
