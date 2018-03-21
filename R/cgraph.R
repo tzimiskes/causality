@@ -21,28 +21,28 @@ is.cgraph <- function(graph) {
     return(FALSE)
 }
 
-is.dag <- function(dag) {
+is.dag <- function(cgraph) {
   if (isTRUE(all.equal(.DAG_CLASS, class(cgraph))))
     return(TRUE)
   else
     return(FALSE)
 }
 
-is.pattern <- function(dag) {
+is.pattern <- function(cgraph) {
   if (isTRUE(all.equal(.PATTERN_CLASS, class(cgraph))))
     return(TRUE)
   else
     return(FALSE)
 }
 
-is.pdag <-function(pdag) {
+is.pdag <-function(cgraph) {
   if (isTRUE(all.equal(.PDAG_CLASS, class(cgraph))))
     return(TRUE)
   else
     return(FALSE)
 }
 
-is.pag <-function(pag) {
+is.pag <-function(cgraph) {
   if (isTRUE(all.equal(.PAG_CLASS, class(cgraph))))
     return(TRUE)
   else
