@@ -10,7 +10,7 @@ cgraph <- function(nodes, adjacencies, edges) {
 .DAG_CLASS     <- c("causality-dag"    , "causality-graph")
 .PDAG_CLASS    <- c("causality-pdag"   , "causality-graph")
 .PATTERN_CLASS <- c("causality-pattern", "causality-graph")
-
+.PAG_CLASS     <- c("causality-pag"   , "causality-graph")
 # The following is a series of is function to do simple type checking for the
 # user and the various functions in the package
 
