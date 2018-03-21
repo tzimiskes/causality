@@ -92,7 +92,6 @@ is.latent <- function(cgraph) {
   return(TRUE)
 }
 
-
 # attempt to coerce a graph of type cgraph to a dag
 as.dag <- function(cgraph) {
   if (!is.cgraph(cgraph))
@@ -139,7 +138,6 @@ as.pattern <- function(cgraph) {
   stop("unable to coerce input to pattern")
 }
 
-
 as.pdag <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
@@ -182,7 +180,7 @@ is_valid_cgraph <- function(graph) {
     }
   }
 
-  .calculate_adjacencies_from_edges(graph$edges)
+  .calculate_adjacencies_from_edges(graph$edges, graph$nodes)
 
   # check to see if the graph is simple
   n_edges <- nrow(graph$edges)
