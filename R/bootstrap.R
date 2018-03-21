@@ -20,7 +20,6 @@ aggregate_graphs <- function(cgraphs, raw = FALSE, no_pags = TRUE) {
   })
 
   table <- .Call("c_dag_to_rbt", cgraphs)
-  print(table)
   table <- as.data.frame(table)
 
   cgraph <- cgraphs[[1]]
@@ -49,7 +48,7 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
     max <- max(x)
     n_max <- 0
     for (value in x) {
-      if (x == max) {
+      if (value == max) {
         n_max <- n_max + 1
       }
     }
