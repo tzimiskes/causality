@@ -15,7 +15,7 @@ cgraph <- function(nodes, adjacencies, edges) {
 # user and the various functions in the package
 
 is.cgraph <- function(graph) {
-  if (isTRUE(all.equal(.CGRAPH_CLASS, class(graph))))
+  if (.CGRAPH_CLASS %in% class(graph))
     return(TRUE)
   else
     return(FALSE)
