@@ -47,10 +47,16 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
 {
   plurality <- function(x) {
     max <- max(x)
-    if (length(max) > 1)
+    n_max <- 0
+    for (value in x) {
+      if (x == max) {
+        n_max <- n_max + 1
+      }
+    }
+    if (n_max > 1)
       return(0)
     else
-      return(which(max, x))
+      return(match(max, x))
   }
 
   majority <- function(x) {
