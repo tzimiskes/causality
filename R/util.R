@@ -48,7 +48,7 @@
   }
   if(adjacencies) {
     cgraph$adjacencies <- lapply(cgraph$adjacencies, function(x) {
-      unname(unlist(hash)[x])
+      as.integer(unname(unlist(hash)[x]))
     })
   }
   if(nodes)

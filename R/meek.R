@@ -1,8 +1,6 @@
 meek <- function(pdag) {
   tmp <- .prepare_cgraph_for_call(pdag, nodes = F, edges = T, adjacencies = T)
-
   tmp <- .Call("meek_rules", tmp)
- print("foo")
   pdag$edges[, 1] <- pdag$nodes[tmp[, 1] + 1]
   pdag$edges[, 2] <- pdag$nodes[tmp[, 2] + 1]
   pdag$edges[, 3] <- .NONLATENT_EDGE_TYPES[tmp[, 3]]
