@@ -1,15 +1,9 @@
 #include"headers/causality.h"
+#include"headers/int_linked_list.h"
 
-typedef struct int_ll* int_ll_ptr;
-// definition of each node in a linked list
-typedef struct int_ll {
-  int_ll_ptr child;
-  int key;
-  int value;
-} int_ll;
 
-static inline int_ll_ptr int_ll_instantiate(int key, int value) {
-  int_ll_ptr tmp = malloc(sizeof(int_ll));
+static inline ill_ptr ill_instantiate(int key, int value) {
+  ill_ptr tmp = malloc(sizeof(ill));
   if(tmp == NULL)
     error("Failed to instaniate linked list!\n");
   tmp->key =  key;
@@ -18,48 +12,46 @@ static inline int_ll_ptr int_ll_instantiate(int key, int value) {
   return(tmp);
 }
 
-int_ll_ptr int_ll_insert(int_ll_ptr root, int key, int value) {
+ill_ptr ill_insert(ill_ptr root, int key, int value) {
   if(root == NULL)
-    return(int_ll_instantiate(key, value));
+    return(ill_instantiate(key, value));
   else {
-    int_ll_ptr tmp = root;
+    ill_ptr tmp = root;
     while(tmp->child != NULL)
       tmp = tmp->child;
-    tmp->child = int_ll_instantiate(key, value);
+    tmp->child = ill_instantiate(key, value);
     return(root);
   }
 }
 
-void ill_insert(int_ll_ptr* root, int key, int value,
-                             int* index, int_ll_ptr nodes)
+void ill_insert2(ill_ptr* root, int key, int value,
+                             int i, ill_ptr nodes)
   {
-    int i = *index;
     nodes[i].child = *root;
     nodes[i].key   = key;
     nodes[i].value = value;
     *root          = &nodes[i];
-    (*index)++;
 }
 
 // this function inserts nodes into the linked list by descending value
 // I guess its strange that I don't do this by key; I might rewrite it
 // if a node goes before root, it changes the values of root to the new node,
-// and the makes a new int_ll and sets it to root,
-int_ll_ptr int_ll_insert_by_value(int_ll_ptr root, int key, int value) {
+// and the makes a new ill and sets it to root,
+ill_ptr ill_insert_by_value(ill_ptr root, int key, int value) {
   // if root is null, instantiate
   if(root == NULL)
-    return(int_ll_instantiate(key, value));
+    return(ill_instantiate(key, value));
   // if new node should be before root, make new node root
   if(root->value < value) {
-    int_ll_ptr new_root = int_ll_instantiate(key, value);
+    ill_ptr new_root = ill_instantiate(key, value);
     new_root->child = root;
     return(new_root);
   }
   // else loop through the nodes
-  int_ll_ptr tmp = root;
+  ill_ptr tmp = root;
   while(tmp->child != NULL) {
     if(tmp->child->value < value) {
-      int_ll_ptr new_node = int_ll_instantiate(key, value);
+      ill_ptr new_node = ill_instantiate(key, value);
       new_node->child = tmp->child;
       tmp->child = new_node;
       return(root);
@@ -67,75 +59,46 @@ int_ll_ptr int_ll_insert_by_value(int_ll_ptr root, int key, int value) {
     tmp = tmp->child;
   }
   // if child is NULL instantiate it
-  tmp->child = int_ll_instantiate(key, value);
+  tmp->child = ill_instantiate(key, value);
   return(root);
 }
 
-int_ll_ptr int_ll_next(int_ll_ptr root) {
+void ill_set_next(ill_ptr root, ill_ptr next) {
+  root->child = next;
+}
+
+ill_ptr ill_next(ill_ptr root) {
   return(root->child);
 }
 
-int int_ll_key(int_ll_ptr root) {
+int ill_key(ill_ptr root) {
   return(root->key);
 }
 
-int int_ll_value(int_ll_ptr root) {
+int ill_value(ill_ptr root) {
   return(root->value);
 }
 
-void int_ll_free(int_ll_ptr root) {
+void ill_free(ill_ptr root) {
   while(root != NULL) {
-    int_ll_ptr next = root->child;
+    ill_ptr next = root->child;
     free(root);
     root = next;
   }
 }
 
-int_ll_ptr int_ll_delete(int_ll_ptr root, const int key) {
-  if(root != NULL) {
-    int_ll_ptr tmp = root;
-    if(root->key == key) {
-      tmp = root->child;
-      free(root);
-      return(tmp);
-    }
-    else {
-      while(tmp->child != NULL) {
-        if(tmp->child->key == key) {
-          int_ll_ptr new_child = tmp->child->child;
-          free(tmp->child);
-          tmp->child = new_child;
-          return root;
-        }
-        tmp = tmp->child;
-      }
-      error("key not found in linked list!\n");
-    }
-  }
-  else {
-    return root; /* aka NULL */
-  }
+ill_ptr ill_delete(ill_ptr* root, const int key) {
+    return *root; /* aka NULL */
 }
 
-int int_ll_size(int_ll_ptr root) {
-  int n = 1;
-  if(root == NULL)
-    return 0;
-  else {
-    while((root = root->child) != NULL)
-      n++;
-  }
-  return n;
-}
-
-void int_ll_set_value(int_ll_ptr root, int new_value) {
+void ill_set_value(ill_ptr root, int new_value) {
   if(root != NULL)
     root->value = new_value;
   else
     error("Cannot assign value to a NULL pointer!\n");
 }
 
-int_ll_ptr int_ll_search(int_ll_ptr root, const int key) {
+ill_ptr ill_search(ill_ptr root, const int key) {
   while(root != NULL) {
     if(root-> key == key)
       return root;
@@ -145,31 +108,23 @@ int_ll_ptr int_ll_search(int_ll_ptr root, const int key) {
   return root; /* root is NULL */
 }
 
-int_ll_ptr int_ll_make_nodes(const int n) {
-  int_ll_ptr tmp = malloc(n*sizeof(int_ll));
-  if(tmp == NULL)
-    error("Failed to allocate memory for pointer!\n");
-  return tmp;
-}
-
-
-int_ll_ptr* make_int_ll_hash_table(const int n) {
-  int_ll_ptr* hash_table = malloc(n*sizeof(int_ll_ptr));
+ill_ptr* create_ill_ptr_star(const int n) {
+  ill_ptr* hash_table = malloc(n*sizeof(ill_ptr));
   if(hash_table == NULL)
-    error("Failed to allocate pointer for hash_table.");
+    error("Failed to allocate pointer for ill_ptr*\n");
   for(int i = 0; i < n; ++i)
     hash_table[i] = NULL;
   return(hash_table);
 }
 
-int_ll_ptr create_ill_ptr(const int n) {
-  int_ll_ptr ptr = calloc(n, sizeof(int_ll));
+ill_ptr create_ill_ptr(const int n) {
+  ill_ptr ptr = calloc(n, sizeof(ill));
   if(ptr == NULL)
-    error("Failed to allocate pointer for hash_table.");
+    error("Failed to allocate pointer for ill_ptr\n");
   return(ptr);
 }
 
-void int_ll_print(int_ll_ptr root) {
+void ill_print(ill_ptr root) {
   while(root != NULL) {
     Rprintf("Key: %i Value: %i\n", root->key, root->value);
     root = root->child;
