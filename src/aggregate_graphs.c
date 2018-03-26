@@ -54,11 +54,11 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
       int * count_to_add;
 
       switch(edge) {
-        case ET_FORWARD: {
+        case DIRECTED: {
           count_to_add = (int*) &ARR_DIRECTED[0];
           break;
         }
-        case ET_UNDIRECTED: {
+        case UNDIRECTED: {
           count_to_add = (int*) &ARR_UNDIRECTED[0];
           break;
         }
@@ -72,7 +72,7 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
       } else {
         // if we need to put the edge in backwards,
         // then we also need to reverse the edge_type
-        if (edge == ET_FORWARD)
+        if (edge == DIRECTED)
           count_to_add = (int*) &ARR_BACKDIRECTED[0];
 
         rbt_hash[child] = int_rbt_insert(rbt_hash[child], parent, NUM_NL_EDGES_STORED,
