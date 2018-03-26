@@ -1,16 +1,29 @@
-#include"headers/causality.h"
 // This RBT implementation is adapted from the Eternally Confuzzled tutorial
 // http://www.eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx
+
+#ifdef _MSC_VER
+#define ALIGNED_ALLOCATE(ptr, align, size) ptr = _aligned_malloc(size, align)
+#define FREE(ptr) _aligned_free(ptr)
+#else
+#define _XOPEN_SOURCE 600
+#define ALIGNED_ALLOCATE(ptr, align, size) posix_memalign((void**) &ptr, \
+                                                          (align), (size))
+#define FREE(ptr) free(ptr)
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include"headers/causality.h"
 
 #define LEFT 0
 #define RIGHT 1
 
-typedef struct int_rbt_node* int_rbt_ptr;
-typedef struct int_rbt_node {
-  int key;
+typedef struct int_rbt* int_rbt_ptr;
+typedef struct int_rbt {
   int_rbt_ptr child[2];
+  int key;
   int values []; /* this is a Flexible Array Member -- use with caution! */
-}int_rbt_node;
+}int_rbt;
 
 static inline int IS_RED(int_rbt_ptr node) {
   if(node == NULL) {
@@ -44,7 +57,9 @@ int int_rbt_key(int_rbt_ptr root) {
 inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
                                                    const int * const values)
   {
-  int_rbt_ptr tmp = malloc(sizeof(int_rbt_node) + n*sizeof(int));
+  int_rbt_ptr tmp;
+  ALIGNED_ALLOCATE(tmp, 32, offsetof(int_rbt, values) + n*sizeof(int));
+  //int_rbt_ptr tmp = malloc(offsetof(int_rbt, values) + n*sizeof(int));
   if(tmp == NULL) {
     error("failed to allocate memory for rbt pointer\n");
   }
@@ -132,7 +147,7 @@ void int_rbt_free(int_rbt_ptr root) {
   if(root != NULL) {
     int_rbt_free(root->child[LEFT]);
     int_rbt_free(root->child[RIGHT]);
-    free(root);
+    FREE(root);
   }
 }
 

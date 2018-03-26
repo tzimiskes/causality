@@ -30,6 +30,17 @@ int_ll_ptr int_ll_insert(int_ll_ptr root, int key, int value) {
   }
 }
 
+void ill_insert(int_ll_ptr* root, int key, int value,
+                             int* index, int_ll_ptr nodes)
+  {
+    int i = *index;
+    nodes[i].child = *root;
+    nodes[i].key   = key;
+    nodes[i].value = value;
+    *root          = &nodes[i];
+    (*index)++;
+}
+
 // this function inserts nodes into the linked list by descending value
 // I guess its strange that I don't do this by key; I might rewrite it
 // if a node goes before root, it changes the values of root to the new node,
@@ -109,12 +120,12 @@ int_ll_ptr int_ll_delete(int_ll_ptr root, const int key) {
 int int_ll_size(int_ll_ptr root) {
   int n = 1;
   if(root == NULL)
-    return(0);
+    return 0;
   else {
     while((root = root->child) != NULL)
       n++;
   }
-  return(n);
+  return n;
 }
 
 void int_ll_set_value(int_ll_ptr root, int new_value) {
@@ -133,3 +144,35 @@ int_ll_ptr int_ll_search(int_ll_ptr root, const int key) {
   }
   return root; /* root is NULL */
 }
+
+int_ll_ptr int_ll_make_nodes(const int n) {
+  int_ll_ptr tmp = malloc(n*sizeof(int_ll));
+  if(tmp == NULL)
+    error("Failed to allocate memory for pointer!\n");
+  return tmp;
+}
+
+
+int_ll_ptr* make_int_ll_hash_table(const int n) {
+  int_ll_ptr* hash_table = malloc(n*sizeof(int_ll_ptr));
+  if(hash_table == NULL)
+    error("Failed to allocate pointer for hash_table.");
+  for(int i = 0; i < n; ++i)
+    hash_table[i] = NULL;
+  return(hash_table);
+}
+
+int_ll_ptr create_ill_ptr(const int n) {
+  int_ll_ptr ptr = calloc(n, sizeof(int_ll));
+  if(ptr == NULL)
+    error("Failed to allocate pointer for hash_table.");
+  return(ptr);
+}
+
+void int_ll_print(int_ll_ptr root) {
+  while(root != NULL) {
+    Rprintf("Key: %i Value: %i\n", root->key, root->value);
+    root = root->child;
+  }
+}
+

@@ -15,13 +15,6 @@
 #define COMPELLED 1
 #define REVERSABLE 2
 
-// Hash table to store (node1, node2, value)
-// This implementation uses a naive hash function for the first key
-// second key is represented by linked list
-// I guess red black trees could be used instead,
-// but I'm skeptical of the performance advantages in this case
-
-inline int_ll_ptr* make_int_ll_hash_table(const int n);
 
 // These two functions implement the topological sort as described in CLRS
 // topological sort returns a SEXP because there's an R fuction which
@@ -320,13 +313,4 @@ SEXP c_dag_to_pattern(SEXP dag) {
   // unprotect top_order and edges
   UNPROTECT(2);
   return(edges);
-}
-// helper function, nothing interesting going on
-int_ll_ptr* make_int_ll_hash_table(const int n) {
-  int_ll_ptr* hash_table = malloc(n*sizeof(int_ll_ptr));
-  if(hash_table == NULL)
-    error("Failed to allocate pointer for hash_table.");
-  for(int i = 0; i < n; ++i)
-    hash_table[i] = NULL;
-  return(hash_table);
 }
