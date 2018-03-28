@@ -7,68 +7,76 @@
 #define FLIP 1
 #define UNORIENTABLE 0
 
-
+/* these are the four meek rules as desricbe by meek(1995), and pearl(2000)
+ * this functions either return ORIENT, FLIP, or UNORIENTABLE
+ */
 static int meek1(int node1, int node2, cmpct_cg_ptr cg);
 static int meek2(int node1, int node2, cmpct_cg_ptr cg);
 static int meek3(int node1, int node2, cmpct_cg_ptr cg);
 static int meek4(int node1, int node2, cmpct_cg_ptr cg);
 
+/*
+ * apply_rule applied the selected meek rule (passed in by function pointer)
+ * it returns 1 if the rule was applied, and 0 if not
+ */
 static int apply_rule(int* edges_ptr, int i, int node1, int node2,
                   cmpct_cg_ptr cg, int (*meek_rule) (int, int, cmpct_cg_ptr));
 
+/*
+ * meek_rules take in a PDAG and maximially orients it by repeatedly applying
+ * the four meek rules
+ * it currently returns an updated edge matrix
+ */
 SEXP meek_rules(SEXP pdag) {
-  const int n_nodes    = length(VECTOR_ELT(pdag, NODES));
 
-  // get edge matrix
-  SEXP edges          = PROTECT(duplicate(VECTOR_ELT(pdag, EDGES)));
-  int* edges_ptr      = INTEGER(edges);
-  const int n_edges   = nrows(edges);
+  int n_nodes    = length(VECTOR_ELT(pdag, NODES));
+  SEXP edges     = PROTECT(duplicate(VECTOR_ELT(pdag, EDGES)));
+  int* edges_ptr = INTEGER(edges);
+  int n_edges    = nrows(edges);
 
-
+  /* generate underlying causal graph represntation (in this case, a compact
+   * causal graph, and fill it in using regular insertion
+   */
   cmpct_cg_ptr cg_ptr = create_cmpct_cg(n_nodes, n_edges);
   fill_in_cmpct_cg(cg_ptr, edges_ptr, ill_insert2);
-  print_cmpct_cg(cg_ptr);
+  /*
+   * idea for loop: index through the edges of graph, and attempt to apply meek
+   * rules to unidrected edges. repeat this process until no rules are applied
+   */
   int rule_applied;
   do {
     rule_applied = 0;
     for(int i = 0; i < n_edges; ++i) {
       int edge_type = edges_ptr[i + 2*n_edges];
+      // check to see if the edge is undirected
       if(edge_type == UNDIRECTED) {
-        int node1 = edges_ptr[i            ];
-        int node2 = edges_ptr[i + n_edges  ];
+        // if it is, grab the nodes involved, and attempt to apply meek rules
+        int node1 = edges_ptr[i          ];
+        int node2 = edges_ptr[i + n_edges];
+
         rule_applied = apply_rule(edges_ptr, i, node1, node2, cg_ptr, meek1);
-        if(rule_applied){
-          Rprintf("Rule 1 Applied\n");
-          print_cmpct_cg(cg_ptr);
-          break;
-        }
+        if(rule_applied) /* if a rule is applied successfully, skip the rest */
+          goto EOFL;
         rule_applied = apply_rule(edges_ptr, i, node1, node2, cg_ptr, meek2);
-        if(rule_applied) {
-          Rprintf("Rule 2 Applied\n");
-          print_cmpct_cg(cg_ptr);
-          break;
-        }
+        if(rule_applied)
+          goto EOFL;
         rule_applied = apply_rule(edges_ptr, i, node1, node2, cg_ptr, meek3);
         if(rule_applied)
-          break;
+          goto EOFL;
         rule_applied = apply_rule(edges_ptr, i, node1, node2, cg_ptr, meek4);
-        if(rule_applied) {
-          Rprintf("Rule 4 Applied\n");
-          print_cmpct_cg(cg_ptr);
-          break;
-        }
+        EOFL : {}
       }
     }
      R_CheckUserInterrupt();
   } while(rule_applied);
-
   // free malloc'd memory
   free_cmpct_cg(cg_ptr);
   UNPROTECT(1);
   return(edges);
 }
 
-/* meek rule one:
+/*
+ * meek rule one:
  * look for chain node3 --> node1 --- node2, where !adj(node3, node2). If so,
  * orient node1 --> node2
  *
@@ -102,7 +110,8 @@ static int meek1(const int node1, const int node2, cmpct_cg_ptr cg) {
   return UNORIENTABLE;
 }
 
-/* meek rule 2: look for node3 such that, node3 --> node1, node2 --> node3. If
+/*
+ * meek rule 2: look for node3 such that, node3 --> node1, node2 --> node3. If
  * so, orient node2 --> node1 to prevent a cycle.
  *
  * In the reverse case, look for node3 --> node2, node1 --> node3, so that we
@@ -145,15 +154,19 @@ static int meek2(const int node1, const int node2, cmpct_cg_ptr cg) {
   return UNORIENTABLE;
 }
 
-
+/*
+ * meek rule 3: orient node1 --- node2 into node2 --> node1 when there exists
+ * chains node2 --- node3 --> node1 and node2 --- node4 --> node1, with
+ * !adj(node3, node4)
+ *
+ * reverse case: chains node1 --- node3 --> node2 and node1 --- node4 --> node2,
+ * with !adj(node3, node4)
+ */
 static int meek3(const int node1, const int node2, cmpct_cg_ptr cg) {
   ill_ptr* parents          = get_cmpct_cg_parents(cg);
+
+  // look for node3 --> node1
   ill_ptr node1_parents     = parents[node1];
-
-  ill_ptr node2_parents     = parents[node2];
-  // look node3 --> node1
-
-
   while(node1_parents != NULL ) {
     if(ill_value(node1_parents) == DIRECTED) {
       int node3 = ill_key(node1_parents);
@@ -180,6 +193,7 @@ static int meek3(const int node1, const int node2, cmpct_cg_ptr cg) {
     node1_parents = ill_next(node1_parents);
   }
   // now we look through the parents of node2 instead of node1
+  ill_ptr node2_parents     = parents[node2];
   while(node2_parents != NULL ) {
     if(ill_value(node2_parents) == DIRECTED) {
       int node3 = ill_key(node2_parents);
@@ -208,7 +222,11 @@ static int meek3(const int node1, const int node2, cmpct_cg_ptr cg) {
   return UNORIENTABLE;
 }
 
-
+/*
+ *  meek4 rule4: orient node1 --> node2 if there is a chain
+ * node4 --> node3 --> node2, node1 --- node4, with adj(node3, node1) and
+ * !adj(node2, node4)
+ */
 static int meek4(const int node1, const int node2, cmpct_cg_ptr cg) {
   ill_ptr* parents          = get_cmpct_cg_parents(cg);
 
@@ -258,31 +276,27 @@ static int meek4(const int node1, const int node2, cmpct_cg_ptr cg) {
   return UNORIENTABLE;
 }
 
-
 static int apply_rule(int* edges_ptr, int i, int node1, int node2,
                   cmpct_cg_ptr cg, int (*meek_rule) (int, int, cmpct_cg_ptr))
 {
-  int result = meek_rule(node1, node2, cg);
-
+  int result  = meek_rule(node1, node2, cg);
   int n_edges = get_cmpct_cg_n_edges(cg);
 
   switch(result) {
     case UNORIENTABLE :
       return 0;
-    case ORIENT : {
-      edges_ptr[i + 2*n_edges] = DIRECTED;
-      orient_cmpct_cg_edge(cg, node1, node2);
-      return 1;
-    }
-    case FLIP : {
+    case ORIENT :
+      orient_cmpct_cg_edge(cg, node1, node2); /* update the edge in cg */
+  case FLIP : {
+      /* flip node1 and node2 */
       edges_ptr[i            ] = node2;
       edges_ptr[i + n_edges  ] = node1;
-      edges_ptr[i + 2*n_edges] = DIRECTED;
-      Rprintf("filp\n");
-      orient_cmpct_cg_edge(cg, node2, node1);
-      Rprintf("flip success\n");
-      return 1;
+      orient_cmpct_cg_edge(cg, node2, node1); /* update the edge in cg */
     }
-  default: return 0; /* this should never happen -- exists to make gcc happy */
+  default : {
+    // set the edge tpye to be directed and return
+    edges_ptr[i + 2*n_edges] = DIRECTED;
+    return 1;
+    }
   }
 }
