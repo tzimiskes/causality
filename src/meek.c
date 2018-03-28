@@ -7,8 +7,10 @@
 #define FLIP 1
 #define UNORIENTABLE 0
 
-/* these are the four meek rules as desricbe by meek(1995), and pearl(2000)
- * this functions either return ORIENT, FLIP, or UNORIENTABLE
+/* these are the four meek rules as described by meek(1995). A better discussion
+ *  is found in and pearl(2009)
+ * each rule is described where it is implemented
+ * these functions either return ORIENT, FLIP, or UNORIENTABLE
  */
 static int meek1(int node1, int node2, cmpct_cg_ptr cg);
 static int meek2(int node1, int node2, cmpct_cg_ptr cg);
@@ -276,6 +278,10 @@ static int meek4(const int node1, const int node2, cmpct_cg_ptr cg) {
   return UNORIENTABLE;
 }
 
+/*
+ * apply_rule applied the selected meek rule (passed in by function pointer)
+ * it returns 1 if the rule was applied, and 0 if not
+ */
 static int apply_rule(int* edges_ptr, int i, int node1, int node2,
                   cmpct_cg_ptr cg, int (*meek_rule) (int, int, cmpct_cg_ptr))
 {
