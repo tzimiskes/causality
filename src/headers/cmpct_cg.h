@@ -13,6 +13,10 @@ void print_cmpct_cg(cmpct_cg_ptr cg);
 
 ill_ptr* get_cmpct_cg_parents(cmpct_cg_ptr cg);
 
+
+int get_cmpct_cg_n_edges (cmpct_cg_ptr cg);
+int get_cmpct_cg_n_nodes (cmpct_cg_ptr cg);
+
 int directed_parent(cmpct_cg_ptr cg, const int node);
 int undirected_edge_in_cg(cmpct_cg_ptr cg, const int node1, const int node2);
 int nodes_adjacent_in_cg(cmpct_cg_ptr cg, const int node1, const int node2);

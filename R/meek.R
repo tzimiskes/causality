@@ -1,5 +1,9 @@
 meek <- function(pdag) {
-  tmp <- .prepare_cgraph_for_call(pdag, nodes = F, edges = T, adjacencies = T)
+  if(!is.cgraph(pdag))
+    stop("Input is not a cgraph")
+  if(!is.nonlatent(pdag))
+    stop("input must only contain nonlatent model edge types")
+  tmp <- .prepare_cgraph_for_call(pdag, nodes = F, edges = T, adjacencies = F)
   tmp <- .Call("meek_rules", tmp)
   pdag$edges[, 1] <- pdag$nodes[tmp[, 1] + 1]
   pdag$edges[, 2] <- pdag$nodes[tmp[, 2] + 1]
@@ -10,7 +14,7 @@ meek <- function(pdag) {
 }
 
 .pick_dag_from_pdag <- function(pdag) {
-
+  pdag <- meek(pdag)
   n_edges <- nrow(pdag$edges)
     for (i in 1:n_edges) {
       if (pdag$edges[i, 3] == .UNDIRECTED) {

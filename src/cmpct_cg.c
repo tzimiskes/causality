@@ -18,9 +18,7 @@ typedef struct cmpct_cg {
    ill_ptr* parents = create_ill_ptr_star(n_nodes + 1);
    if(parents == NULL)
     printf("Failed to allocate memory for parents pointer in cmpct_cg!\n");
-   for(int i = 0; i < n_nodes; ++i)
-      parents[i] = NULL;
-    parents[n_nodes] = create_ill_ptr(n_nodes);
+    parents[n_nodes] = create_ill_ptr(n_edges);
     if(parents == NULL)
      printf("Failed to allocate memory for nodes pointer in cmpct_cg!\n");
 
@@ -28,9 +26,18 @@ typedef struct cmpct_cg {
     return cg;
 }
 
+int get_cmpct_cg_n_edges (cmpct_cg_ptr cg) {
+  return cg->n_edges;
+}
+
+ int get_cmpct_cg_n_nodes (cmpct_cg_ptr cg) {
+   return cg->n_nodes;
+ }
+
 void free_cmpct_cg(cmpct_cg_ptr cg) {
   free(cg->parents[cg->n_nodes]);
   free(cg->parents);
+  free(cg);
 }
 
 
@@ -107,16 +114,20 @@ void fill_in_cmpct_cg(cmpct_cg_ptr cg, int* edges_ptr,
    return 0;
  }
 
-/* orient node1--> node2 */
+/* orient node1 --> node2 */
 void orient_cmpct_cg_edge(cmpct_cg_ptr cg, int node1, int node2) {
+  Rprintf("%i --> %i\n", node1, node2);
 
   ill_ptr* parents = cg->parents;
 
   // check to see if node1 is already a parent of node2
   ill_ptr edge = ill_search(parents[node2], node1);
-  if(edge != NULL) /* if it is not NULL, set the edge type to directed */
+  if(edge != NULL) { /* if it is not NULL, set the edge type to directed */
+    Rprintf("%p\n", edge);
     ill_set_value(edge, DIRECTED);
+  }
   else {
+    Rprintf("else\n");
     // node1 is a child of node2
 
     ill_ptr nodes = parents[cg->n_nodes];
@@ -137,7 +148,7 @@ void orient_cmpct_cg_edge(cmpct_cg_ptr cg, int node1, int node2) {
         }
         node1_parents = next;
       }
-      ill_insert2(&parents[node2], node1, DIRECTED, index, nodes);
     }
+    ill_insert2(&parents[node2], node1, DIRECTED, index, nodes);
   }
 }
