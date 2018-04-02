@@ -8,7 +8,7 @@
 #define UNORIENTABLE 0
 
 /* these are the four meek rules as described by meek(1995). A better discussion
- *  is found in and pearl(2009)
+ *  is found in pearl(2009)
  * each rule is described where it is implemented
  * these functions either return ORIENT, FLIP, or UNORIENTABLE
  */
@@ -18,10 +18,10 @@ static int meek3(int node1, int node2, cmpct_cg_ptr cg);
 static int meek4(int node1, int node2, cmpct_cg_ptr cg);
 
 /*
- * apply_rule applied the selected meek rule (passed in by function pointer)
+ * apply_meek_rule applied the selected meek rule (passed in by function pointer)
  * it returns 1 if the rule was applied, and 0 if not
  */
-static int apply_rule(int* edges_ptr, int i, int node1, int node2,
+static int apply_meek_rule(int* edges_ptr, int i, int node1, int node2,
                   cmpct_cg_ptr cg, int (*meek_rule) (int, int, cmpct_cg_ptr));
 
 /*
@@ -36,7 +36,8 @@ SEXP meek_rules(SEXP pdag) {
   int* edges_ptr = INTEGER(edges);
   int n_edges    = nrows(edges);
 
-  /* generate underlying causal graph represntation (in this case, a compact
+   /*
+   * generate underlying causal graph represntation (in this case, a compact
    * causal graph, and fill it in using regular insertion
    */
   cmpct_cg_ptr cg_ptr = create_cmpct_cg(n_nodes, n_edges);
@@ -56,16 +57,16 @@ SEXP meek_rules(SEXP pdag) {
         int node1 = edges_ptr[i          ];
         int node2 = edges_ptr[i + n_edges];
 
-        rule_applied = apply_rule(edges_ptr, i, node1, node2, cg_ptr, meek1);
+        rule_applied = apply_meek_rule(edges_ptr, i, node1, node2, cg_ptr, meek1);
         if(rule_applied) /* if a rule is applied successfully, skip the rest */
           goto EOFL;
-        rule_applied = apply_rule(edges_ptr, i, node1, node2, cg_ptr, meek2);
+        rule_applied = apply_meek_rule(edges_ptr, i, node1, node2, cg_ptr, meek2);
         if(rule_applied)
           goto EOFL;
-        rule_applied = apply_rule(edges_ptr, i, node1, node2, cg_ptr, meek3);
+        rule_applied = apply_meek_rule(edges_ptr, i, node1, node2, cg_ptr, meek3);
         if(rule_applied)
           goto EOFL;
-        rule_applied = apply_rule(edges_ptr, i, node1, node2, cg_ptr, meek4);
+        rule_applied = apply_meek_rule(edges_ptr, i, node1, node2, cg_ptr, meek4);
         EOFL : {}
       }
     }
@@ -93,7 +94,7 @@ static int meek1(const int node1, const int node2, cmpct_cg_ptr cg) {
     if(ill_value(node1_parents) == DIRECTED) {
       int node3 = ill_key(node1_parents);
       /* check to see of node2 and node3 are adjacent */
-      if(!nodes_adjacent_in_cg(cg, node2, node3))
+      if(!adjacent_in_cg(cg, node2, node3))
         return ORIENT;
     }
     node1_parents = ill_next(node1_parents);
@@ -104,7 +105,7 @@ static int meek1(const int node1, const int node2, cmpct_cg_ptr cg) {
     if(ill_value(node2_parents) == DIRECTED) {
       int node3 = ill_key(node2_parents);
       /* check to see of node1 and node3 are adjacent */
-      if(!nodes_adjacent_in_cg(cg, node1, node3))
+      if(!adjacent_in_cg(cg, node1, node3))
         return FLIP;
     }
     node2_parents = ill_next(node2_parents);
@@ -180,10 +181,10 @@ static int meek3(const int node1, const int node2, cmpct_cg_ptr cg) {
         {
           int node4 = ill_key(node1_parents_cpy);
           // check to see if they are adjacent
-          if(!nodes_adjacent_in_cg(cg, node3, node4)) {
+          if(!adjacent_in_cg(cg, node3, node4)) {
             // if they are not, look for node2 -- node3, node2 -- node4
-            if(undirected_edge_in_cg(cg, node3, node2) &&
-               undirected_edge_in_cg(cg, node4, node2))
+            if(edge_undirected_in_cg(cg, node3, node2) &&
+               edge_undirected_in_cg(cg, node4, node2))
             {
               return FLIP;
             }
@@ -207,10 +208,10 @@ static int meek3(const int node1, const int node2, cmpct_cg_ptr cg) {
         {
           int node4 = ill_key(node2_parents_cpy);
           // check to see if they are adjacent
-          if(!nodes_adjacent_in_cg(cg, node3, node4)) {
+          if(!adjacent_in_cg(cg, node3, node4)) {
             // if they are not, look for node1 -- node3, node1 -- node4
-            if(undirected_edge_in_cg(cg, node3, node1) &&
-               undirected_edge_in_cg(cg, node4, node1))
+            if(edge_undirected_in_cg(cg, node3, node1) &&
+               edge_undirected_in_cg(cg, node4, node1))
             {
               return ORIENT;
             }
@@ -236,13 +237,13 @@ static int meek4(const int node1, const int node2, cmpct_cg_ptr cg) {
   while(node1_parents != NULL) {
     if(ill_value(node1_parents) == DIRECTED) {
       int node3 = ill_key(node1_parents);
-      if(nodes_adjacent_in_cg(cg, node2, node3)) {
+      if(adjacent_in_cg(cg, node2, node3)) {
         ill_ptr node3_parents = parents[node3];
         while(node3_parents != NULL) {
             if(ill_value(node3_parents) == DIRECTED) {
               int node4 = ill_key(node3_parents);
-              if(undirected_edge_in_cg(cg, node4, node2) &&
-                 !nodes_adjacent_in_cg(cg, node1, node4))
+              if(edge_undirected_in_cg(cg, node4, node2) &&
+                 !adjacent_in_cg(cg, node1, node4))
               {
                 return FLIP;
               }
@@ -258,13 +259,13 @@ static int meek4(const int node1, const int node2, cmpct_cg_ptr cg) {
   while(node2_parents != NULL) {
     if(ill_value(node2_parents) == DIRECTED) {
       int node3 = ill_key(node2_parents);
-      if(nodes_adjacent_in_cg(cg, node1, node3)) {
+      if(adjacent_in_cg(cg, node1, node3)) {
         ill_ptr node3_parents = parents[node3];
         while(node3_parents != NULL) {
           if(ill_value(node3_parents) == DIRECTED) {
             int node4 = ill_key(node3_parents);
-            if(undirected_edge_in_cg(cg, node4, node1) &&
-               !nodes_adjacent_in_cg(cg, node2, node4))
+            if(edge_undirected_in_cg(cg, node4, node1) &&
+               !adjacent_in_cg(cg, node2, node4))
             {
               return ORIENT;
             }
@@ -279,10 +280,10 @@ static int meek4(const int node1, const int node2, cmpct_cg_ptr cg) {
 }
 
 /*
- * apply_rule applied the selected meek rule (passed in by function pointer)
+ * apply_meek_rule applied the selected meek rule (passed in by function pointer)
  * it returns 1 if the rule was applied, and 0 if not
  */
-static int apply_rule(int* edges_ptr, int i, int node1, int node2,
+static int apply_meek_rule(int* edges_ptr, int i, int node1, int node2,
                   cmpct_cg_ptr cg, int (*meek_rule) (int, int, cmpct_cg_ptr))
 {
   int result  = meek_rule(node1, node2, cg);

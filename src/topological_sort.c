@@ -1,15 +1,14 @@
 #include"headers/causality.h"
-
+#include"headers/cmpct_cg.h"
 #include"headers/int_linked_list.h"
-
+#include"headers/edgetypes.h"
 #include"headers/int_a_stack.h"
 
 // macros used in topological sort
 #define UNMARKED 0
 #define MARKED 1
 #define TEMPORARY -1
-// macro when inserting elements without a defined value into a linked list
-#define EMPTY -1
+
 // macros for dag_to_pattern
 #define UNKNOWN -1
 #define COMPELLED 1
@@ -26,14 +25,14 @@ void visit(const int i,
            int* const restrict n_marked,
            const ill_ptr* const restrict children,
            int_a_stack_ptr restrict stack_ptr
-          );
+);
 
 // These two functions (along with the above) implement the algorithm that
 // converts DAGs to Patterns (aka CPDAGs). The Algorithm is due to Chickering
 // c_dag_to_pattern returns the "patterned" edge list to R,
 // so its return type is SEXP
 
-ill_ptr* order_edges(SEXP dag, SEXP top_sort, const int n_nodes);
+cmpct_cg_ptr order_edges(SEXP dag, SEXP top_sort, const int n_nodes);
 SEXP c_dag_to_pattern(SEXP dag);
 
 // The following two functions implement the topological sort
@@ -48,34 +47,39 @@ void visit(const int i,
     error("dag contains a cycle, so the input is not actually a dag.");
   else if(marked[i] == UNMARKED) {
     marked[i] = TEMPORARY;
-  ill_ptr parent = children[i];
-  while(parent != NULL) {
-    visit(ill_key(parent), marked, n_marked, children, stack_ptr);
-    parent = ill_next(parent);
-  }
-  marked[i] = MARKED;
-  (*n_marked)++;
-  int_a_stack_push(stack_ptr, i);
+    ill_ptr parent = children[i];
+    while(parent != NULL) {
+      if(ill_value(parent) == DIRECTED)
+        visit(ill_key(parent), marked, n_marked, children, stack_ptr);
+      parent = ill_next(parent);
+    }
+    marked[i] = MARKED;
+    (*n_marked)++;
+    int_a_stack_push(stack_ptr, i);
   }
 }
 
 SEXP c_topological_sort(SEXP dag) {
 
-  const int n_nodes = length(VECTOR_ELT(dag, 0));
+  const int n_nodes = length(VECTOR_ELT(dag, NODES));
   // the hash table stores the children of each node
-  ill_ptr* const restrict children = create_ill_ptr_star(n_nodes);
+
+  ill_ptr* const restrict children = create_ptr_to_ill_ptr(n_nodes);
 
   // grab the edge matrix and number of edges
-  SEXP edges = PROTECT(VECTOR_ELT(dag, 2));
+  SEXP edges = PROTECT(VECTOR_ELT(dag, EDGES));
   const int n_edges = nrows(edges);
+
+
   const int* restrict edges_ptr = INTEGER(edges);
 
-// fill in the hash table
+  // fill in the hash table
   for(int i = 0; i < n_edges; ++i) {
     // matrices are stored as 1d arrays in R, with column major ordering
     int parent = edges_ptr[i];
     int child = edges_ptr[i + n_edges];
-    children[parent] = ill_insert(children[parent], child, EMPTY);
+    int edge = edges_ptr[i+ 2*n_edges];
+    children[parent] = ill_insert(children[parent], child, edge);
   }
   // we no longer need edges
   UNPROTECT(1);
@@ -121,7 +125,7 @@ SEXP c_topological_sort(SEXP dag) {
   return(order);
 }
 
-ill_ptr* order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
+cmpct_cg_ptr order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
 
   // get the topological order pointer
   const int* const top_order_ptr = INTEGER(top_order);
@@ -137,43 +141,42 @@ ill_ptr* order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
     top_order_hash[top_order_ptr[i]] = i;
 
   // grab the edge matrix and number of edges
-  SEXP edges                 = PROTECT(VECTOR_ELT(dag, 2));
+  SEXP edges                 = PROTECT(VECTOR_ELT(dag, EDGES));
   const int n_edges          = nrows(edges);
-  const int* const edges_ptr = INTEGER(edges);
-
-  // the hash table stores the parents of each node
-  // set of parents is represented as a linked list
-  ill_ptr* const parents = create_ill_ptr_star(n_nodes);
+  int* edges_ptr = INTEGER(edges);
 
   // fill in the hash table. entries are added in descending topological order
-  for(int i = 0; i < n_edges; ++i) {
-    int parent = edges_ptr[i          ];
-    int child  = edges_ptr[i + n_edges];
-    parents[child] = ill_insert_by_value(parents[child],
-                     parent, top_order_hash[parent]);
-    }
+  int* edges_ptr_offset = edges_ptr + 2*n_edges;
+  for(int i = 0; i < n_edges; ++i)
+    edges_ptr_offset[i] = top_order_hash[edges_ptr[i]];
+
+  cmpct_cg_ptr cg = create_cmpct_cg(n_nodes, n_edges);
+  fill_in_cmpct_cg(cg, edges_ptr, ill_insert_by_value);
+
 
   // free all the malloc'd memory
   free(top_order_hash);
   UNPROTECT(1);
-  return(parents);
+  return(cg);
 }
 
 SEXP c_dag_to_pattern(SEXP dag) {
   // get the number of nodes
-  const int n_nodes = length(VECTOR_ELT(dag, 0));
+  const int n_nodes = length(VECTOR_ELT(dag, NODES));
 
   // get the topological order
   SEXP top_order                 = PROTECT(c_topological_sort(dag));
   const int* const top_order_ptr = INTEGER(top_order);
 
   // get the parent list of each node from the function order edges
-  ill_ptr* parents = order_edges(dag, top_order, n_nodes);
+  cmpct_cg_ptr cg = order_edges(dag, top_order, n_nodes);
+
+  ill_ptr* parents = get_cmpct_cg_parents(cg);
 
   // order edges sets the value parameter for each edge, so we need to
   // change the value for everything to UNKNOWN
   for(int i = 0; i < n_nodes; ++i) {
-    ill_ptr tmp_ptr = parents[top_order_ptr[i]];
+    ill_ptr tmp_ptr = parents[i];
     while(tmp_ptr != NULL) {
       ill_set_value(tmp_ptr, UNKNOWN);
       tmp_ptr = ill_next(tmp_ptr);

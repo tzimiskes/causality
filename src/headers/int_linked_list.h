@@ -9,16 +9,15 @@ typedef struct ill {
   int value;
 } ill;
 
-ill_ptr* create_ill_ptr_star(const int n);
+ill_ptr* create_ptr_to_ill_ptr(const int n);
 ill_ptr  create_ill_ptr(const int n);
 
-ill_ptr ill_delete(ill_ptr* root, int key);
 void ill_free(ill_ptr root);
 
 // insertion functions
 ill_ptr ill_insert(ill_ptr root, int key, int value);
 void ill_insert2(ill_ptr* root, int key, int value, int i, ill_ptr nodes);
-ill_ptr ill_insert_by_value(ill_ptr root, int key, int value);
+void ill_insert_by_value(ill_ptr* root, int key, int value, int i, ill_ptr nodes);
 
 ill_ptr ill_search(ill_ptr root, const int key);
 void ill_set_next(ill_ptr root, ill_ptr next);

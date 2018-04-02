@@ -50,5 +50,3 @@ SEXP c_partial_correlation(SEXP x, SEXP y, SEXP z) {
 
   return(ScalarReal(rho_xy_g_z));
 }
-
-

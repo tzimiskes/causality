@@ -24,43 +24,43 @@ ill_ptr ill_insert(ill_ptr root, int key, int value) {
   }
 }
 
-void ill_insert2(ill_ptr* root, int key, int value,
-                             int i, ill_ptr nodes)
-  {
+void ill_insert2(ill_ptr* root, int key, int value, int i, ill_ptr nodes) {
     nodes[i].child = *root;
     nodes[i].key   = key;
     nodes[i].value = value;
     *root          = &nodes[i];
 }
 
-// this function inserts nodes into the linked list by descending value
-// I guess its strange that I don't do this by key; I might rewrite it
-// if a node goes before root, it changes the values of root to the new node,
-// and the makes a new ill and sets it to root,
-ill_ptr ill_insert_by_value(ill_ptr root, int key, int value) {
+/*
+ * TODO
+ */
+void ill_insert_by_value(ill_ptr* root, int key, int value,
+                          int i, ill_ptr nodes)
+{
+  nodes[i].key   = key;
+  nodes[i].value = value;
   // if root is null, instantiate
-  if(root == NULL)
-    return(ill_instantiate(key, value));
-  // if new node should be before root, make new node root
-  if(root->value < value) {
-    ill_ptr new_root = ill_instantiate(key, value);
-    new_root->child = root;
-    return(new_root);
+  if(*root == NULL) {
+    *root          = &nodes[i];
+    return;
+  }
+  if((*root)->value < value) {
+    nodes[i].child = *root;
+    *root          = &nodes[i];
+    return;
   }
   // else loop through the nodes
-  ill_ptr tmp = root;
+  ill_ptr tmp = *root;
   while(tmp->child != NULL) {
     if(tmp->child->value < value) {
-      ill_ptr new_node = ill_instantiate(key, value);
-      new_node->child = tmp->child;
-      tmp->child = new_node;
-      return(root);
+      nodes[i].child = tmp->child;
+      tmp->child     = &nodes[i];
+      return;
     }
     tmp = tmp->child;
   }
   // if child is NULL instantiate it
-  tmp->child = ill_instantiate(key, value);
-  return(root);
+  tmp->child = &nodes[i];
 }
 
 void ill_set_next(ill_ptr root, ill_ptr next) {
@@ -87,10 +87,6 @@ void ill_free(ill_ptr root) {
   }
 }
 
-ill_ptr ill_delete(ill_ptr* root, const int key) {
-    return *root; /* aka NULL */
-}
-
 void ill_set_value(ill_ptr root, int new_value) {
   if(root != NULL)
     root->value = new_value;
@@ -108,7 +104,7 @@ ill_ptr ill_search(ill_ptr root, const int key) {
   return root; /* root is NULL */
 }
 
-ill_ptr* create_ill_ptr_star(const int n) {
+ill_ptr* create_ptr_to_ill_ptr(const int n) {
   ill_ptr* hash_table = malloc(n*sizeof(ill_ptr));
   if(hash_table == NULL)
     error("Failed to allocate pointer for ill_ptr*\n");
@@ -130,4 +126,3 @@ void ill_print(ill_ptr root) {
     root = root->child;
   }
 }
-
