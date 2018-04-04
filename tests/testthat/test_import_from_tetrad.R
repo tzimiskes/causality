@@ -7,7 +7,7 @@ test_that("invalid graphs are rejected", {
   # error itself is because the graph is a multigraph
   expect_error(expect_warning(import_from_tetrad_file("../reversed_multigraph.txt")))
   expect_error(import_from_tetrad_file("../self_loop.txt"))
-  expect_s3_class(import_from_tetrad_file("../dag_test.txt", type = "dag"), "dag")
+  expect_s3_class(import_from_tetrad_file("../dag_test.txt", type = "dag"), .CGRAPH_CLASS)
   expect_error(import_from_tetrad_file("../dcg_test.txt", type = "dag"))
-  expect_s3_class(import_from_tetrad_file("../dcg_test.txt", type = NULL), "cgraph")
+  expect_s3_class(import_from_tetrad_file("../dcg_test.txt", type = NULL), .CGRAPH_CLASS)
 })
