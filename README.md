@@ -12,8 +12,6 @@ TODO:
    - [ ] document
  - [ ] as.pdag:
  - [ ] implement (nothing?)
- - [ ] is_valid_cgraph: needs to check to make sure if the adjacencies are legal
-   - [ ] we need to check to see that the edges/adjacencies are correct
  - [ ] remove_cycles
    - probably useful when bootstrapping
  - [ ] need to make man pages for the entire cgraph.R file
@@ -39,10 +37,7 @@ import_export.R
 * - [ ] see above
 * shd.R
 - [ ] redo type checking
-* meek.R
-- [x] implement
-- [ ] test
-- [ ] document
+
 * Alg Comparison stuff
 - [ ] F1 Statistics
 - [ ] calculate_statistics function for ease of use in simulation studies
