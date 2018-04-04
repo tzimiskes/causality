@@ -309,10 +309,8 @@ SEXP c_dag_to_pattern(SEXP dag) {
     }
   }
 
-  // free malloc'd memory
-  for(int i = 0; i < n_nodes; ++i)
-    ill_free(parents[i]);
-  free(parents);
+
+  free_cmpct_cg(cg);
   // unprotect top_order and edges
   UNPROTECT(2);
   return(edges);

@@ -7,6 +7,7 @@
 #define FLIP 1
 #define UNORIENTABLE 0
 
+
 /* these are the four meek rules as described by meek(1995). A better discussion
  *  is found in pearl(2009)
  * each rule is described where it is implemented
@@ -292,18 +293,21 @@ static int apply_meek_rule(int* edges_ptr, int i, int node1, int node2,
   switch(result) {
     case UNORIENTABLE :
       return 0;
-    case ORIENT :
+  case ORIENT : {
+
       orient_cmpct_cg_edge(cg, node1, node2); /* update the edge in cg */
+      edges_ptr[i + 2*n_edges] = DIRECTED;
+      break;
+  }
   case FLIP : {
       /* flip node1 and node2 */
       edges_ptr[i            ] = node2;
       edges_ptr[i + n_edges  ] = node1;
+      edges_ptr[i + 2*n_edges] = DIRECTED;
       orient_cmpct_cg_edge(cg, node2, node1); /* update the edge in cg */
-    }
-  default : {
-    // set the edge tpye to be directed and return
-    edges_ptr[i + 2*n_edges] = DIRECTED;
-    return 1;
+
+      break;
     }
   }
+  return 1;
 }

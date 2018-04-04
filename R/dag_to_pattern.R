@@ -87,19 +87,11 @@ topological_sort <- function(dag) {
     hash[[dag$nodes[[i]]]] <- i - 1
   # convert the matrix of edges, which is a character vector, to an integer
   # vector. This is done so the C end is simpler
-  for (i in 1:nrow(dag$edges)) {
-    dag$edges[i, 1] <- hash[[dag$edges[i, 1]]]
-    dag$edges[i, 2] <- hash[[dag$edges[i, 2]]]
-    dag$edges[i, 3] <- 1
-  }
-  nc <- ncol(dag$edges)
-  nr <- nrow(dag$edges)
-  dag$edges <- as.integer(dag$edges)
-  dim(dag$edges) <- c(nr, nc)
+ tmp <- .prepare_cgraph_for_call(dag, F, T, F)
   # now that we have an integer matrix, call the C function
-  tmp <- tryCatch(.Call("c_topological_sort", dag), error = function(e) NULL)
-  if(is.null(tmp))
+  order <- tryCatch(.Call("c_topological_sort", tmp), error = function(e) NULL)
+  if(is.null(order))
     return(NULL)
   else
-    return(dag$nodes[tmp + 1])
+    return(dag$nodes[order + 1])
 }
