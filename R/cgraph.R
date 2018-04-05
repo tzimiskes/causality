@@ -48,7 +48,7 @@ is.pag <-function(cgraph) {
   else
     return(FALSE)
 }
-# this has bugs
+
 is.cyclic <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
@@ -97,56 +97,85 @@ is.latent <- function(cgraph) {
 
 # attempt to coerce a graph of type cgraph to a dag
 as.dag <- function(cgraph) {
-  if(is.dag(cgraph))
-    return(cgraph)
-  if (is.pattern(cgraph) || is.pdag(cgraph)) {
-    cgraph <- .pick_dag_from_pdag(cgraph)
-    class(cgraph) <- .DAG_CLASS
+  if (!is.cgraph(cgraph))
+    stop("input is not a cgraph")
+  if (is.dag(cgraph)) {
     return(cgraph)
   }
-  if(is.pag(cgraph))
+  if (is.pattern(cgraph)) {
+  return( .pick_dag_from_pattern(cgraph))
+  }
+  if (is.pdag(cgraph)) {
+    return(.pick_dag_from_pdag(cgraph))
+  }
+  if (is.pag(cgraph))
     stop("not implemented")
 
   # ok, now attempt to turn cgraph object into dag
-  # check check to see if it is directed. and acyclic
-  if (is.directed(cgraph)) {
-    if (!is.cyclic(cgraph)) {
+  # check check to see if it is acyclic
+  if (!is.cyclic(cgraph)) {
+    # if it is directed, we then its a DAG!
+    if (is.directed(cgraph)) {
       class(cgraph) <- .DAG_CLASS
       return(cgraph)
     }
-    else {
-      stop("input contains a cycle, so it cannot be coerced to a dag")
+    # if its nonlatent, its a pdag, so we can try to see if
+    # theres a dag extension
+    else if (is.nonlatent(cgraph)) {
+      return(.pick_dag_from_pdag(cgraph))
     }
   }
   else
-    stop("Unable to coerce input to a dag.")
+    stop("input contains a cycle, so it cannot be coerced to a dag")
 }
 
 as.pattern <- function(cgraph) {
-  if(is.pattern(cgraph))
+  if (!is.cgraph(cgraph))
+    stop("input is not a cgraph")
+  if (is.pattern(cgraph))
     return(cgraph)
-  if (is.dag(cgraph) || is.pdag(cgraph)) {
-    cgraph <- .dag_to_pattern(cgraph)
-    class(cgraph) <- .PATTERN_CLASS
-    return(cgraph)
-  }
+  if (is.dag(cgraph))
+    return(.dag_to_pattern(cgraph))
+  if (is.pdag(cgraph))
+    return(.pick_dag_from_pdag(cgraph))
   if (is.pag(cgraph))
     stop("pags cannot be converted to patterns.")
 
-  stop("unable to coerce input to pattern")
+  # ok, now attempt to turn cgraph object into pattern
+  # check check to see if it is acyclic
+  if (!is.cyclic(cgraph)) {
+    # if it is directed, we then its a DAG and we
+    # need to convert it to a pattern
+    if (is.directed(cgraph)) {
+      return(.dag_to_pattern(cgraph))
+    }
+    # if its nonlatent, its a pdag, so we can try to see if
+    # theres a dag extension
+    else if (is.nonlatent(cgraph)) {
+      return(.pattern_from_pdag(cgraph))
+    }
+  }
+  else
+    stop("input contains a cycle, so it cannot be coerced to a dag")
 }
 
 as.pdag <- function(cgraph) {
+  if (!is.cgraph(cgraph))
+    stop("input is not a cgraph")
+  if (is.pdag(cgraph))
+    return(cgraph)
   if (is.pattern(cgraph)) {
     class(cgraph) <- .PDAG_CLASS
     return(cgraph)
   }
   if (is.dag(cgraph)) {
-    cgraph <- .dag_to_pattern(cgraph)
     class(cgraph) <- .PDAG_CLASS
     return(cgraph)
   }
+  if(is.pag(cgraph))
+    stop("not implemented")
 
+  # now, try to turn cgraph into a pdag
   if (is.nonlatent(cgraph)) {
     if (!is.cyclic(cgraph)) {
       class(cgraph) <- .PDAG_CLASS

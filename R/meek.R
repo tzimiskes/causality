@@ -13,19 +13,50 @@ meek <- function(pdag) {
 
 }
 
-.pick_dag_from_pdag <- function(pdag) {
-  pdag <- meek(pdag)
-  n_edges <- nrow(pdag$edges)
-    for (i in 1:n_edges) {
-      if (pdag$edges[i, 3] == .UNDIRECTED) {
-        pdag$edges[i, 3] <- .DIRECTED
+.pick_dag_from_pattern <- function(pattern) {
+  n_edges <- nrow(pattern$edges)
+  for (i in 1:n_edges) {
+    if (pattern$edges[i, 3] == .UNDIRECTED) {
+        pattern$edges[i, 3] <- .DIRECTED
         if (runif(1) < .5) {
-          tmp <- pdag$edges[i , 1]
-          pdag$edges[i, 1] <- pdag$edges[i, 2]
-          pdag$edges[i, 2] <- tmp
+          tmp <- pattern$edges[i , 1]
+          pattern$edges[i, 1] <- pattern$edges[i, 2]
+          pattern$edges[i, 2] <- tmp
+      }
+      pattern <- meek(pattern)
+    }
+  }
+  class(pattern) <- .DAG_CLASS
+  return(pattern)
+}
+
+
+.pick_dag_from_pdag <- function(pdag) {
+  warning("Coercing a pdag to a dag may be bugged!")
+  pdag <- meek(pdag)
+  if(is.cyclic(pdag))
+    stop("pdag does not admit a dag extension")
+  n_edges <- nrow(pdag$edges)
+  for (i in 1:n_edges) {
+    if (pdag$edges[i, 3] == .UNDIRECTED) {
+      pdag$edges[i, 3] <- .DIRECTED
+      if (runif(1) < .5) {
+        tmp <- pdag$edges[i , 1]
+        pdag$edges[i, 1] <- pdag$edges[i, 2]
+        pdag$edges[i, 2] <- tmp
       }
       pdag <- meek(pdag)
     }
   }
+  class(pdag) <- .DAG_CLASS
   return(pdag)
+}
+
+.pattern_from_pdag <- function(pdag) {
+  warning("Coercing a pdag to a pattern may be bugged!")
+  pdag <- meek(pdag)
+  if(is.cyclic(pdag))
+    stop("pdag cannot be coerced to a pattern")
+  .dag_to_pattern(pdag)
+  return(.dag_to_pattern(pdag))
 }
