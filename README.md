@@ -2,16 +2,6 @@
 
 TODO:
 * cgraph.R
- - [ ] as.dag
-   - [x] implement pdag/pattern support
-   - [ ] write tests
-   - [ ] document
- - [ ] as.pattern
-   - [x] implement pdag --> pattern
-   - [ ] tests
-   - [ ] document
- - [ ] as.pdag:
- - [ ] implement (nothing?)
  - [ ] remove_cycles
    - probably useful when bootstrapping
  - [ ] need to make man pages for the entire cgraph.R file
