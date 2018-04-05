@@ -66,7 +66,6 @@ ill_ptr* get_cmpct_cg_parents(cmpct_cg_ptr cg) {
 }
 
 void print_cmpct_cg(cmpct_cg_ptr cg) {
-  ill_ptr ptr;
   for(int i = 0; i < cg->n_nodes; ++i) {
     Rprintf("Parent: %i\n", i);
     ill_print(cg->parents[i]);
@@ -118,7 +117,7 @@ void orient_cmpct_cg_edge(cmpct_cg_ptr cg, int node1, int node2) {
 
     ill_ptr nodes         = parents[cg->n_nodes];
     ill_ptr node1_parents = parents[node1];
-    int index;
+    int index = -1;
     if(ill_key(node1_parents) == node2) {
       index = node1_parents - nodes; /* ptr arithmetic -- gives offset */
       // remove the node and set root to be the next node in the list
