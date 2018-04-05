@@ -1,4 +1,4 @@
-aggregate_graphs <- function(cgraphs, raw = FALSE, no_pags = TRUE) {
+aggregate_graphs <- function(cgraphs, raw = FALSE) {
   if(!is.list(cgraphs))
     stop("dags is not as list")
   if (length(cgraphs) == 1)
@@ -25,19 +25,11 @@ aggregate_graphs <- function(cgraphs, raw = FALSE, no_pags = TRUE) {
   cgraph <- cgraphs[[1]]
   table[[1]] <- cgraph$nodes[table[[1]]]
   table[[2]] <- cgraph$nodes[table[[2]]]
-  if (ncol(table) == 5) {
-    names(table) <- c("node1", "node2", "<--", "-->", "---")
-    if(raw == FALSE) {
-      table[[3]] <- table[[3]]/length(cgraphs)
-      table[[4]] <- table[[4]]/length(cgraphs)
-      table[[5]] <- table[[5]]/ length(cgraphs)
-    }
-  }
-  else {
-    # TODO(arix)
-  }
+    names(table) <- c("node1","node2", "<--", "---", "-->", "<~~",
+                      "~~>", "<++", "++>","<-o", "o->", "<->", "o-o")
+
   output <- list(nodes = cgraph$nodes, table = table)
-  class(output) <- c("aggregated-pdags")
+  class(output) <- c("aggregated-cgraphs")
   return(output)
 }
 

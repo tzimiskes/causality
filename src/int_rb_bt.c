@@ -1,15 +1,16 @@
 // This RBT implementation is adapted from the Eternally Confuzzled tutorial
 // http://www.eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx
-
+/*
 #ifdef _MSC_VER
 #define ALIGNED_ALLOCATE(ptr, align, size) ptr = _aligned_malloc(size, align)
 #define FREE(ptr) _aligned_free(ptr)
 #else
 #define _XOPEN_SOURCE 600
-#define ALIGNED_ALLOCATE(ptr, align, size) posix_memalign((void**) &ptr, \
-                                                          (align), (size))
+#define ALIGNED_ALLOCATE(ptr, align, size) posix_memalign((void**) &(ptr), \
+                                                        (align), (size))
 #define FREE(ptr) free(ptr)
 #endif
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -18,14 +19,14 @@
 #define LEFT 0
 #define RIGHT 1
 
-typedef struct int_rbt* int_rbt_ptr;
-typedef struct int_rbt {
-  int_rbt_ptr child[2];
+typedef struct irbt* irbt_ptr;
+typedef struct irbt {
+  irbt_ptr child[2];
   int key;
-  int values []; /* this is a Flexible Array Member -- use with caution! */
-}int_rbt;
+  int values [11]; /* NUM_EDGES_STORED */
+}irbt;
 
-static inline int IS_RED(int_rbt_ptr node) {
+static inline int IS_RED(irbt_ptr node) {
   if(node == NULL) {
     return 0;
   }
@@ -42,24 +43,22 @@ static inline int ABS(int x) {
     return(x);
 }
 
-static inline void SET_TO_RED(int_rbt_ptr node) {
+static inline void SET_TO_RED(irbt_ptr node) {
   node->key = ABS(node->key);
 }
 
-static inline void SET_TO_BLACK(int_rbt_ptr node) {
+static inline void SET_TO_BLACK(irbt_ptr node) {
   node->key = -ABS(node->key);
 }
 
-int int_rbt_key(int_rbt_ptr root) {
+int irbt_key(irbt_ptr root) {
   return(ABS(root->key) - 1);
 }
 
-inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
+inline irbt_ptr irbt_instantiate_node(const int key, const int n,
                                                    const int * const values)
   {
-  int_rbt_ptr tmp;
-  ALIGNED_ALLOCATE(tmp, 32, offsetof(int_rbt, values) + n*sizeof(int));
-  //int_rbt_ptr tmp = malloc(offsetof(int_rbt, values) + n*sizeof(int));
+  irbt_ptr tmp = malloc(sizeof(irbt));
   if(tmp == NULL) {
     error("failed to allocate memory for rbt pointer\n");
   }
@@ -70,9 +69,9 @@ inline int_rbt_ptr int_rbt_instantiate_node(const int key, const int n,
   return(tmp);
 }
 
-static inline int_rbt_ptr single_rotation(int_rbt_ptr root, int dir) {
+static inline irbt_ptr single_rotation(irbt_ptr root, int dir) {
 
-  int_rbt_ptr tmp = root->child[!dir];
+  irbt_ptr tmp = root->child[!dir];
 
   root->child[!dir] = tmp->child[dir];
   tmp->child[dir]   = root;
@@ -82,28 +81,28 @@ static inline int_rbt_ptr single_rotation(int_rbt_ptr root, int dir) {
   return tmp;
 }
 
-static inline int_rbt_ptr double_rotation(int_rbt_ptr root, int dir) {
+static inline irbt_ptr double_rotation(irbt_ptr root, int dir) {
 
   root->child[!dir] = single_rotation(root->child[!dir], !dir);
 
   return single_rotation(root, dir);
 }
 
-static int_rbt_ptr int_rbt_insert_recurvise(int_rbt_ptr root,
+static irbt_ptr irbt_insert_recurvise(irbt_ptr root,
                                                    const int key,
                                                    const int n,
                                                    const int* const values)
 {
   if(root == NULL) {
-    root = int_rbt_instantiate_node(key, n, values);
+    root = irbt_instantiate_node(key, n, values);
   }
-  else if (key == int_rbt_key(root)) {
+  else if (key == irbt_key(root)) {
     for(int i = 0; i < n; ++i)
       root->values[i] += values[i];
   }
   else {
-    int direction = key < int_rbt_key(root) ? LEFT : RIGHT;
-    root->child[direction] = int_rbt_insert_recurvise(root->child[direction],
+    int direction = key < irbt_key(root) ? LEFT : RIGHT;
+    root->child[direction] = irbt_insert_recurvise(root->child[direction],
                                                       key, n, values);
 
     if(IS_RED(root->child[direction])) {
@@ -124,60 +123,70 @@ static int_rbt_ptr int_rbt_insert_recurvise(int_rbt_ptr root,
   return root;
 }
 
-int_rbt_ptr int_rbt_insert(int_rbt_ptr root, const int key, const int n,
+irbt_ptr irbt_insert(irbt_ptr root, const int key, const int n,
                            const int * const values)
 {
-  int_rbt_ptr tmp = int_rbt_insert_recurvise(root, key ,n, values);
-  SET_TO_BLACK(tmp);
-  return tmp;
+  root = irbt_insert_recurvise(root, key , n, values);
+  SET_TO_BLACK(root);
+  return(root);
 }
 
-void int_rbt_print_tree(int_rbt_ptr root, const int n) {
+void irbt_print_tree(irbt_ptr root, const int n) {
   if(root != NULL) {
-    Rprintf("Key: %i Value(s):", int_rbt_key(root));
+    Rprintf("Key: %i Value(s):", irbt_key(root));
     for(int i = 0; i < n; ++i)
       Rprintf(" %i" , root->values[i]);
     Rprintf("\n");
-    int_rbt_print_tree(root->child[LEFT], n);
-    int_rbt_print_tree(root->child[RIGHT], n);
+    irbt_print_tree(root->child[LEFT], n);
+    irbt_print_tree(root->child[RIGHT], n);
   }
 }
 
-void int_rbt_free(int_rbt_ptr root) {
+void irbt_free(irbt_ptr root) {
   if(root != NULL) {
-    int_rbt_free(root->child[LEFT]);
-    int_rbt_free(root->child[RIGHT]);
-    FREE(root);
+    irbt_free(root->child[LEFT]);
+    irbt_free(root->child[RIGHT]);
+    free(root);
   }
 }
 
-int_rbt_ptr int_rbt_merge_trees(int_rbt_ptr dst, int_rbt_ptr src, const int n)
+irbt_ptr* make_ptr_to_irbt(const int n) {
+  irbt_ptr* hash_table = malloc(n*sizeof(irbt));
+  if(hash_table == NULL)
+    error("Failed to allocate pointer for hash_table.\n");
+  for(int i = 0; i < n; ++i)
+    hash_table[i] = NULL;
+  return(hash_table);
+}
+
+
+irbt_ptr irbt_merge_trees(irbt_ptr dst, irbt_ptr src, const int n)
 {
   if(src != NULL) {
-    dst = int_rbt_merge_trees(dst, src->child[LEFT], n);
-    dst = int_rbt_merge_trees(dst, src->child[RIGHT], n);
-    return(int_rbt_insert(dst, int_rbt_key(src), n , src->values));
+    dst = irbt_merge_trees(dst, src->child[LEFT], n);
+    dst = irbt_merge_trees(dst, src->child[RIGHT], n);
+    return(irbt_insert(dst, irbt_key(src), n , src->values));
   }
   else
     return dst;
 }
 
-int int_rbt_size(int_rbt_ptr root) {
+int irbt_size(irbt_ptr root) {
   if(root != NULL)
-    return(1 + int_rbt_size(root->child[LEFT]) +
-            int_rbt_size(root->child[RIGHT]));
+    return(1 + irbt_size(root->child[LEFT]) +
+            irbt_size(root->child[RIGHT]));
   else
     return 0;
 }
 
-int* int_rbt_values_ptr(int_rbt_ptr root) {
+int* irbt_values_ptr(irbt_ptr root) {
   return (root->values);
 }
 
-int_rbt_ptr int_rbt_left_child(int_rbt_ptr root) {
+irbt_ptr irbt_left_child(irbt_ptr root) {
   return (root->child[LEFT]);
 }
 
-int_rbt_ptr int_rbt_right_child(int_rbt_ptr root) {
+irbt_ptr irbt_right_child(irbt_ptr root) {
   return (root->child[RIGHT]);
 }
