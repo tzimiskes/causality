@@ -8,7 +8,7 @@ static inline ill_ptr ill_instantiate(int key, int value) {
     error("Failed to instaniate linked list!\n");
   tmp->key =  key;
   tmp->value = value;
-  tmp->child = NULL;
+  tmp->next = NULL;
   return(tmp);
 }
 
@@ -17,15 +17,15 @@ ill_ptr ill_insert(ill_ptr root, int key, int value) {
     return(ill_instantiate(key, value));
   else {
     ill_ptr tmp = root;
-    while(tmp->child != NULL)
-      tmp = tmp->child;
-    tmp->child = ill_instantiate(key, value);
+    while(tmp->next != NULL)
+      tmp = tmp->next;
+    tmp->next = ill_instantiate(key, value);
     return(root);
   }
 }
 
 void ill_insert2(ill_ptr* root, int key, int value, int i, ill_ptr nodes) {
-    nodes[i].child = *root;
+    nodes[i].next = *root;
     nodes[i].key   = key;
     nodes[i].value = value;
     *root          = &nodes[i];
@@ -45,30 +45,30 @@ void ill_insert_by_value(ill_ptr* root, int key, int value,
     return;
   }
   if((*root)->value < value) {
-    nodes[i].child = *root;
+    nodes[i].next = *root;
     *root          = &nodes[i];
     return;
   }
   // else loop through the nodes
   ill_ptr tmp = *root;
-  while(tmp->child != NULL) {
-    if(tmp->child->value < value) {
-      nodes[i].child = tmp->child;
-      tmp->child     = &nodes[i];
+  while(tmp->next != NULL) {
+    if(tmp->next->value < value) {
+      nodes[i].next = tmp->next;
+      tmp->next     = &nodes[i];
       return;
     }
-    tmp = tmp->child;
+    tmp = tmp->next;
   }
-  // if child is NULL instantiate it
-  tmp->child = &nodes[i];
+  // if next is NULL instantiate it
+  tmp->next = &nodes[i];
 }
 
 void ill_set_next(ill_ptr root, ill_ptr next) {
-  root->child = next;
+  root->next = next;
 }
 
 ill_ptr ill_next(ill_ptr root) {
-  return(root->child);
+  return(root->next);
 }
 
 int ill_key(ill_ptr root) {
@@ -81,7 +81,7 @@ int ill_value(ill_ptr root) {
 
 void ill_free(ill_ptr root) {
   while(root != NULL) {
-    ill_ptr next = root->child;
+    ill_ptr next = root->next;
     free(root);
     root = next;
   }
@@ -99,7 +99,7 @@ ill_ptr ill_search(ill_ptr root, const int key) {
     if(root-> key == key)
       return root;
     else
-      root = root->child;
+      root = root->next;
   }
   return root; /* root is NULL */
 }
@@ -123,6 +123,6 @@ ill_ptr create_ill_ptr(const int n) {
 void ill_print(ill_ptr root) {
   while(root != NULL) {
     Rprintf("Key: %i Value: %i\n", root->key, root->value);
-    root = root->child;
+    root = root->next;
   }
 }

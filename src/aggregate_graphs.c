@@ -2,12 +2,10 @@
 #include"headers/int_redblacktree.h"
 #include"headers/edgetypes.h"
 
-
 /* 1   2   3   4   5   6   7   8   9   10  11
  * <-- --- --> <~~ ~~> <++ ++> <-o o-> <-> o-o
  */
 #define NUM_EDGES_STORED 11
-
 
 /*
  * There is almost certainly a better way to do this, but as it currently stands
@@ -25,14 +23,26 @@ static const int ARR_CIRCLE       [11] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
 static const int ARR_BIDIRECTED   [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
 static const int ARR_CIRCLECIRCLE [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
 
-
-
+/*
+ * converts irbt to matrix
+ */
 void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             const int n_rows , const int parent, int* index,
                             irbt_ptr root);
+/*
+ * FUNCTION_NAME takes in an edge (parent, child, edge) and then returns a
+ * pointer to of the arrays above. That pointer is used to increment
+ * the count of the particular edge type by 1 in the red black tree
+ */
+void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge);
 
-const int* edge_decider(int parent, int child, int edge);
-SEXP c_dag_to_rbt(SEXP cgraphs) {
+/*
+ * aggregate_cgraphs takes in a list of cgraphs and then reduces them to a new
+ * aggregated cgraph object. The function acomplishes this by turning each
+ * cgraph into a red black tree (irbt), and then combining the trees into one
+ * The final tree is then converted into a matrix and returned
+ */
+SEXP cf_aggregate_cgraphs(SEXP cgraphs) {
 
   const int n_graphs = length(cgraphs);
   const int n_nodes = length(VECTOR_ELT(VECTOR_ELT(cgraphs, 0), NODES));
@@ -56,18 +66,19 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
       const int parent = edges_ptr[i             ];
       const int child  = edges_ptr[i + n_edges   ];
       const int edge   = edges_ptr[i + n_edges_t2];
-      const int* foo = edge_decider(parent, child, edge);
+      //
+      //
+      // for example (1,0, -->) would become (1,0, <--)
+      /* determine how to add the edge to the irbt. determine_edge_array figures
+       * out if the array will be forwards or backwards (if applicable)
+       * and then if (p)
+       *
+       */
+      add_edge_to_irbt(&tree, parent, child, edge);
 
-      if(parent < child)
-        tree[parent] = irbt_insert(tree[parent], child, NUM_EDGES_STORED, foo);
-      else
-        tree[child]  = irbt_insert(tree[child], parent, NUM_EDGES_STORED, foo);
     }
-    UNPROTECT(2);
-
+    UNPROTECT(2); /* unprotect R objects */
   }
-
-
   //reduce  all trees to the base tree, which is an alias for tree[0]
   // "easy" to parallelize
   irbt_ptr* base = trees[0];
@@ -78,10 +89,11 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
       base[j] = irbt_merge_trees(base[j], src[j], NUM_EDGES_STORED);
     }
   }
-
-
-  // free all the memory except the base tree
-  // IF YOU TRY TO ACCESS ANY OF THE OTHER TREES PREPARE FOR SEG FAULTS
+ /*
+  * free all the memory except the base tree
+  * this is why i starts at 1 in the follorwing for loop; base = trees[0]
+  * IF YOU TRY TO ACCESS ANY OF THE OTHER TREES PREPARE FOR SEG FAULTS
+  */
   for(int i = 1; i < n_graphs; ++i) {
     for(int j = 0; j <  n_nodes; ++j) {
       irbt_free(trees[i][j]);
@@ -95,10 +107,10 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
   for(int i = 0; i < n_nodes; ++i)
     n_rows += irbt_size(base[i]);
 
-  SEXP output_matrix = PROTECT(allocMatrix(REALSXP, n_rows,  NUM_EDGES_STORED + 2));
+  SEXP output_matrix = PROTECT(allocMatrix(REALSXP, n_rows, NUM_EDGES_STORED + 2));
   double* output_matrix_ptr = REAL(output_matrix);
   // 0 the matrix
-  memset(output_matrix_ptr, 0, n_rows*(NUM_EDGES_STORED +2)* sizeof(double));
+  memset(output_matrix_ptr, 0, n_rows*(NUM_EDGES_STORED + 2)* sizeof(double));
 
   int index = 0;
   for(int i = 0; i < n_nodes; ++i)
@@ -107,12 +119,13 @@ SEXP c_dag_to_rbt(SEXP cgraphs) {
   // free the last tree
   free(base);
 
-
   UNPROTECT(1);
   return(output_matrix);
 }
 
-
+/*
+ * Convert an integer red black tree to a matrix
+ */
 void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             const int n_rows , const int parent, int* index,
                             irbt_ptr root)
@@ -131,43 +144,67 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
   }
 }
 
-const int* edge_decider(int parent, int child, int edge) {
-
+void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge) {
+  const int* array;
+  // all these edges are undirected, so we just first check these
   switch(edge) {
   case UNDIRECTED:
-      return ARR_UNDIRECTED;
+      array = ARR_UNDIRECTED;
   case CIRCLECIRCLE:
-    return ARR_CIRCLECIRCLE;
+    array = ARR_CIRCLECIRCLE;
   case BIDIRECTED:
-    return ARR_BIDIRECTED;
+    array = ARR_BIDIRECTED;
   }
-
+  // use the fact that parent < child or child < parent to determine
+  // whether or not an edge should be forward or backward
   if(parent < child) {
     switch(edge) {
-    case DIRECTED:
-      return ARR_DIRECTED;
-    case PLUSPLUSARROW:
-      return ARR_PLUS;
-    case SQUIGGLEARROW:
-      return ARR_SQUIGGLE;
-    case CIRCLEARROW:
-      return ARR_CIRCLE;
+    case DIRECTED: {
+      array = ARR_DIRECTED;
+      break;
+    }
+    case PLUSPLUSARROW: {
+      array = ARR_PLUS;
+      break;
+    }
+    case SQUIGGLEARROW: {
+      array = ARR_SQUIGGLE;
+      break;
+    }
+    case CIRCLEARROW: {
+      array = ARR_CIRCLE;
+      break;
+    }
     default:
       error("failed to bin edge. Unrecognized edge type!\n");
     }
   }
   else {
     switch(edge) {
-    case DIRECTED:
-      return ARR_BACKDIRECTED;
-    case PLUSPLUSARROW:
-      return ARR_BACKPLUS;
-    case SQUIGGLEARROW:
-      return ARR_BACKSQUIGGLE;
-    case CIRCLEARROW:
-      return ARR_BACKCIRCLE;
+    case DIRECTED: {
+      array = ARR_BACKDIRECTED;
+      break;
+    }
+    case PLUSPLUSARROW: {
+      array = ARR_BACKPLUS;
+      break;
+    }
+    case SQUIGGLEARROW: {
+      array = ARR_BACKSQUIGGLE;
+      break;
+    }
+    case CIRCLEARROW: {
+      array = ARR_BACKCIRCLE;
+      break;
+    }
     default:
       error("failed to bin edge. Unrecognized edge type!\n");
     }
   }
+  if(parent < child)
+    (*root)[parent] = irbt_insert((*root)[parent], child,
+                                  NUM_EDGES_STORED, array);
+  else
+    (*root)[child]  = irbt_insert((*root)[child], parent,
+                                  NUM_EDGES_STORED, array);
 }

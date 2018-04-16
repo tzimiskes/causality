@@ -30,7 +30,7 @@ static int apply_rule(int (*meek_rule) (int, int, cmpct_cg_ptr), int* edges_ptr,
  * the four meek rules
  * it currently returns an updated edge matrix
  */
-SEXP meek_rules(SEXP pdag) {
+SEXP cf_meek_rules(SEXP pdag) {
 
   int n_nodes    = length(VECTOR_ELT(pdag, NODES));
   SEXP edges     = PROTECT(duplicate(VECTOR_ELT(pdag, EDGES)));
@@ -283,7 +283,7 @@ static int meek4(const int node1, const int node2, cmpct_cg_ptr cg_ptr) {
 }
 
 /*
- * apply_meek_rule applied the selected meek rule (passed in by function pointer)
+ * apply_meek_rule applies the selected meek rule (passed in by pointer)
  * it returns 1 if the rule was applied, and 0 if not
  */
 static int apply_rule(int (*meek_rule) (int, int, cmpct_cg_ptr), int* edges_ptr,
@@ -296,7 +296,7 @@ static int apply_rule(int (*meek_rule) (int, int, cmpct_cg_ptr), int* edges_ptr,
     case UNORIENTABLE :
       return 0;
   case ORIENT : {
-      orient_cmpct_cg_edge(cg_ptr, node1, node2); /* update the edge in cg */
+      orient_cmpct_cg_edge(cg_ptr, node1, node2, ill_insert2); /* orient edge */
       edges_ptr[i + 2*n_edges] = DIRECTED;
       break;
   }
@@ -305,7 +305,7 @@ static int apply_rule(int (*meek_rule) (int, int, cmpct_cg_ptr), int* edges_ptr,
       edges_ptr[i            ] = node2;
       edges_ptr[i + n_edges  ] = node1;
       edges_ptr[i + 2*n_edges] = DIRECTED;
-      orient_cmpct_cg_edge(cg_ptr, node2, node1); /* update the edge in cg */
+      orient_cmpct_cg_edge(cg_ptr, node2, node1, ill_insert2); /* orient edge */
       break;
     }
   }

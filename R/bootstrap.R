@@ -19,7 +19,7 @@ aggregate_graphs <- function(cgraphs, raw = FALSE) {
     .prepare_cgraph_for_call(cgraph, F, T, T)
   })
 
-  table <- .Call("c_dag_to_rbt", cgraphs)
+  table <- .Call("cf_aggregate_cgraphs", cgraphs)
   table <- as.data.frame(table)
 
   cgraph <- cgraphs[[1]]

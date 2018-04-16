@@ -1,16 +1,6 @@
 // This RBT implementation is adapted from the Eternally Confuzzled tutorial
 // http://www.eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx
-/*
-#ifdef _MSC_VER
-#define ALIGNED_ALLOCATE(ptr, align, size) ptr = _aligned_malloc(size, align)
-#define FREE(ptr) _aligned_free(ptr)
-#else
-#define _XOPEN_SOURCE 600
-#define ALIGNED_ALLOCATE(ptr, align, size) posix_memalign((void**) &(ptr), \
-                                                        (align), (size))
-#define FREE(ptr) free(ptr)
-#endif
-*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>

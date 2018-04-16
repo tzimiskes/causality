@@ -17,7 +17,7 @@
 
   # creating a "hash table" makes the next operation faster
   tmp <-.prepare_cgraph_for_call(dag, nodes = F, edges = T, adj = F)
-  tmp <-.Call("c_dag_to_pattern", tmp)
+  tmp <-.Call("cf_dag_to_pattern", tmp)
   dag$edges[, 1] <- dag$nodes[tmp[, 1] + 1]
   dag$edges[, 2] <- dag$nodes[tmp[, 2] + 1]
   dag$edges[, 3] <- c("-->","---")[tmp[, 3]]
@@ -69,7 +69,7 @@ topological_sort <- function(dag) {
   nr <- nrow(dag$edges)
   dag$edges <- as.integer(dag$edges)
   dim(dag$edges) <- c(nr, nc)
-  tmp<-tryCatch(.Call("c_topological_sort", dag), error = function(e) NA)
+  tmp<-tryCatch(.Call("cf_topological_sort", dag), error = function(e) NA)
   return(dag$nodes[tmp + 1])
 }
 
@@ -89,7 +89,7 @@ topological_sort <- function(dag) {
   # vector. This is done so the C end is simpler
  tmp <- .prepare_cgraph_for_call(dag, F, T, F)
   # now that we have an integer matrix, call the C function
-  order <- tryCatch(.Call("c_topological_sort", tmp), error = function(e) NULL)
+  order <- tryCatch(.Call("cf_topological_sort", tmp), error = function(e) NULL)
   if(is.null(order))
     return(NULL)
   else

@@ -1,10 +1,10 @@
-#ifndef _ILL_
-#define _ILL_
+#ifndef _ILL_H
+#define _ILL_H
 
 typedef struct ill* ill_ptr;
 // definition of each node in a linked list
 typedef struct ill {
-  ill_ptr child;
+  ill_ptr next;
   int key;
   int value;
 } ill;

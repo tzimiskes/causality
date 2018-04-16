@@ -19,7 +19,7 @@
 // topological sort returns a SEXP because there's an R fuction which
 // the user can call to get the topoligical sort
 
-SEXP c_topological_sort(SEXP dag);
+SEXP cf_topological_sort(SEXP dag);
 void visit(const int i,
            int* const restrict marked,
            int* const restrict n_marked,
@@ -33,7 +33,7 @@ void visit(const int i,
 // so its return type is SEXP
 
 cmpct_cg_ptr order_edges(SEXP dag, SEXP top_sort, const int n_nodes);
-SEXP c_dag_to_pattern(SEXP dag);
+SEXP cf_dag_to_pattern(SEXP dag);
 
 // The following two functions implement the topological sort
 // algorithm as found in CLRS
@@ -59,7 +59,7 @@ void visit(const int i,
   }
 }
 
-SEXP c_topological_sort(SEXP dag) {
+SEXP cf_topological_sort(SEXP dag) {
 
   const int n_nodes = length(VECTOR_ELT(dag, NODES));
   // the hash table stores the children of each node
@@ -160,12 +160,12 @@ cmpct_cg_ptr order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
   return(cg);
 }
 
-SEXP c_dag_to_pattern(SEXP dag) {
+SEXP cf_dag_to_pattern(SEXP dag) {
   // get the number of nodes
   const int n_nodes = length(VECTOR_ELT(dag, NODES));
 
   // get the topological order
-  SEXP top_order                 = PROTECT(c_topological_sort(dag));
+  SEXP top_order                 = PROTECT(cf_topological_sort(dag));
   const int* const top_order_ptr = INTEGER(top_order);
 
   // get the parent list of each node from the function order edges
