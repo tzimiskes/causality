@@ -84,19 +84,29 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
                            "relative_majority"        = relative_majority,
                            "square_relative_majority" = square_relative_majority
   )
-
+  c( "<~~",
+    "~~>", "<++", "++>","<-o", "o->", "<->", "o-o")
   calculate_edge <- function(src, dst, x) {
     # these need to be chars because R is dumb
     return(switch (as.character(x),
                    "0" = c(src, dst, "---"),
                    "1" = c(dst, src, "-->"),
-                   "2" = c(src, dst, "-->"),
-                   "3" = c(src, dst, "---")
+                   "2" = c(src, dst, "---"),
+                   "3" = c(src, dst, "-->"),
+                   "4" = c(dst, src, "~~>"),
+                   "5" = c(src, dst, "~~>"),
+                   "6" = c(src, dst, "++>"),
+                   "7" = c(src, dst, "++>"),
+                   "8" = c(dst, src, "o->"),
+                   "9" = c(src, dst, "o->"),
+                   "10" = c(src, dst, "<->"),
+                   "11" = c(src, dst, "o-o")
+
     ))
   }
 
   df <- agg_pdags$table
-  df <- df[ifelse ( rowSums(df[,3:5]) > threshold , T , F),]
+  df <- df[rowSums(df[, -c(1:2)]) > threshold,]
   nodes <- agg_pdags$nodes
   n_edges <- nrow(df)
   if (n_edges == 0) {
