@@ -88,19 +88,19 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
     "~~>", "<++", "++>","<-o", "o->", "<->", "o-o")
   calculate_edge <- function(src, dst, x) {
     # these need to be chars because R is dumb
-    return(switch (as.character(x),
-                   "0" = c(src, dst, "---"),
-                   "1" = c(dst, src, "-->"),
-                   "2" = c(src, dst, "---"),
-                   "3" = c(src, dst, "-->"),
-                   "4" = c(dst, src, "~~>"),
-                   "5" = c(src, dst, "~~>"),
-                   "6" = c(src, dst, "++>"),
-                   "7" = c(src, dst, "++>"),
-                   "8" = c(dst, src, "o->"),
-                   "9" = c(src, dst, "o->"),
-                   "10" = c(src, dst, "<->"),
-                   "11" = c(src, dst, "o-o")
+    return(switch(as.character(x),
+                 "0"  = c(src, dst, "---"),
+                 "1"  = c(dst, src, "-->"),
+                 "2"  = c(src, dst, "---"),
+                 "3"  = c(src, dst, "-->"),
+                 "4"  = c(dst, src, "~~>"),
+                 "5"  = c(src, dst, "~~>"),
+                 "6"  = c(src, dst, "++>"),
+                 "7"  = c(src, dst, "++>"),
+                 "8"  = c(dst, src, "o->"),
+                 "9"  = c(src, dst, "o->"),
+                 "10" = c(src, dst, "<->"),
+                 "11" = c(src, dst, "o-o")
 
     ))
   }
@@ -115,7 +115,7 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
   }
   edges <- matrix(data = "", nrow = n_edges, ncol = 3)
   for (i in 1:n_edges) {
-    edges[i,] <- calculate_edge(df[i,1], df[i,2], voting_method(df[i, 3:5]))
+    edges[i,] <- calculate_edge(df[i,1], df[i,2], voting_method(df[i, -c(1:2)]))
   }
   adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
   return(cgraph(nodes, adjacencies, edges))
