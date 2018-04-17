@@ -28,6 +28,8 @@ aggregate_graphs <- function(cgraphs, raw = FALSE) {
     names(table) <- c("node1","node2", "<--", "---", "-->", "<~~",
                       "~~>", "<++", "++>","<-o", "o->", "<->", "o-o")
 
+  table <- table[, c(T, T, colSums(table[, -(1:2)]) != 0)]
+
   output <- list(nodes = cgraph$nodes, table = table)
   class(output) <- c("aggregated-cgraphs")
   return(output)

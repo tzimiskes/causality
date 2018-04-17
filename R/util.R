@@ -55,3 +55,15 @@
     cgraph$nodes <- unname(unlist(hash))
   return(cgraph)
 }
+
+cgraph_from_edges <- function(edges) {
+ nodes <- c()
+ for(i in 1:nrow(edges)) {
+   if(!(edges[i, 1] %in% nodes))
+     nodes <- c(edges[i, 1], nodes)
+   if(!(edges[i, 2] %in% nodes))
+     nodes <- c(edges[i, 2], nodes)
+  }
+ adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
+  return(cgraph(nodes, adjacencies, edges))
+}

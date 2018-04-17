@@ -145,60 +145,66 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
 }
 
 void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge) {
-  const int* array;
+  const int* array = NULL;
   // all these edges are undirected, so we just first check these
   switch(edge) {
-  case UNDIRECTED:
+    case UNDIRECTED: {
       array = ARR_UNDIRECTED;
-  case CIRCLECIRCLE:
-    array = ARR_CIRCLECIRCLE;
-  case BIDIRECTED:
-    array = ARR_BIDIRECTED;
+      break;
+    }
+    case CIRCLECIRCLE: {
+      array = ARR_CIRCLECIRCLE;
+      break;
+    }
+    case BIDIRECTED:
+      array = ARR_BIDIRECTED;
   }
   // use the fact that parent < child or child < parent to determine
   // whether or not an edge should be forward or backward
-  if(parent < child) {
-    switch(edge) {
-    case DIRECTED: {
-      array = ARR_DIRECTED;
-      break;
+  if(array == NULL) {
+    if(parent < child) {
+      switch(edge) {
+      case DIRECTED: {
+        array = ARR_DIRECTED;
+        break;
+      }
+      case PLUSPLUSARROW: {
+        array = ARR_PLUS;
+        break;
+      }
+      case SQUIGGLEARROW: {
+        array = ARR_SQUIGGLE;
+        break;
+      }
+      case CIRCLEARROW: {
+        array = ARR_CIRCLE;
+        break;
+      }
+      default:
+        error("failed to bin edge. Unrecognized edge type!\n");
+      }
     }
-    case PLUSPLUSARROW: {
-      array = ARR_PLUS;
-      break;
-    }
-    case SQUIGGLEARROW: {
-      array = ARR_SQUIGGLE;
-      break;
-    }
-    case CIRCLEARROW: {
-      array = ARR_CIRCLE;
-      break;
-    }
-    default:
-      error("failed to bin edge. Unrecognized edge type!\n");
-    }
-  }
-  else {
-    switch(edge) {
-    case DIRECTED: {
-      array = ARR_BACKDIRECTED;
-      break;
-    }
-    case PLUSPLUSARROW: {
-      array = ARR_BACKPLUS;
-      break;
-    }
-    case SQUIGGLEARROW: {
-      array = ARR_BACKSQUIGGLE;
-      break;
-    }
-    case CIRCLEARROW: {
-      array = ARR_BACKCIRCLE;
-      break;
-    }
-    default:
-      error("failed to bin edge. Unrecognized edge type!\n");
+    else {
+      switch(edge) {
+      case DIRECTED: {
+        array = ARR_BACKDIRECTED;
+        break;
+      }
+      case PLUSPLUSARROW: {
+        array = ARR_BACKPLUS;
+        break;
+      }
+      case SQUIGGLEARROW: {
+        array = ARR_BACKSQUIGGLE;
+        break;
+      }
+      case CIRCLEARROW: {
+        array = ARR_BACKCIRCLE;
+        break;
+      }
+      default:
+        error("failed to bin edge. Unrecognized edge type!\n");
+      }
     }
   }
   if(parent < child)
