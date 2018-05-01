@@ -87,8 +87,7 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
                            "relative_majority"        = relative_majority,
                            "square_relative_majority" = square_relative_majority
   )
-  c( "<~~",
-    "~~>", "<++", "++>","<-o", "o->", "<->", "o-o")
+
   calculate_edge <- function(src, dst, x) {
     # these need to be chars because R is dumb
     return(switch(as.character(x),
@@ -122,5 +121,40 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
   }
   adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
   return(cgraph(nodes, adjacencies, edges))
+}
 
+
+vote2 <- function(agg_pdags) {
+  df <- agg_pdags$table
+  df$'!' <- 1- rowSums(df[, -(1:2)])
+
+  plurality <- function(x) {
+    max <- max(x)
+    n_max <- 0
+    for (value in x) {
+      if (value == max) {
+        n_max <- n_max + 1
+      }
+    }
+    if (n_max > 1)
+      return(0)
+    else
+      return(match(max, x))
+  }
+
+
+  edges <- c()
+  for (i in 1:nrow(df)) {
+    edge_type <- plurality(df[i, -c(1:2)])
+    if (edge_type == 0 || edge_type == 2)
+      edges <- c(edges, df[i, 1], df[i, 2], "---" )
+    else if(edge_type == 1)
+      edges <- c(edges, df[i, 2], df[i, 1], "-->")
+    else if(edge_type == 3)
+      edges <- c(edges, df[i, 1], df[i, 2], "-->" )
+  }
+  nodes <- agg_pdags$nodes
+  edges <- matrix(edges, ncol = 3, byrow = T)
+  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
+  return(cgraph(nodes, adjacencies, edges))
 }
