@@ -20,18 +20,6 @@
 #' @seealso \code{\link{dag_to_pattern}}
 # TODO(arix) redo type checking
 shd <- function(pdag1, pdag2) {
-  if (!any(c("pattern", "pdag") %in% class(pdag1))) {
-    if ("dag" %in% class(pdag1))
-      stop("pdag1 is of class dag, not pattern. Convert it to pattern via dag_to_pattern first")
-    else
-      stop("pdag1 is not a pattern or pdag.")
-  }
-  if (!any(c("pattern", "pdag") %in% class(pdag2))) {
-    if ("dag" %in% class(pdag2))
-      stop("pdag2 is of class dag, not pattern. Convert it to pattern via dag_to_pattern first")
-    else
-      stop("pdag2 is not a pattern or pdag")
-  }
   # generate the adjacency list of the children of pdag1
   true_children <- list()
   for (i in 1:nrow(pdag1$edges)) {
