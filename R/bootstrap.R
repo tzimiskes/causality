@@ -158,3 +158,39 @@ vote2 <- function(agg_pdags) {
   adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
   return(cgraph(nodes, adjacencies, edges))
 }
+
+
+votek<- function(agg_pdags, k) {
+  df <- agg_pdags$table
+  df$'!' <- 1- rowSums(df[, -(1:2)])/k
+
+  plurality <- function(x) {
+    max <- max(x)
+    n_max <- 0
+    for (value in x) {
+      if (value == max) {
+        n_max <- n_max + 1
+      }
+    }
+    if (n_max > 1)
+      return(0)
+    else
+      return(match(max, x))
+  }
+
+
+  edges <- c()
+  for (i in 1:nrow(df)) {
+    edge_type <- plurality(df[i, -c(1:2)])
+    if (edge_type == 0 || edge_type == 2)
+      edges <- c(edges, df[i, 1], df[i, 2], "---" )
+    else if(edge_type == 1)
+      edges <- c(edges, df[i, 2], df[i, 1], "-->")
+    else if(edge_type == 3)
+      edges <- c(edges, df[i, 1], df[i, 2], "-->" )
+  }
+  nodes <- agg_pdags$nodes
+  edges <- matrix(edges, ncol = 3, byrow = T)
+  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
+  return(cgraph(nodes, adjacencies, edges))
+}
