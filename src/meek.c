@@ -30,12 +30,12 @@ static int apply_rule(int (*meek_rule) (int, int, cmpct_cg_ptr), int* edges_ptr,
  * the four meek rules
  * it currently returns an updated edge matrix
  */
-SEXP cf_meek_rules(SEXP pdag) {
+SEXP cf_meek_rules(SEXP Pdag) {
 
-  int n_nodes    = length(VECTOR_ELT(pdag, NODES));
-  SEXP edges     = PROTECT(duplicate(VECTOR_ELT(pdag, EDGES)));
-  int* edges_ptr = INTEGER(edges);
-  int n_edges    = nrows(edges);
+  int n_nodes    = length(VECTOR_ELT(Pdag, NODES));
+  SEXP Edges     = PROTECT(duplicate(VECTOR_ELT(Pdag, EDGES)));
+  int* edges_ptr = INTEGER(Edges);
+  int n_edges    = nrows(Edges);
 
    /*
    * generate underlying causal graph represntation (in this case, a compact
@@ -76,7 +76,7 @@ SEXP cf_meek_rules(SEXP pdag) {
   // free malloc'd memory
   free_cmpct_cg(cg_ptr);
   UNPROTECT(1);
-  return(edges);
+  return(Edges);
 }
 
 /*

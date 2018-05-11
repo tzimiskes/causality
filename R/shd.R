@@ -39,7 +39,6 @@ shd <- function(pdag1, pdag2) {
     pdag2_edge <- as.list(est_children[[pdag1_edge[1]]])[[pdag1_edge[2]]]
     if (is.null(pdag2_edge)) {
       if (pdag1_edge[3] == "-->") {
-        print(pdag1_edge)
         distance <- distance + 1
       }
       # if pdag1_edge is not of type -->, it is --- since (true_src, true_dst,
@@ -49,14 +48,12 @@ shd <- function(pdag1, pdag2) {
         pdag2_edge <- as.list(est_children[[pdag1_edge[2]]])[[pdag1_edge[1]]]
         # it isn't
         if (is.null(pdag2_edge) || pdag2_edge != "---") {
-          print(pdag1_edge)
           distance <- distance + 1
         }
       }
       # pdag2_edge is not null
       # if the orientations don't match, pdag2_edge in not oriented in
     } else if( pdag2_edge != pdag1_edge[3]) {
-      print(pdag1_edge)
       distance <- distance + 1
     }
   }
@@ -67,10 +64,20 @@ shd <- function(pdag1, pdag2) {
     if (is.null(pdag1_edge)) {
       pdag1_edge <- as.list(true_children[[pdag2_edge[2]]])[[pdag2_edge[1]]]
       if (is.null(pdag1_edge)) {
-        print(pdag2_edge)
         distance <- distance + 1
       }
     }
   }
   return(distance)
+}
+
+
+shd2 <- function(pdag1, pdag2, k = 1) {
+  #if(!is.cgraph(pdag1))
+  #  stop("Input is not a cgraph")
+  #if(!is.nonlatent(pdag1))
+  #  stop("input must only contain nonlatent model edge types")
+  pdag1 <- .prepare_cgraph_for_call(pdag1, nodes = F, edges = T, adjacencies = F)
+  pdag2 <- .prepare_cgraph_for_call(pdag2, nodes = F, edges = T, adjacencies = F)
+  .Call("cf_structural_hamming_distance", pdag1, pdag2, k)
 }
