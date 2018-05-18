@@ -43,8 +43,8 @@ void fill_in_cmpct_cg(cmpct_cg_ptr cg, int* edges_ptr,
   ill_ptr nodes    = parents[cg->n_nodes];
   // fill in cg
   for(int i = 0; i < n_edges; ++i) {
-    int parent = edges_ptr[i                 ];
-    int child  = edges_ptr[i + n_edges       ];
+    int parent     = edges_ptr[i             ];
+    int child      = edges_ptr[i + n_edges   ];
     int edge_type  = edges_ptr[i + n_edges_2t];
     insert_fp(&parents[child], parent, edge_type, i, nodes);
   }
@@ -114,6 +114,19 @@ int edge_undirected_in_cg(cmpct_cg_ptr cg, const int node1, const int node2)  {
     if(ill_key(node2_parents) == node1)
     return ill_value(node2_parents) == UNDIRECTED;
     node2_parents = ill_next(node2_parents);
+  }
+  return 0;
+}
+/*
+ * edge_directed_in_cg returns whether or not the edge (parent, child, -->)
+ * is in the causality graph pointer, cg_ptr
+ */
+int edge_directed_in_cg(cmpct_cg_ptr cg, const int parent, const int child) {
+  ill_ptr parents = cg->parents[child];
+  while(parents != NULL) {
+    if(ill_key(parents) == parent)
+      return ill_value(parents) == DIRECTED;
+    parents = ill_next(parents);
   }
   return 0;
 }

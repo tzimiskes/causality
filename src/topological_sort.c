@@ -188,7 +188,7 @@ SEXP cf_dag_to_pattern(SEXP dag) {
     // so we don't need to check to see its unordered
     // look at the edges that go into y
 
-    const int y        = top_order_ptr[i];
+    const int y     = top_order_ptr[i];
     // parents of y
     ill_ptr poy_ptr = parents[y];
 
@@ -198,7 +198,7 @@ SEXP cf_dag_to_pattern(SEXP dag) {
     if(poy_ptr != NULL) {
 
       const int x        = ill_key(poy_ptr);
-      ill_ptr pox_ptr = parents[x];
+      ill_ptr pox_ptr    =  parents[x];
 
       // for each parent of x, w, where w -> x is compelled
       // check to see if w forms the chain w -> x -> y
@@ -245,27 +245,16 @@ SEXP cf_dag_to_pattern(SEXP dag) {
       // by starting at the second parent (might not exist),
       // we avoid the need to check to see if z = x
       // STEP 7.5: look for an unshielded collider
-      int unshielded_collider = 1;
-      ill_ptr poy_dup_ptr = ill_next(poy_ptr);
-      if(poy_dup_ptr == NULL) {
-        unshielded_collider = 0;
-      }
+      int unshielded_collider = 0;
+      ill_ptr poy_dup_ptr = parents[y];
       while(poy_dup_ptr != NULL) {
-        const int z = ill_key(poy_dup_ptr);
-        // reset parents of x
-        pox_ptr = parents[x];
-        // if x has no parents, we have an unshielded collider
-        if(pox_ptr == NULL)
-          goto STEP_89;
-
-        // if z is a parent of x, we do not have a shielded collider
-        while(pox_ptr != NULL) {
-          if(ill_key(pox_ptr) == z) {
-            unshielded_collider = 0;
+        if(ill_key(poy_dup_ptr) != x) {
+          const int z = ill_key(poy_dup_ptr);
+          // reset parents of x
+          if(!adjacent_in_cg(cg, x, z)) {
+            unshielded_collider = 1;
             goto STEP_89;
           }
-          else
-            pox_ptr = ill_next(pox_ptr);
         }
         poy_dup_ptr = ill_next(poy_dup_ptr);
       }
