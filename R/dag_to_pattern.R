@@ -20,7 +20,8 @@
   tmp <-.Call("cf_dag_to_pattern", tmp)
   dag$edges[, 1] <- dag$nodes[tmp[, 1] + 1]
   dag$edges[, 2] <- dag$nodes[tmp[, 2] + 1]
-  dag$edges[, 3] <- c("-->","---")[tmp[, 3]]
+  dag$edges[, 3] <- c(.DIRECTED,.UNDIRECTED)[tmp[, 3]]
+  class(dag) <- .PATTERN_CLASS
   return(dag)
 }
 
