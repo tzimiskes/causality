@@ -1,19 +1,4 @@
-bn_learn_to_cgraph <- function(bn_graph) {
-  # converts a learned graph of bn-class to a grpah of cgraph-class
-  if (!(class(bn_graph) == "bn"))
-    stop("Input is not of class bn!")
 
-  names <- names(bn_graph$nodes)
-  # get the adjacencies
-  adjacencies <- lapply(names, function(x) {
-    bn_graph$nodes[[x]]$nbr
-  }
-  )
-  names(adjacencies) <- names
-  # get the edges
-  edges <- cbind(unname(bn_graph$arcs), "-->")
-  return(cgraph(names, adjacencies, edges))
-}
 
 export_bnlearn_object_to_tetrad <- function(file, model) {
   # This function exports an object of bn-class in a TETRAD compatible form
@@ -98,7 +83,11 @@ import_from_tetrad_file <- function(file, type = "cgraph", sort = F) {
     return(tmp_cgraph)
 }
 
-convert_rcausal_to_cgraph <-function(graph) {
+as.cgraph <- function(graph) {
+  UseMethod("as.cgraph")
+}
+
+as.cgraph.rcausal <- function(graph) {
 
   edges <- graph$edges
   new_edges <- matrix("", nrow = length(edges), ncol = 3)
@@ -107,18 +96,44 @@ convert_rcausal_to_cgraph <-function(graph) {
     foo <- strsplit(edges[i], " ")[[1]]
     new_edges[i, 1] <- foo[1]
     new_edges[i, 2] <- foo[3]
-    if(foo[2] == "<->")
-      new_edges[i, 3] <- "---"
-    else
+    if(length(foo) == 3)
       new_edges[i, 3] <- foo[2]
+    else {
+      if(foo[5] == "dd")
+        new_edges[i, 3] <- .PLUSPLUS
+      else
+        new_edges[i, 3] <- .SQUIGGLE
+    }
   }
   adjacencies = .calculate_adjacencies_from_edges(new_edges, graph$nodes)
   cgraph <- cgraph(graph$nodes, adjacencies, new_edges)
 
   if(!is_valid_cgraph(cgraph)) {
-  warning("Input is not a valid cgraph object")
+    warning("Input is not a valid cgraph object")
   print(cgraph)
   }
 
   return(cgraph)
+}
+
+
+as.cgraph.fges <-as.cgraph.fges.discrete <- as.cgraph.fges.mixed <-
+  as.cgraph.fges <-as.cgraph.fges.discrete <- as.cgraph.fges.mixed <-
+  as.cgraph.pc <- as.cgraph.rcausal
+
+as.cgraph.bn <- function(bn_graph) {
+  # converts a learned graph of bn-class to a grpah of cgraph-class
+  if (!(class(bn_graph) == "bn"))
+    stop("Input is not of class bn!")
+
+  names <- names(bn_graph$nodes)
+  # get the adjacencies
+  adjacencies <- lapply(names, function(x) {
+    bn_graph$nodes[[x]]$nbr
+  }
+  )
+  names(adjacencies) <- names
+  # get the edges
+  edges <- cbind(unname(bn_graph$arcs), "-->")
+  return(cgraph(names, adjacencies, edges))
 }

@@ -1,7 +1,14 @@
-# edges that show up in pags
-.LATENT_EDGE_TYPES    <- c("-->", "~~>", "++>", "o->", "o-o")
-#edges that show up in pdags
-.NONLATENT_EDGE_TYPES <- c("-->", "---")
+.DIRECTED       <- "-->"
+.UNDIRECTED     <- "---"
+.PLUSPLUS       <- "++>"
+.SQUIGGLE       <- "~~>"
+.CIRCLEDIRECTED <- "o->"
+.CIRCLECIRCLE   <- "o-o"
+.BIDIRECTED     <- "<->"
 
-.DIRECTED <- "-->"
-.UNDIRECTED <- "---"
+# edges that show up in pags
+.LATENT_EDGE_TYPES    <- c(.DIRECTED, .SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED,
+                           .CIRCLECIRCLE)
+#edges that show up in pdags
+.NONLATENT_EDGE_TYPES <- c(.DIRECTED, .UNDIRECTED)
+

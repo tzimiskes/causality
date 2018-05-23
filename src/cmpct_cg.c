@@ -86,14 +86,14 @@ int adjacent_in_cg(cmpct_cg_ptr cg, const int node1, const int node2) {
   ill_ptr node1_parents = cg->parents[node1];
   while(node1_parents != NULL) {
     if(ill_key(node1_parents) == node2)
-    return 1;
+      return 1;
     node1_parents = ill_next(node1_parents);
   }
   // look through the parents of node2 to see if node1 is a parent
   ill_ptr node2_parents = cg->parents[node2];
   while(node2_parents != NULL) {
     if(ill_key(node2_parents) == node1)
-    return 1;
+      return 1;
     node2_parents = ill_next(node2_parents);
   }
   return 0;
