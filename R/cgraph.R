@@ -205,7 +205,14 @@ is_valid_cgraph <- function(graph) {
     }
   }
 
-  .calculate_adjacencies_from_edges(graph$edges, graph$nodes)
+  adjs <- .calculate_adjacencies_from_edges(graph$edges, graph$nodes)
+  for(node in names(adjs)) {
+    calculated_node_adjs <- adjs[[node]]
+    listed_node_adjs     <- graph$adjacencies[[node]]
+    intersection         <- intersect(calculated_node_adjs, listed_node_adjs)
+    if (!isTRUE(all.equal(intersection, listed_node_adjs)))
+      stop("adjacencies do not not match the nodes and edge!")
+  }
 
   # check to see if the graph is simple
   n_edges <- nrow(graph$edges)
@@ -229,4 +236,67 @@ is_valid_cgraph <- function(graph) {
     }
   }
   return(TRUE)
+}
+
+
+# create a generic function to handle converting non causality objects to
+# causality ones
+as.cgraph <- function(graph) {
+  if(is.cgraph(graph))
+    return(graph)
+  else
+    UseMethod("as.cgraph")
+}
+# rcausal uses different classes for each algorithm, this makes it necessary to
+# create this 'dummy' function to handle converting the algorithm output to
+# causality
+.as.cgraph.rcausal <- function(graph) {
+
+  edges <- graph$edges
+  new_edges <- matrix("", nrow = length(edges), ncol = 3)
+
+  for (i in 1:length(edges)) {
+    edge <- strsplit(edges[i], " ")[[1]]
+    new_edges[i, 1] <- edge[1]
+    new_edges[i, 2] <- edge[3]
+    if (length(edge) == 3)
+      new_edges[i, 3] <- edge[2]
+    else {
+      # tetrad use X1 --> X2 nl pd/dd to mark unconfounded paths in pags
+      # I think this is stupid, so we use ++>/ ~~> for dd/pd
+      if(edge[5] == "dd")
+        new_edges[i, 3] <- .PLUSPLUS # ++>
+      else
+        new_edges[i, 3] <- .SQUIGGLE # ~~>
+    }
+  }
+  adjacencies <- .calculate_adjacencies_from_edges(new_edges, graph$nodes)
+  cgraph      <- cgraph(graph$nodes, adjacencies, new_edges)
+
+  if (!is_valid_cgraph(cgraph))
+    stop("Input is not a valid cgraph object")
+  return(cgraph)
+}
+
+# tetrad sucks. this exists to support the generic as.cgraph function
+as.cgraph.fges <- as.cgraph.fges.discrete <- as.cgraph.fges.mixed   <-
+  as.cgraph.gfci <- as.cgraph.gfci.discrete <- as.cgraph.gfci.mixed <-
+  as.cgraph.pc   <- as.cgraph.cpc           <- as.cgraph.pcstable   <-
+  as.cgraph.cpcstable <- .as.cgraph.rcausal
+
+# converts bn objects to causality ones
+as.cgraph.bn <- function(graph) {
+  if (!(class(graph) == "bn"))
+    stop("Input is not of class bn!")
+
+  names <- names(graph$nodes)
+  # get the adjacencies
+  adjacencies <- lapply(names, function(x) {
+    graph$nodes[[x]]$nbr
+  }
+  )
+  names(adjacencies) <- names
+  # get the edges
+  edges <- cbind(unname(graph$arcs), "-->")
+  return(cgraph(names, adjacencies, edges))
 }
