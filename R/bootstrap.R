@@ -14,10 +14,6 @@ aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df 
   if (!same_nodes)
     stop("Not all the graphs have the same nodes")
 
-  cgraphs <- lapply(cgraphs, function(cgraph) {
-    .prepare_cgraph_for_call(cgraph, F, T, T)
-  })
-
   method <- match.arg(method)
   bs.weights <- rep(0, length(cgraphs))
   if (method == "frequentist") {
@@ -25,10 +21,16 @@ aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df 
   }
   if (method == "bayesian") {
     for (i  in 1:length(cgraphs)) {
-      bs.weights[i] <- score_graph(as.dag(cgraphs[[i]]), df)
+      graph <- as.dag(cgraphs[[i]])
+      bs.weights[i] <- score_graph(graph, df)
     }
     bs.weights <- exp(-.5*(bs.weights - min(bs.weights)))
   }
+
+  cgraphs <- lapply(cgraphs, function(cgraph) {
+    .prepare_cgraph_for_call(cgraph, F, T, T)
+  })
+
   table <- .Call("cf_aggregate_cgraphs", cgraphs, bs.weights)
   table <- as.data.frame(table)
 
