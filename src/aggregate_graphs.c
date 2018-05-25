@@ -152,7 +152,7 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
 }
 
 void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge, float weight) {
-  float* array;
+  float* array = NULL;
   // all these edges are undirected, so we just first check these
   switch(edge) {
     case UNDIRECTED: {
@@ -163,9 +163,10 @@ void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge, float we
       array = ARR_CIRCLECIRCLE;
       break;
     }
-    case BIDIRECTED:
+    case BIDIRECTED: {
       array = ARR_BIDIRECTED;
       break;
+    }
   }
   // use the fact that parent < child or child < parent to determine
   // whether or not an edge should be forward or backward

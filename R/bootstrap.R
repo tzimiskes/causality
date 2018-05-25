@@ -25,7 +25,7 @@ aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df 
   }
   if (method == "bayesian") {
     for (i  in 1:length(cgraphs)) {
-      bs.weights[i] <- score_graph(cgraphs[[i]], df)
+      bs.weights[i] <- score_graph(as.dag(cgraphs[[i]]), df)
     }
     bs.weights <- exp(-.5*(bs.weights - min(bs.weights)))
   }
