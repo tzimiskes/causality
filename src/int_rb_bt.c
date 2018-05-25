@@ -52,7 +52,8 @@ inline irbt_ptr irbt_instantiate_node(int key, float* values, float weight)
   if(tmp == NULL) {
     error("failed to allocate memory for rbt pointer\n");
   }
-  memcpy(tmp->values, values, NUM_EDGES_STORED*sizeof(int));
+  for(int i = 0; i < NUM_EDGES_STORED; ++i)
+    tmp->values[i] = values[i]*weight;
   tmp->key          = key + 1;
   tmp->child[LEFT]  = NULL;
   tmp->child[RIGHT] = NULL;
