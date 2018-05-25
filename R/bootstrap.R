@@ -19,16 +19,17 @@ aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df 
   })
 
   method <- match.arg(method)
-  weghts <- rep(0, length(cgraphs))
+  bs.weghts <- rep(0, length(cgraphs))
   if (method == "frequentist") {
-    weghts <- rep(1, length(cgraphs))
+    bs.weghts <- rep(1, length(cgraphs))
   }
   if (method == "bayesian") {
     for (i  in 1:length(cgraphs)) {
-      weights[i] <- score_graph(cgraphs[[i]], df)
+      bs.weights[i] <- score_graph(cgraphs[[i]], df)
     }
+    bs.weghts <- exp(-.5*(bs.weghts - min(bs.weghts)))
   }
-  table <- .Call("cf_aggregate_cgraphs", cgraphs, weights)
+  table <- .Call("cf_aggregate_cgraphs", cgraphs, bs.weights)
   table <- as.data.frame(table)
 
   cgraph <- cgraphs[[1]]

@@ -28,7 +28,7 @@ static float ARR_CIRCLECIRCLE [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
  */
 void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             const int n_rows , const int parent, int* index,
-                            irbt_ptr root);
+                            irbt_ptr root, float sum_weights);
 /*
  * FUNCTION_NAME takes in an edge (parent, child, edge) and then returns a
  * pointer to of the arrays above. That pointer is used to increment
@@ -47,6 +47,12 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
   const int n_graphs = length(Cgraphs);
   const int n_nodes = length(VECTOR_ELT(VECTOR_ELT(Cgraphs, 0), NODES));
   double* weights_ptr = REAL(Weights);
+
+  float sum_weights = 0;
+  for(int i = 0; i < n_graphs; ++i) {
+    sum_weights += weights_ptr[i];
+  }
+
   irbt_ptr** trees = malloc(n_graphs * sizeof(irbt_ptr*));
   // can parallelize
   for(int j = 0; j < n_graphs; ++j) {
@@ -114,7 +120,7 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
 
   int index = 0;
   for(int i = 0; i < n_nodes; ++i)
-  convert_tree_to_matrix(output_matrix_ptr, n_rows, i, &index, base[i]);
+  convert_tree_to_matrix(output_matrix_ptr, n_rows, i, &index, base[i], sum_weights);
 
   // free the last tree
   free(base);
@@ -128,19 +134,19 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
  */
 void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             const int n_rows , const int parent, int* index,
-                            irbt_ptr root)
+                            irbt_ptr root, float sum_weights)
 {
   if( root != NULL) {
   matrix_ptr[*index + 0*n_rows] = parent + 1;
   matrix_ptr[*index + 1*n_rows] = irbt_key(root) + 1;
   const int * const restrict root_values_ptr = irbt_values_ptr(root);
   for(int i = 0; i < NUM_EDGES_STORED; ++i)
-    matrix_ptr[*index + (i+2)*n_rows] = root_values_ptr[i];
+    matrix_ptr[*index + (i+2)*n_rows] = root_values_ptr[i]/sum_weights;
   (*index)++;
   convert_tree_to_matrix(matrix_ptr, n_rows, parent, index,
-                         irbt_left_child(root));
+                         irbt_left_child(root), sum_weights);
   convert_tree_to_matrix(matrix_ptr, n_rows, parent, index,
-                         irbt_right_child(root));
+                         irbt_right_child(root), sum_weights);
   }
 }
 
