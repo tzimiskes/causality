@@ -52,7 +52,7 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
   for(int i = 0; i < n_graphs; ++i) {
     sum_weights += weights_ptr[i];
   }
-  Rprintf("Sum weights: %i\n", sum_weights);
+  Rprintf("Sum weights: %f\n", sum_weights);
   irbt_ptr** trees = malloc(n_graphs * sizeof(irbt_ptr*));
   // can parallelize
   for(int j = 0; j < n_graphs; ++j) {
