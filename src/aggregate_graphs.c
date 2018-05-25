@@ -120,7 +120,7 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
 
   int index = 0;
   for(int i = 0; i < n_nodes; ++i)
-  convert_tree_to_matrix(output_matrix_ptr, n_rows, i, &index, base[i], sum_weights);
+    convert_tree_to_matrix(output_matrix_ptr, n_rows, i, &index, base[i], sum_weights);
 
   // free the last tree
   free(base);
@@ -137,11 +137,11 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             irbt_ptr root, float sum_weights)
 {
   if( root != NULL) {
-  matrix_ptr[*index + 0*n_rows] = parent + 1;
-  matrix_ptr[*index + 1*n_rows] = irbt_key(root) + 1;
-  float* restrict root_values_ptr = irbt_values_ptr(root);
-  for(int i = 0; i < NUM_EDGES_STORED; ++i)
-    matrix_ptr[*index + (i+2)*n_rows] = (double) root_values_ptr[i]/sum_weights;
+    matrix_ptr[*index + 0*n_rows] = parent + 1;
+    matrix_ptr[*index + 1*n_rows] = irbt_key(root) + 1;
+    float* root_values_ptr = irbt_values_ptr(root);
+    for(int i = 0; i < NUM_EDGES_STORED; ++i)
+      matrix_ptr[*index + (i+2)*n_rows] = (double) root_values_ptr[i]/sum_weights;
   (*index)++;
   convert_tree_to_matrix(matrix_ptr, n_rows, parent, index,
                          irbt_left_child(root), sum_weights);
