@@ -139,9 +139,9 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
   if( root != NULL) {
   matrix_ptr[*index + 0*n_rows] = parent + 1;
   matrix_ptr[*index + 1*n_rows] = irbt_key(root) + 1;
-  const int * const restrict root_values_ptr = irbt_values_ptr(root);
+  float* restrict root_values_ptr = irbt_values_ptr(root);
   for(int i = 0; i < NUM_EDGES_STORED; ++i)
-    matrix_ptr[*index + (i+2)*n_rows] = root_values_ptr[i]/sum_weights;
+    matrix_ptr[*index + (i+2)*n_rows] = (double) root_values_ptr[i]/sum_weights;
   (*index)++;
   convert_tree_to_matrix(matrix_ptr, n_rows, parent, index,
                          irbt_left_child(root), sum_weights);
