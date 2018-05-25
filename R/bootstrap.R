@@ -1,10 +1,9 @@
-aggregate_graphs <- function(cgraphs, raw = FALSE) {
+aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df = NULL)
+{
   if(!is.list(cgraphs))
     stop("dags is not as list")
   if (length(cgraphs) == 1)
     stop("dags is of length 1")
-  if(!is.logical(raw))
-    stop("raw does not take on a logical value")
 
   base <- cgraphs[[1]]
   # see if all the graphs have the EXACT same nodes
@@ -19,7 +18,17 @@ aggregate_graphs <- function(cgraphs, raw = FALSE) {
     .prepare_cgraph_for_call(cgraph, F, T, T)
   })
 
-  table <- .Call("cf_aggregate_cgraphs", cgraphs)
+  method <- match.arg(method)
+  weghts <- rep(0, length(cgraphs))
+  if (method == "frequentist") {
+    weghts <- rep(1, length(cgraphs))
+  }
+  if (method == "bayesian") {
+    for (i  in 1:length(cgraphs)) {
+      weights[i] <- score_graph(cgraphs[[i]], df)
+    }
+  }
+  table <- .Call("cf_aggregate_cgraphs", cgraphs, weights)
   table <- as.data.frame(table)
 
   cgraph <- cgraphs[[1]]
@@ -29,10 +38,7 @@ aggregate_graphs <- function(cgraphs, raw = FALSE) {
                       "~~>", "<++", "++>","<-o", "o->", "<->", "o-o")
 
   table <- table[, c(T, T, colSums(table[, -(1:2)]) != 0)]
-  n_graphs <- length(cgraphs)
-  for(col in names(table[])[-(1:2)]) {
-    table[[col]] <- table[[col]]/n_graphs
-  }
+
   output <- list(nodes = cgraph$nodes, table = table)
   class(output) <- c("aggregated-cgraphs")
   return(output)

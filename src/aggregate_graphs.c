@@ -11,17 +11,17 @@
  * There is almost certainly a better way to do this, but as it currently stands
  * the underlying rbt implementation will not allow for a better one
  */
-static const int ARR_BACKDIRECTED [11] = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static const int ARR_UNDIRECTED   [11] = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static const int ARR_DIRECTED     [11] = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-static const int ARR_BACKSQUIGGLE [11] = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0};
-static const int ARR_SQUIGGLE     [11] = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
-static const int ARR_BACKPLUS     [11] = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
-static const int ARR_PLUS         [11] = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
-static const int ARR_BACKCIRCLE   [11] = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0};
-static const int ARR_CIRCLE       [11] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
-static const int ARR_BIDIRECTED   [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
-static const int ARR_CIRCLECIRCLE [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+static float ARR_BACKDIRECTED [11] = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static float ARR_UNDIRECTED   [11] = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static float ARR_DIRECTED     [11] = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+static float ARR_BACKSQUIGGLE [11] = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0};
+static float ARR_SQUIGGLE     [11] = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
+static float ARR_BACKPLUS     [11] = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
+static float ARR_PLUS         [11] = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
+static float ARR_BACKCIRCLE   [11] = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0};
+static float ARR_CIRCLE       [11] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
+static float ARR_BIDIRECTED   [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
+static float ARR_CIRCLECIRCLE [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
 
 /*
  * converts irbt to matrix
@@ -34,7 +34,7 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
  * pointer to of the arrays above. That pointer is used to increment
  * the count of the particular edge type by 1 in the red black tree
  */
-void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge);
+void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge, float weight);
 
 /*
  * aggregate_cgraphs takes in a list of cgraphs and then reduces them to a new
@@ -42,22 +42,23 @@ void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge);
  * cgraph into a red black tree (irbt), and then combining the trees into one
  * The final tree is then converted into a matrix and returned
  */
-SEXP cf_aggregate_cgraphs(SEXP cgraphs) {
+SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
 
-  const int n_graphs = length(cgraphs);
-  const int n_nodes = length(VECTOR_ELT(VECTOR_ELT(cgraphs, 0), NODES));
-
+  const int n_graphs = length(Cgraphs);
+  const int n_nodes = length(VECTOR_ELT(VECTOR_ELT(Cgraphs, 0), NODES));
+  double* weights_ptr = REAL(Weights);
   irbt_ptr** trees = malloc(n_graphs * sizeof(irbt_ptr*));
   // can parallelize
-  for(int j = 0; j < length(cgraphs); ++j) {
+  for(int j = 0; j < n_graphs; ++j) {
 
-    SEXP cgraph = PROTECT(VECTOR_ELT(cgraphs, j));
+    float weight = (float) weights_ptr[j];
+    SEXP Cgraph = PROTECT(VECTOR_ELT(Cgraphs, j));
 
     trees[j] = make_ptr_to_irbt(n_nodes);
     // create alias for trees[j]
     irbt_ptr* tree = trees[j];
 
-    SEXP edges = PROTECT(VECTOR_ELT(cgraph, EDGES));
+    SEXP edges = PROTECT(VECTOR_ELT(Cgraph, EDGES));
     const int n_edges = nrows(edges);
     // number of edges times 2
     const int n_edges_t2 = 2*n_edges;
@@ -66,15 +67,14 @@ SEXP cf_aggregate_cgraphs(SEXP cgraphs) {
       const int parent = edges_ptr[i             ];
       const int child  = edges_ptr[i + n_edges   ];
       const int edge   = edges_ptr[i + n_edges_t2];
-      //
-      //
+
       // for example (1,0, -->) would become (1,0, <--)
       /* determine how to add the edge to the irbt. determine_edge_array figures
        * out if the array will be forwards or backwards (if applicable)
        * and then if (p)
        *
        */
-      add_edge_to_irbt(&tree, parent, child, edge);
+      add_edge_to_irbt(&tree, parent, child, edge, weight);
 
     }
     UNPROTECT(2); /* unprotect R objects */
@@ -86,7 +86,7 @@ SEXP cf_aggregate_cgraphs(SEXP cgraphs) {
     // create alias for trees[i]
     irbt_ptr* src = trees[i];
     for( int j = 0; j < n_nodes; ++j) {
-      base[j] = irbt_merge_trees(base[j], src[j], NUM_EDGES_STORED);
+      base[j] = irbt_merge_trees(base[j], src[j]);
     }
   }
  /*
@@ -144,8 +144,8 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
   }
 }
 
-void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge) {
-  const int* array = NULL;
+void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge, float weight) {
+  float* array;
   // all these edges are undirected, so we just first check these
   switch(edge) {
     case UNDIRECTED: {
@@ -207,10 +207,9 @@ void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge) {
       }
     }
   }
+
   if(parent < child)
-    (*root)[parent] = irbt_insert((*root)[parent], child,
-                                  NUM_EDGES_STORED, array);
+    (*root)[parent] = irbt_insert((*root)[parent], child, array, weight);
   else
-    (*root)[child]  = irbt_insert((*root)[child], parent,
-                                  NUM_EDGES_STORED, array);
+    (*root)[child]  = irbt_insert((*root)[child], parent, array, weight);
 }

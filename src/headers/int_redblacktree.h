@@ -4,10 +4,10 @@
 typedef struct irbt_node irbt_node;
 typedef irbt_node* irbt_ptr;
 
-irbt_ptr irbt_insert(irbt_ptr root, int key, int n, const int * const values);
-void irbt_print_tree(irbt_ptr root, const int n);
+irbt_ptr irbt_insert(irbt_ptr root, int key, float* values, float weight);
+void irbt_print_tree(irbt_ptr root);
 void irbt_free(irbt_ptr root);
-irbt_ptr irbt_merge_trees(irbt_ptr dst, irbt_ptr src, const int n);
+irbt_ptr irbt_merge_trees(irbt_ptr dst, irbt_ptr src);
 int irbt_size(irbt_ptr root);
 int irbt_key(irbt_ptr root);
 int* irbt_values_ptr(irbt_ptr root);

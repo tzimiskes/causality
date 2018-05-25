@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include"headers/causality.h"
+#include "headers/causality.h"
+#include "headers/edgetypes.h"
 
 #define LEFT 0
 #define RIGHT 1
@@ -13,7 +14,7 @@ typedef struct irbt* irbt_ptr;
 typedef struct irbt {
   irbt_ptr child[2];
   int key;
-  int values [11]; /* NUM_EDGES_STORED */
+  float values [NUM_EDGES_STORED]; /* NUM_EDGES_STORED */
 }irbt;
 
 static inline int IS_RED(irbt_ptr node) {
@@ -45,14 +46,13 @@ int irbt_key(irbt_ptr root) {
   return(ABS(root->key) - 1);
 }
 
-inline irbt_ptr irbt_instantiate_node(const int key, const int n,
-                                                   const int * const values)
+inline irbt_ptr irbt_instantiate_node(int key, float* values, float weight)
   {
   irbt_ptr tmp = malloc(sizeof(irbt));
   if(tmp == NULL) {
     error("failed to allocate memory for rbt pointer\n");
   }
-  memcpy(tmp->values, values, n*sizeof(int));
+  memcpy(tmp->values, values, NUM_EDGES_STORED*sizeof(int));
   tmp->key          = key + 1;
   tmp->child[LEFT]  = NULL;
   tmp->child[RIGHT] = NULL;
@@ -78,22 +78,20 @@ static inline irbt_ptr double_rotation(irbt_ptr root, int dir) {
   return single_rotation(root, dir);
 }
 
-static irbt_ptr irbt_insert_recurvise(irbt_ptr root,
-                                                   const int key,
-                                                   const int n,
-                                                   const int* const values)
+static irbt_ptr irbt_insert_recursive(irbt_ptr root, int key, float* values,
+                                      float weight)
 {
   if(root == NULL) {
-    root = irbt_instantiate_node(key, n, values);
+    root = irbt_instantiate_node(key, values, weight);
   }
   else if (key == irbt_key(root)) {
-    for(int i = 0; i < n; ++i)
+    for(int i = 0; i < NUM_EDGES_STORED; ++i)
       root->values[i] += values[i];
   }
   else {
     int direction = key < irbt_key(root) ? LEFT : RIGHT;
-    root->child[direction] = irbt_insert_recurvise(root->child[direction],
-                                                      key, n, values);
+    root->child[direction] = irbt_insert_recursive(root->child[direction],
+                                                      key, values, weight);
 
     if(IS_RED(root->child[direction])) {
       if(IS_RED(root->child[!direction])) {
@@ -113,22 +111,21 @@ static irbt_ptr irbt_insert_recurvise(irbt_ptr root,
   return root;
 }
 
-irbt_ptr irbt_insert(irbt_ptr root, const int key, const int n,
-                           const int * const values)
+irbt_ptr irbt_insert(irbt_ptr root, int key, float* values, float weight)
 {
-  root = irbt_insert_recurvise(root, key , n, values);
+  root = irbt_insert_recursive(root, key, values, weight);
   SET_TO_BLACK(root);
   return(root);
 }
 
-void irbt_print_tree(irbt_ptr root, const int n) {
+void irbt_print_tree(irbt_ptr root) {
   if(root != NULL) {
     Rprintf("Key: %i Value(s):", irbt_key(root));
-    for(int i = 0; i < n; ++i)
+    for(int i = 0; i < NUM_EDGES_STORED; ++i)
       Rprintf(" %i" , root->values[i]);
     Rprintf("\n");
-    irbt_print_tree(root->child[LEFT], n);
-    irbt_print_tree(root->child[RIGHT], n);
+    irbt_print_tree(root->child[LEFT]);
+    irbt_print_tree(root->child[RIGHT]);
   }
 }
 
@@ -150,12 +147,12 @@ irbt_ptr* make_ptr_to_irbt(const int n) {
 }
 
 
-irbt_ptr irbt_merge_trees(irbt_ptr dst, irbt_ptr src, const int n)
+irbt_ptr irbt_merge_trees(irbt_ptr dst, irbt_ptr src)
 {
   if(src != NULL) {
-    dst = irbt_merge_trees(dst, src->child[LEFT], n);
-    dst = irbt_merge_trees(dst, src->child[RIGHT], n);
-    return(irbt_insert(dst, irbt_key(src), n , src->values));
+    dst = irbt_merge_trees(dst, src->child[LEFT]);
+    dst = irbt_merge_trees(dst, src->child[RIGHT]);
+    return(irbt_insert(dst, irbt_key(src), src->values, 1));
   }
   else
     return dst;
@@ -169,7 +166,7 @@ int irbt_size(irbt_ptr root) {
     return 0;
 }
 
-int* irbt_values_ptr(irbt_ptr root) {
+float* irbt_values_ptr(irbt_ptr root) {
   return (root->values);
 }
 
