@@ -20,13 +20,13 @@ aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df 
     bs.weights <- rep(1, length(cgraphs))
   }
   if (method == "bayesian") {
-    for (i in 1:length(bs.weights)) {
+    for (i in 1:length(cgraphs)) {
       graph <- as.dag(cgraphs[[i]])
       bs.weights[i] <- score_graph(graph, df)
     }
     bs.weights <- exp(-.5*(bs.weights - min(bs.weights)))
   }
-  print(sum(bs.weights))
+  bs.weights <- round(bs.weights, digits = 5)
   cgraphs <- lapply(cgraphs, function(cgraph) {
     .prepare_cgraph_for_call(cgraph, F, T, T)
   })

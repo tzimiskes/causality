@@ -52,7 +52,6 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
   for(int i = 0; i < n_graphs; ++i) {
     sum_weights += weights_ptr[i];
   }
-  Rprintf("Sum weights: %f\n", sum_weights);
   irbt_ptr** trees = malloc(n_graphs * sizeof(irbt_ptr*));
   // can parallelize
   for(int j = 0; j < n_graphs; ++j) {
@@ -137,11 +136,12 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             irbt_ptr root, float sum_weights)
 {
   if( root != NULL) {
+    double inv_sum_weights = 1.0f/((double) sum_weights);
     matrix_ptr[*index + 0*n_rows] = parent + 1;
     matrix_ptr[*index + 1*n_rows] = irbt_key(root) + 1;
     float* root_values_ptr = irbt_values_ptr(root);
     for(int i = 0; i < NUM_EDGES_STORED; ++i) {
-      matrix_ptr[*index + (i+2)*n_rows] = (double) root_values_ptr[i]/sum_weights;
+      matrix_ptr[*index + (i+2)*n_rows] = ((double) root_values_ptr[i]) * inv_sum_weights;
     }
   (*index)++;
   convert_tree_to_matrix(matrix_ptr, n_rows, parent, index,
