@@ -11,7 +11,7 @@ score_graph <- function(cgraph, data) {
   for (node in names(parents)) {
     form <- paste(node, "~", paste(parents[[node]], collapse = "+"))
     form <- as.formula(form)
-    sum_BIC <- sum_BIC + BIC(lm(form, data))
+    sum_BIC <- sum_BIC + BIC(lm(form, data)) + 2*length(parents[[node]]) + 1 #bias correction
   }
   return(sum_BIC)
 }
