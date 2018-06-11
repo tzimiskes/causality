@@ -126,3 +126,25 @@ void ill_print(ill_ptr root) {
     root = root->next;
   }
 }
+/* DO NOT USE THIS IN CONJUCTION WITH CMPCT_CG !!!!!! */
+void ill_delete(ill_ptr* root, int key) {
+  ill_ptr tmp = *root; /* should probably check to see if this is not null */
+  if(tmp != NULL) {
+    if(tmp->key == key) {
+      *root = (*root)->next;
+    free(root);
+    }
+    while (tmp->next != NULL) {
+    if(tmp->next->key == key) {
+      ill_ptr tmp2 = tmp->next;
+      tmp->next = tmp2->next;
+      free(tmp2);
+      return;
+    }
+    else
+      tmp = tmp->next;
+    }
+   error("Error Unable to locate key in ill_delete\n");
+  }
+}
+
