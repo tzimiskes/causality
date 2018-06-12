@@ -12,9 +12,9 @@ typedef struct foo {
   foo_ptr foo_prev;
 } foo;
 
-int adjacent(foo_ptr foo, int node) {
-  ill_ptr parents  = foo->parents;
-  ill_ptr children = foo->children;
+int adjacent(foo foo, int node) {
+  ill_ptr parents  = foo.parents;
+  ill_ptr children = foo.children;
 
   while(parents != NULL) {
     if(ill_key(parents) == node)
@@ -34,7 +34,7 @@ inline int is_sink(foo_ptr foop) {
 }
 
 /* check to see if all undirected parents are adj to all other parents */
-int check_condition(foo_ptr foo, foo_ptr* foos) {
+int check_condition(foo_ptr foo, foo_ptr foos) {
   ill_ptr parents = foo->parents;
   ill_ptr tmp = parents;
   /* look for undirect parents of the node */
@@ -58,12 +58,12 @@ int check_condition(foo_ptr foo, foo_ptr* foos) {
  * orient_in_dag takes in a node, and points all undirected parents towards it
  * in the edge list
  */
-void orient_in_dag(foo_ptr* foos, foo_ptr current_node,
+void orient_in_dag(foo_ptr foos, foo_ptr current_node,
                    int* dag_edges_ptr, int n_edges, int* index)
   {
   ill_ptr parents = current_node->parents;
   int i           = *index;
-  int node        = current_node - foos[0]; /* ptr arithmetic */
+  int node        = current_node - foos; /* ptr arithmetic */
   while(parents != NULL) {
     dag_edges_ptr[i          ] = node;
     dag_edges_ptr[i + n_edges] = ill_key(parents);
@@ -73,19 +73,19 @@ void orient_in_dag(foo_ptr* foos, foo_ptr current_node,
   *index = i;
 }
 
-void remove_node(foo_ptr* foos, foo_ptr current_node) {
-  int node = current_node - foos[0]; /* ptr arithmetic */
+void remove_node(foo_ptr foos, foo_ptr current_node) {
+  int node = current_node - foos; /* ptr arithmetic */
 
   ill_ptr parents = current_node->parents;
   while(parents != NULL) {
     int parent = ill_key(parents);
       if(ill_key(parents) == DIRECTED) {
-        ill_delete(&(foos[parent]->children), node);
+        ill_delete(&(foos[parent].children), node);
       }
       else {
       /* parent is a undirected parent of node, so node is also an
        * undirected parent of parent */
-        ill_delete(&(foos[parent]->parents), node);
+        ill_delete(&(foos[parent].parents), node);
       }
     parents = ill_next(parents);
   }
@@ -105,7 +105,10 @@ SEXP cf_extend_pdag(SEXP Pdag) {
   int* children_ptr = edges_ptr + n_edges;
   int* edgetype_ptr = edges_ptr + 2*n_edges;
 
-  foo_ptr* foos = calloc(n_nodes, sizeof(foo_ptr));
+  foo_ptr foos = calloc(n_nodes, sizeof(foo));
+
+  if(foos == NULL)
+    error("Failed to allocate memory for foos in cf_extend_pdag\n");
 
   // fill in foos parents and children
   for(int i = 0; i < n_edges; ++i) {
@@ -113,51 +116,54 @@ SEXP cf_extend_pdag(SEXP Pdag) {
     int child    = children_ptr[i];
     int edgetype = edgetype_ptr[i];
     if(edgetype == DIRECTED) {
-      foos[parent]->children = ill_insert(foos[parent]->children, child, DIRECTED);
-      foos[child]->parents   = ill_insert(foos[child]->parents, parent, DIRECTED);
+      foos[parent].children = ill_insert(foos[parent].children, child, DIRECTED);
+      foos[child].parents   = ill_insert(foos[child].parents, parent, DIRECTED);
     }
     else
-      foos[child]->parents = ill_insert(foos[child]->parents, parent, UNDIRECTED);
+      foos[child].parents = ill_insert(foos[child].parents, parent, UNDIRECTED);
   }
+
+  Rprintf("Filled in foos\n");
   // set up circular linked list
   // could be speed up as % is expensive. probably unimportant
   for(int i = 0; i < n_nodes; ++i) {
-    foos[i]->foo_next = foos[(i + 1) % n_nodes];
-    foos[i]->foo_prev = foos[(i - 1) % n_nodes];
+    foos[i].foo_next = foos + (i + 1) % n_nodes;
+    foos[i].foo_prev = foos + (i - 1) % n_nodes;
   }
-
+  Rprintf("Created circluar linked list\n");
   /*
    * create output dag by duplicated pdag and reseting the edge list
    */
   SEXP Dag = PROTECT(duplicate(Pdag));
   int* dag_edges_ptr = INTEGER(VECTOR_ELT(Dag, EDGES));
 
-  memset(dag_edges_ptr+2*n_edges*sizeof(int),  1, n_edges*sizeof(int));
-
-  foo_ptr current_node = foos[0];
+  memset(dag_edges_ptr+2*n_edges,  1, n_edges*sizeof(int));
+  Rprintf("Memeset\n");
+  foo_ptr current_node = foos;
   int n_nodes_checked  = 0;
   int ll_size          = n_nodes;
   /* Comment needed */
   int index = 0;
   while(ll_size > 0 && n_nodes_checked <= ll_size) {
+    Rprintf("Node: %i\n", current_node - foos);
     if(is_sink(current_node) && check_condition(current_node, foos)) {
       orient_in_dag(foos, current_node, dag_edges_ptr, n_edges, &index);
       remove_node(foos, current_node);
       ll_size--;
       n_nodes_checked = 0;
+      Rprintf("Reset counter\n");
     }
     else {
       n_nodes_checked++;
     }
     current_node = current_node->foo_next;
   }
-  int failure = 0;
-  if(ll_size > 0)
-    failure = 1;
+  int failure = ll_size  > 0 ? 1 : 0;
+
   // free malloc'd memory
   for(int i = 0; i < n_nodes; ++i) {
-    ill_free(foos[i]->parents);
-    ill_free(foos[i]->children);
+    ill_free(foos[i].parents);
+    ill_free(foos[i].children);
   }
   free(foos);
   UNPROTECT(1);

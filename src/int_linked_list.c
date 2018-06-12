@@ -135,7 +135,7 @@ void ill_delete(ill_ptr* root, int key) {
     free(root);
     }
     while (tmp->next != NULL) {
-    if(tmp->next->key == key) {
+      if(tmp->next->key == key) {
       ill_ptr tmp2 = tmp->next;
       tmp->next = tmp2->next;
       free(tmp2);
@@ -144,7 +144,6 @@ void ill_delete(ill_ptr* root, int key) {
     else
       tmp = tmp->next;
     }
-   error("Error Unable to locate key in ill_delete\n");
   }
 }
 
