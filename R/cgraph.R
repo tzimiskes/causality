@@ -6,11 +6,11 @@ cgraph <- function(nodes, adjacencies, edges) {
   }
 
 #these hidden (lol) variables are used to assign (sub)classes to craph objects
-.CGRAPH_CLASS  <- c(                     "causality-graph")
-.DAG_CLASS     <- c("causality-dag"    , "causality-graph")
-.PDAG_CLASS    <- c("causality-pdag"   , "causality-graph")
-.PATTERN_CLASS <- c("causality-pattern", "causality-graph")
-.PAG_CLASS     <- c("causality-pag"    , "causality-graph")
+.CGRAPH_CLASS  <- c(                     "causality.graph")
+.DAG_CLASS     <- c("causality.dag"    , "causality.graph")
+.PDAG_CLASS    <- c("causality.pdag"   , "causality.graph")
+.PATTERN_CLASS <- c("causality.pattern", "causality.graph")
+.PAG_CLASS     <- c("causality.pag"    , "causality.graph")
 # The following is a series of is function to do simple type checking for the
 # user and the various functions in the package
 
@@ -73,7 +73,7 @@ is.directed <- function(cgraph) {
 
 is.nonlatent <- function(cgraph) {
   if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
+    stop("input is not a causality.graph")
   edge_types <- cgraph$edges[, 3]
   n_edges <- length(edge_types)
   for (i in 1:n_edges) {
@@ -95,38 +95,66 @@ is.latent <- function(cgraph) {
   return(TRUE)
 }
 
-# attempt to coerce a graph of type cgraph to a dag
 as.dag <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
-  if (is.dag(cgraph)) {
+  else if (is.dag(cgraph))
     return(cgraph)
-  }
-  if (is.pattern(cgraph)) {
-  return( .pick_dag_from_pattern(cgraph))
-  }
-  if (is.pdag(cgraph)) {
-    return(.pick_dag_from_pdag(cgraph))
-  }
-  if (is.pag(cgraph))
-    stop("not implemented")
-
-  # ok, now attempt to turn cgraph object into dag
-  # check check to see if it is acyclic
-  if (!is.cyclic(cgraph)) {
-    # if it is directed, we then its a DAG!
-    if (is.directed(cgraph)) {
-      class(cgraph) <- .DAG_CLASS
-      return(cgraph)
-    }
-    # if its nonlatent, its a pdag, so we can try to see if
-    # theres a dag extension
-    else if (is.nonlatent(cgraph)) {
-      return(.pick_dag_from_pdag(cgraph))
-    }
-  }
   else
-    stop("input contains a cycle, so it cannot be coerced to a dag")
+    UseMethod("as.dag")
+}
+
+as.dag.causality.graph <- function(cgraph) {
+  if (!is.cgraph(cgraph))
+    stop("input is not a cgraph")
+
+  if (is.nonlatent(cgraph)) {
+    if (!is.cyclic(cgraph)) {
+      if (is.directed(cgraph)) {
+        class(cgraph) <- .DAG_CLASS
+        return(cgraph())
+      }
+      else { # we have a a pdag
+       dag <- .dag_from_pdag(cgraph)
+       if (is.null(dag)) {
+         warning("Unable to coerce input to causality.dag")
+       }
+       return(dag)
+      }
+    }
+    else { # cylcic, so we can't coerce it
+      warning("Unable to coerce input to causality.dag")
+      return(NULL)
+    }
+  }
+  else if (is.latent(cgraph)) {
+    stop("Not implemented")
+  }
+  else {
+    stop("Unrecognized graph! Can't coerce!")
+  }
+}
+
+as.dag.causality.pdag <- function(cgraph) {
+  if (!is.pdag(cgraph))
+    stop("input is not a causality.graph")
+
+  dag <- .dag_from_pdag(cgraph)
+  if (is.null(dag)) {
+    warning("Unable to coerce input to causality.dag")
+  }
+  return(dag)
+}
+
+as.dag.causality.pattern <- function(cgraph) {
+  if (!is.pattern(cgraph))
+    stop("input is not a causality.pattern")
+  return(.dag_from_pattern(cgraph))
+}
+
+as.dag.causality.pag <- function(cgraph) {
+  if (!is.pag(cgraph))
+    stop("input is not a causality.pag")
 }
 
 as.pattern <- function(cgraph) {
@@ -137,7 +165,7 @@ as.pattern <- function(cgraph) {
   if (is.dag(cgraph))
     return(.dag_to_pattern(cgraph))
   if (is.pdag(cgraph))
-    return(.pick_dag_from_pdag(cgraph))
+    return(.dag_from_pdag(cgraph))
   if (is.pag(cgraph))
     stop("pags cannot be converted to patterns.")
 

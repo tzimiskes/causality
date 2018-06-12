@@ -14,4 +14,7 @@
 #define NODES 0
 #define ADJACENCIES 1
 #define EDGES 2
+
+SEXP cf_topological_sort(SEXP dag);
 #endif
+

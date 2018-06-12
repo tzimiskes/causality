@@ -132,18 +132,20 @@ void ill_delete(ill_ptr* root, int key) {
   if(tmp != NULL) {
     if(tmp->key == key) {
       *root = (*root)->next;
-    free(root);
+      free(tmp);
+      return;
     }
     while (tmp->next != NULL) {
       if(tmp->next->key == key) {
-      ill_ptr tmp2 = tmp->next;
-      tmp->next = tmp2->next;
-      free(tmp2);
-      return;
-    }
-    else
-      tmp = tmp->next;
+        ill_ptr tmp2 = tmp->next;
+        tmp->next = tmp2->next;
+        free(tmp2);
+        return;
+      }
+      else
+        tmp = tmp->next;
     }
   }
+  error("Failed to find key in ill_delete!\n");
 }
 
