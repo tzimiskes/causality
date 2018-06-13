@@ -1,18 +1,93 @@
-# beta version of a data structure that can be used to hold a general graph.
+# Casusality Graph Definitons --------------------------------------------------
+
+#' Casuality Graph
+#'
+#' @param nodes A character array of node names
+#' @param edges A \eqn{m x 3} character matrix. Each row is an edge in the form
+#' of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid edge
+#' types are listed below
+#' @description
+#' doo
+#'
+#'   @author Alexander Rix
+#'
 cgraph <- function(nodes, adjacencies, edges) {
   return(structure(
     list(nodes = nodes, adjacencies = adjacencies, edges = edges),
     class = .CGRAPH_CLASS))
+}
+
+#' @description  doo
+#' @param graph A graph to coerced or tested
+#' @author Alexander Rix
+#' @describeIn cgraph Check to see if a Causality Graph is valid
+is_valid_cgraph <- function(graph) {
+  # check for duplicate nodes
+  nodes <- sort(graph$nodes)
+  for (i in 1:(length(nodes)-1)) {
+    if ( nodes[i] == nodes[i + 1]) {
+      message("graph contains duplicate nodes")
+      return(FALSE)
+    }
   }
 
-#these hidden (lol) variables are used to assign (sub)classes to craph objects
+  adjs <- .calculate_adjacencies_from_edges(graph$edges, graph$nodes)
+  for(node in names(adjs)) {
+    calculated_node_adjs <- adjs[[node]]
+    listed_node_adjs     <- graph$adjacencies[[node]]
+    intersection         <- intersect(calculated_node_adjs, listed_node_adjs)
+    if (!isTRUE(all.equal(intersection, listed_node_adjs)))
+      stop("adjacencies do not not match the nodes and edge!")
+  }
+
+  # check to see if the graph is simple
+  n_edges <- nrow(graph$edges)
+
+  parents = list()
+  for (i in 1:n_edges) {
+    edge <- graph$edges[i,]
+    if (edge[1] == edge[2]) {
+      message("graph contains a self loop")
+      return(FALSE)
+    }
+    if (!is.null(as.list(parents[[edge[2]]])[[edge[1]]])) {
+      message("graph is a multigraph")
+      return(FALSE)
+    }
+    else
+      parents[[edge[2]]][[edge[1]]] <- 1
+    if (!(edge[1] %in% graph$nodes) || (!edge[2] %in% graph$nodes)) {
+      message("graph contains nodes that are not in the node list")
+      return(FALSE)
+    }
+  }
+  return(TRUE)
+}
+
+# these hidden (lol) variables are used to assign (sub)classes to craph objects
 .CGRAPH_CLASS  <- c(                     "causality.graph")
 .DAG_CLASS     <- c("causality.dag"    , "causality.graph")
 .PDAG_CLASS    <- c("causality.pdag"   , "causality.graph")
 .PATTERN_CLASS <- c("causality.pattern", "causality.graph")
 .PAG_CLASS     <- c("causality.pag"    , "causality.graph")
-# The following is a series of is function to do simple type checking for the
-# user and the various functions in the package
+# Edge types currently used in Causality Graphs
+.DIRECTED       <- "-->"
+.UNDIRECTED     <- "---"
+.PLUSPLUS       <- "++>"
+.SQUIGGLE       <- "~~>"
+.CIRCLEDIRECTED <- "o->"
+.CIRCLECIRCLE   <- "o-o"
+.BIDIRECTED     <- "<->"
+
+# edges that show up in pags
+.LATENT_EDGE_TYPES    <- c(.DIRECTED, .SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED,
+                           .CIRCLECIRCLE)
+#edges that show up in pdags
+.NONLATENT_EDGE_TYPES <- c(.DIRECTED, .UNDIRECTED)
+
+
+
+# Casusality Graph is.* Functions ----------------------------------------------
 
 is.cgraph <- function(graph) {
   if (.CGRAPH_CLASS %in% class(graph))
@@ -95,6 +170,8 @@ is.latent <- function(cgraph) {
   return(TRUE)
 }
 
+# Causality Graph as.dag Functions ---------------------------------------------
+
 as.dag <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
@@ -112,7 +189,7 @@ as.dag.causality.graph <- function(cgraph) {
     if (!is.cyclic(cgraph)) {
       if (is.directed(cgraph)) {
         class(cgraph) <- .DAG_CLASS
-        return(cgraph())
+        return(cgraph)
       }
       else { # we have a a pdag
        dag <- .dag_from_pdag(cgraph)
@@ -157,6 +234,8 @@ as.dag.causality.pag <- function(cgraph) {
     stop("input is not a causality.pag")
 }
 
+# Causality Graph as.pattern Functions -----------------------------------------
+
 as.pattern <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
@@ -187,6 +266,7 @@ as.pattern <- function(cgraph) {
     stop("input contains a cycle, so it cannot be coerced to a dag")
 }
 
+# Causality Graph as.pdag Functions --------------------------------------------
 as.pdag <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
@@ -214,59 +294,15 @@ as.pdag <- function(cgraph) {
     stop("input contains a cycle, so it cannot be coerced to pdag")
 }
 
+# Causality Graph as.pag Functions ---------------------------------------------
 as.pag <- function(cgraph) {
   stop("not implemented")
 }
 
-# might change this
-print.cgraph <- function(graph) {
-  print.default(graph)
-}
-
-is_valid_cgraph <- function(graph) {
-  # check for duplicate nodes
-  nodes <- sort(graph$nodes)
-  for (i in 1:(length(nodes)-1)) {
-    if ( nodes[i] == nodes[i + 1]) {
-      message("graph contains duplicate nodes")
-      return(FALSE)
-    }
-  }
-
-  adjs <- .calculate_adjacencies_from_edges(graph$edges, graph$nodes)
-  for(node in names(adjs)) {
-    calculated_node_adjs <- adjs[[node]]
-    listed_node_adjs     <- graph$adjacencies[[node]]
-    intersection         <- intersect(calculated_node_adjs, listed_node_adjs)
-    if (!isTRUE(all.equal(intersection, listed_node_adjs)))
-      stop("adjacencies do not not match the nodes and edge!")
-  }
-
-  # check to see if the graph is simple
-  n_edges <- nrow(graph$edges)
-
-  parents = list()
-  for (i in 1:n_edges) {
-    edge <- graph$edges[i,]
-    if (edge[1] == edge[2]) {
-      message("graph contains a self loop")
-      return(FALSE)
-    }
-    if (!is.null(as.list(parents[[edge[2]]])[[edge[1]]])) {
-      message("graph is a multigraph")
-      return(FALSE)
-    }
-    else
-      parents[[edge[2]]][[edge[1]]] <- 1
-    if (!(edge[1] %in% graph$nodes) || (!edge[2] %in% graph$nodes)) {
-      message("graph contains nodes that are not in the node list")
-      return(FALSE)
-    }
-  }
-  return(TRUE)
-}
 
 
+
+# Causality Graph as.cgraph Functions ------------------------------------------
 # create a generic function to handle converting non causality objects to
 # causality ones
 as.cgraph <- function(graph) {
