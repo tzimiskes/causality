@@ -1,43 +1,27 @@
 # causality
+Hello! I don't know why you are here, but if you have an feedback ( suggestions, bugs, feature requests), let me know so I can address it. 
+`causality` is still in early development, as you can see there are not too many things you can do with the code. But, this will change as I begin to add implementations of GES, GFCI, FOFC/FTFC and beyond. 
+## Development Roadmap 
 
-TODO:
-* cgraph.R
- - [ ] remove_cycles
-   - probably useful when bootstrapping
- - [ ] need to make man pages for the entire cgraph.R file
-- [ ] I forsee the need to add functions to add remove edges
-* dag_to_pattern.R
-- [x] make dag_to_pattern private.
-- [ ] Figure out what to do with all the documentation
-- [ ] tests (see as.pattern)
-import_export.R
-- [x] add in support to convert R-causal output to cgraph
-- [ ] rewrite import_from_tetrad_file so it doesn't suck
-- [ ] Document (eventually; it needs to not suck first)
-- [ ] add in type checking as "as.foo" is implemented
-* bootstrap.R
-- [x] continue to build out the file to facilitate more boostrapping
-- [ ] document
-- [ ] tests
-- [ ] figure out how to meek/ pattern the output
-* adjacency.R
-- [ ] look at implementation to see why i index over names of skeleton
-- [ ] make it in C??
-* arrowhead.R
-* - [ ] see above
-* shd.R
-- [ ] redo type checking
+*Active Devlopment of New Features has halted while I undergo a review of the code and document what is implemented so far*
 
-* Alg Comparison stuff
-- [ ] F1 Statistics
-- [ ] calculate_statistics function for ease of use in simulation studies
-* Parameter Space Sensitivity Analysis
 
-* Latent Stuff (It is the Forbidden Land, Simba)
+Rough roadmap of major features:
 
-* misc
-- [ ] convert cgraph to lavaan equation
-- [ ] implement a good partial correlations routine
+- GES (July 2018) 
+  - Realistically, this will first occur for SEMs and then Bayes Nets
+- Latent Variable Models (August)
+- FCI (September)
+- FOFC (October)
 
-* simluate datasets functionality
-- [ ] input dag, distribution of variables, functional form between them
+Rougher roadmap of minor features:
+
+
+- function to remove cycles from cgraphs
+- mutator functions to safely add and delete edges/nodes from graphs
+- function for d-separation test
+- function to calculate the markov boundary/blanket of a node
+- function to calculate partial correlations between variables
+
+
+In the future I would like to add support for simulations, and using javascript to create interactive plots, with possible support for exporting to tikz (LaTeX) 
