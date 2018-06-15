@@ -10,7 +10,7 @@
 #'
 #'
 #' @details
-#' The valid edges types for non latent variable model graphs
+#' The valid edges types for non lateBnt variable model graphs
 #'   (DAGs, PDAGs, Patterns) are:
 #' \itemize{
 #'   \item \code{-->}
@@ -256,29 +256,41 @@ as.pattern <- function(cgraph) {
     stop("input is not a cgraph")
   if (is.pattern(cgraph))
     return(cgraph)
-  if (is.dag(cgraph))
-    return(.dag_to_pattern(cgraph))
-  if (is.pdag(cgraph))
-    return(.dag_from_pdag(cgraph))
-  if (is.pag(cgraph))
-    stop("pags cannot be converted to patterns.")
+}
 
-  # ok, now attempt to turn cgraph object into pattern
-  # check check to see if it is acyclic
-  if (!is.cyclic(cgraph)) {
-    # if it is directed, we then its a DAG and we
-    # need to convert it to a pattern
-    if (is.directed(cgraph)) {
-      return(.dag_to_pattern(cgraph))
+as.pattern.causality.dag <- function(cgraph) {
+  if (!is.dag(cgraph))
+    stop("input is not a dag")
+  return(.dag_to_pattern(cgraph))
+}
+
+as.pattern.causality.pdag <- function(cgraph) {
+  if (!is.pdag(cgraph))
+    stop("input is not a pdag")
+    return(.dag_from_pdag(cgraph))
+
+}
+
+as.pattern.causality.pag <- function(cgraph) {
+  if (!is.pag(cgraph))
+    stop("Input is not a pag")
+  stop("Not Implemented")
+}
+
+as.pattern.causality.graph <- function(cgraph) {
+  if (is.nonlatent(cgraph)) {
+    if (!is.cyclic(cgraph)) {
+      dag <- .dag_from_pdag(cgraph)
+      if (is.null(dag)) {
+        stop("Input cannot be converted to a pattern")
+      }
+      else
+        return(.dag_to_pattern(dag))
     }
-    # if its nonlatent, its a pdag, so we can try to see if
-    # theres a dag extension
-    else if (is.nonlatent(cgraph)) {
-      return(.pattern_from_pdag(cgraph))
+    else {
+      stop("input contains a cycle, so it cannot be converted to a pattern")
     }
   }
-  else
-    stop("input contains a cycle, so it cannot be coerced to a dag")
 }
 
 # Causality Graph as.pdag Functions --------------------------------------------
@@ -319,8 +331,6 @@ as.pdag.causality.pag <- function(cgraph) {
 
     stop("not implemented")
 }
-
-
 
 # Causality Graph as.pag Functions ---------------------------------------------
 as.pag <- function(cgraph) {
