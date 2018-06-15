@@ -20,12 +20,10 @@ score_graph <- function(cgraph, data) {
   if (!is.cgraph(cgraph))
     stop("Graph is not a causality graph!")
   if (!is.dag(cgraph)) {
-    if (is.pattern(cgraph))
-      cgraph <- as.dag(cgraph) {
-      if (is.null(cgraph)) {
-        warning("Cannot score graph because it lacks a DAG extesnion")
-        return(NA)
-      }
+    cgraph <- as.dag(cgraph)
+    if (is.null(cgraph)) {
+      warning("Cannot score graph because it lacks a DAG extension")
+      return(NA)
     }
   }
   parents <- parents(cgraph)

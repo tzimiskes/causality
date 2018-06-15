@@ -7,10 +7,27 @@
 #' of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid edge
 #' types are listed below
 #' @description
-#' doo
 #'
-#'   @author Alexander Rix
 #'
+#' @details
+#' The valid edges types for non latent variable model graphs
+#'   (DAGs, PDAGs, Patterns) are:
+#' \itemize{
+#'   \item \code{-->}
+#'   \item \code{---}
+#' }
+#' And for latent variable models (PAGs, MAGs):
+#'  \itemize{
+#'    \item \code{o-o}
+#'    \item \code{o->}
+#'    \item \code{++>}
+#'    \item \code{~~>}
+#'    \item \code{<->}
+#'  }
+#'
+#'
+#' @author Alexander Rix
+#' @return An object of class "causality.graph", or an error
 cgraph <- function(nodes, adjacencies, edges) {
   return(structure(
     list(nodes = nodes, adjacencies = adjacencies, edges = edges),
@@ -175,10 +192,8 @@ is.latent <- function(cgraph) {
 as.dag <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
-  else if (is.dag(cgraph))
+  if(is.dag(cgraph))
     return(cgraph)
-  else
-    UseMethod("as.dag")
 }
 
 as.dag.causality.graph <- function(cgraph) {
@@ -193,9 +208,8 @@ as.dag.causality.graph <- function(cgraph) {
       }
       else { # we have a a pdag
        dag <- .dag_from_pdag(cgraph)
-       if (is.null(dag)) {
+       if (is.null(dag))
          warning("Unable to coerce input to causality.dag")
-       }
        return(dag)
       }
     }
@@ -232,6 +246,7 @@ as.dag.causality.pattern <- function(cgraph) {
 as.dag.causality.pag <- function(cgraph) {
   if (!is.pag(cgraph))
     stop("input is not a causality.pag")
+  stop("Not implemented")
 }
 
 # Causality Graph as.pattern Functions -----------------------------------------
@@ -267,23 +282,13 @@ as.pattern <- function(cgraph) {
 }
 
 # Causality Graph as.pdag Functions --------------------------------------------
-as.pdag <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
-  if (is.pdag(cgraph))
-    return(cgraph)
-  if (is.pattern(cgraph)) {
-    class(cgraph) <- .PDAG_CLASS
-    return(cgraph)
-  }
-  if (is.dag(cgraph)) {
-    class(cgraph) <- .PDAG_CLASS
-    return(cgraph)
-  }
-  if(is.pag(cgraph))
-    stop("not implemented")
 
-  # now, try to turn cgraph into a pdag
+as.pdag <- function(cgraph) {
+  if(!is.cgraph(cgraph))
+    stop("Input is not a causality graph")
+  if(is.pdag(cgraph))
+    return(cgraph)
+
   if (is.nonlatent(cgraph)) {
     if (!is.cyclic(cgraph)) {
       class(cgraph) <- .PDAG_CLASS
@@ -294,6 +299,29 @@ as.pdag <- function(cgraph) {
     stop("input contains a cycle, so it cannot be coerced to pdag")
 }
 
+as.pdag.causality.dag <- function(cgraph) {
+  if(!is.dag(cgraph))
+    stop("Input is not a causality dag")
+  class(cgraph) = .PDAG_CLASS
+  return(cgraph)
+}
+
+as.pdag.causality.dag <- function(cgraph) {
+  if(!is.pattern(cgraph))
+    stop("Input is not a causality pattern")
+  class(cgraph) = .PDAG_CLASS
+  return(cgraph)
+}
+
+as.pdag.causality.pag <- function(cgraph) {
+  if(!is.pag(cgraph))
+    stop("Input is not a causality pag")
+
+    stop("not implemented")
+}
+
+
+
 # Causality Graph as.pag Functions ---------------------------------------------
 as.pag <- function(cgraph) {
   stop("not implemented")
@@ -303,14 +331,16 @@ as.pag <- function(cgraph) {
 
 
 # Causality Graph as.cgraph Functions ------------------------------------------
-# create a generic function to handle converting non causality objects to
-# causality ones
+
+#' Why is this no work
+#' @describeIn cgraph Attempt to coerce a non causality graph to a
+#'   causality graph
+#' @export
 as.cgraph <- function(graph) {
   if(is.cgraph(graph))
     return(graph)
-  else
-    UseMethod("as.cgraph")
 }
+
 # rcausal uses different classes for each algorithm, this makes it necessary to
 # create this 'dummy' function to handle converting the algorithm output to
 # causality
@@ -348,7 +378,6 @@ as.cgraph.fges <- as.cgraph.fges.discrete <- as.cgraph.fges.mixed   <-
   as.cgraph.pc   <- as.cgraph.cpc           <- as.cgraph.pcstable   <-
   as.cgraph.cpcstable <- .as.cgraph.rcausal
 
-# converts bn objects to causality ones
 as.cgraph.bn <- function(graph) {
   if (!(class(graph) == "bn"))
     stop("Input is not of class bn!")
