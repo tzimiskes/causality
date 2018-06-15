@@ -1,14 +1,13 @@
 # Casusality Graph Definitons --------------------------------------------------
 
-#' Casuality Graph
+#' Casuality Graphs
 #'
+#' Create or test for objects pf type "causality.graph"
 #' @param nodes A character array of node names
 #' @param edges A \eqn{m x 3} character matrix. Each row is an edge in the form
 #' of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid edge
 #' types are listed below
-#' @description
-#'
-#'
+#' @param graph A graph to coerced or tested
 #' @details
 #' The valid edges types for non lateBnt variable model graphs
 #'   (DAGs, PDAGs, Patterns) are:
@@ -26,18 +25,29 @@
 #'  }
 #'
 #'
-#' @author Alexander Rix
+
 #' @return An object of class "causality.graph", or an error
+#' @author Alexander Rix
+#' @references
+#' Spirtes, Peter, Clark N. Glymour, Richard Scheines, David Heckerman,
+#' Christopher Meek, Gregory Cooper, and Thomas Richardson.
+#' Causation, prediction, and search. MIT press, 2000.
+#'
+#' Pearl, Judea. Causality. Cambridge university press, 2009.
+#' @family causality.graph.types
 cgraph <- function(nodes, adjacencies, edges) {
   return(structure(
     list(nodes = nodes, adjacencies = adjacencies, edges = edges),
     class = .CGRAPH_CLASS))
 }
 
-#' @description  doo
-#' @param graph A graph to coerced or tested
-#' @author Alexander Rix
-#' @describeIn cgraph Check to see if a Causality Graph is valid
+#' @details is_valid_cgraph checks to see if the input is a valid
+#' "causality.graph." Specifally, it checks that there are no duplicate nodes,
+#' as well as if the input is simple (no self-loops and is not a multi-graph).
+#' @usage is_valid_cgraph(graph)
+#' @rdname cgraph
+#' @return \code{is_valid_cgraph} returns \code{TRUE} or \code{FALSE} depending
+#' on whether or not the input is valid
 is_valid_cgraph <- function(graph) {
   # check for duplicate nodes
   nodes <- sort(graph$nodes)
@@ -105,7 +115,9 @@ is_valid_cgraph <- function(graph) {
 
 
 # Casusality Graph is.* Functions ----------------------------------------------
-
+ #' @usage is.cgraph(graph) Tests whether or not an object has the class
+ #'   causality.graph
+ #' @rdname cgraph
 is.cgraph <- function(graph) {
   if (.CGRAPH_CLASS %in% class(graph))
     return(TRUE)
@@ -342,13 +354,23 @@ as.pag <- function(cgraph) {
 
 # Causality Graph as.cgraph Functions ------------------------------------------
 
-#' Why is this no work
-#' @describeIn cgraph Attempt to coerce a non causality graph to a
-#'   causality graph
-#' @export
+#' @details Why is this no work
+#' @usage as.cgraph(graph) S3 generic to attempt to convert not causality graph
+#'   to casuality.graph
+#' @param graph A graph to coerced or tested
+#' @rdname cgraph
 as.cgraph <- function(graph) {
-  if(is.cgraph(graph))
-    return(graph)
+    UseMethod("as.cgraph")
+}
+
+as.cgraph.causality.graph <- function(graph) {
+  return(graph)
+}
+
+as.cgraph.causality.default <- function(graph) {
+  if (is_valid_cgraph(graph))
+    class(graph) <- .CGRAPH_CLASS
+  return(graph)
 }
 
 # rcausal uses different classes for each algorithm, this makes it necessary to
