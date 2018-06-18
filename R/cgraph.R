@@ -1,33 +1,49 @@
+# cgraph.R contains implementations for the core causality classe(s)
+# Author: Alexander Rix (arix@umn.edu)
+
 # Casusality Graph Definitons --------------------------------------------------
 
 #' Casuality Graphs
 #'
-#' Create or test for objects pf type "causality.graph"
+#' Create or test for objects of type "causality.graph"
 #' @param nodes A character array of node names
 #' @param edges A \eqn{m x 3} character matrix. Each row is an edge in the form
-#' of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid edge
-#' types are listed below
+#'   of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid
+#'   edge types are listed below
+#' @param validate logical number to determine whether or not to check to see
+#'   if the cgraph is valid before returning it. Default is \code{TRUE}
 #' @param graph A graph to coerced or tested
-#' @details
-#' The valid edges types for non lateBnt variable model graphs
+#' @details A causality-graph consists of three things
+#'   \itemize{
+#'     \item nodes: a character vector of the nodes of the in the causal graph
+#'     \item adjacencies a list of character vectors that contain the
+#'       adjacencies of each node. This is calculated when a cgraph is created.
+#'     \item edges a m x 3 character matrix which represents the edges in a
+#'       causal graph in the form (from, to, edge). For example, if we are
+#'       dealing with a causal graph regarding drug use and cancer, The edge
+#'       "Smoking --> Cancer" would be stored as ("Smoking", "Cancer", "-->")
+#'       in the edge matrix
+#'   }
+#'   The valid edges types for non latent variable model graphs
 #'   (DAGs, PDAGs, Patterns) are:
-#' \itemize{
-#'   \item \code{-->}
-#'   \item \code{---}
-#' }
-#' And for latent variable models (PAGs, MAGs):
-#'  \itemize{
-#'    \item \code{o-o}
-#'    \item \code{o->}
-#'    \item \code{++>}
-#'    \item \code{~~>}
-#'    \item \code{<->}
-#'  }
+#'   \itemize{
+#'     \item \code{-->}
+#'     \item \code{---}
+#'   }
+#'   And for latent variable models (PAGs, MAGs):
+#'   \itemize{
+#'     \item \code{o-o}
+#'     \item \code{o->}
+#'     \item \code{++>}
+#'     \item \code{~~>}
+#'     \item \code{<->}
+#'   }
 #'
 #'
-
-#' @return An object of class "causality.graph", or an error
+#' @return \code{cgraph} returns object of class "causality.graph", or an error
+#'   if the graph is invalid.
 #' @author Alexander Rix
+#' @examples TODO(arix)
 #' @references
 #' Spirtes, Peter, Clark N. Glymour, Richard Scheines, David Heckerman,
 #' Christopher Meek, Gregory Cooper, and Thomas Richardson.
@@ -35,21 +51,44 @@
 #'
 #' Pearl, Judea. Causality. Cambridge university press, 2009.
 #' @family causality.graph.types
-cgraph <- function(nodes, adjacencies, edges) {
-  return(structure(
+cgraph <- function(nodes, edges, validate = T) {
+  if(!is.logical(validate))
+    stop("validate must take on a logical value")
+  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
+
+  graph <- structure(
     list(nodes = nodes, adjacencies = adjacencies, edges = edges),
-    class = .CGRAPH_CLASS))
+    class = .CGRAPH_CLASS)
+  if(validate) {
+    if (!is_valid_cgraph(graph))
+      stop("Input is not a valid causality graph")
+  }
+  else
+    return(graph)
 }
 
-#' @details is_valid_cgraph checks to see if the input is a valid
+#' @details \code{is_valid_cgraph} checks to see if the input is a valid
 #' "causality.graph." Specifally, it checks that there are no duplicate nodes,
 #' as well as if the input is simple (no self-loops and is not a multi-graph).
 #' @usage is_valid_cgraph(graph)
 #' @rdname cgraph
 #' @return \code{is_valid_cgraph} returns \code{TRUE} or \code{FALSE} depending
-#' on whether or not the input is valid
+#'   on whether or not the input is valid
 is_valid_cgraph <- function(graph) {
-  # check for duplicate nodes
+  # check to make sure it has valid fields (in the right order)
+  if(!isTRUE(all.equal(c("nodes", "adjacencies","edges"), names(graph)))) {
+    message("graph does not contain the appropriate fields")
+    return(FALSE)
+  }
+  if (!(is.character(graph$edges)) & ncol(graph$edges) == 3) {
+    message("graph edges is not a character matrix")
+    return(FALSE)
+  }
+  if (!is.character(graph$nodes)) {
+    message("graph nodes is not a character matrix")
+    return(FALSE)
+  }
+  # check to make sure that there are no duplicate nodes
   nodes <- sort(graph$nodes)
   for (i in 1:(length(nodes)-1)) {
     if ( nodes[i] == nodes[i + 1]) {
@@ -58,19 +97,10 @@ is_valid_cgraph <- function(graph) {
     }
   }
 
-  adjs <- .calculate_adjacencies_from_edges(graph$edges, graph$nodes)
-  for(node in names(adjs)) {
-    calculated_node_adjs <- adjs[[node]]
-    listed_node_adjs     <- graph$adjacencies[[node]]
-    intersection         <- intersect(calculated_node_adjs, listed_node_adjs)
-    if (!isTRUE(all.equal(intersection, listed_node_adjs)))
-      stop("adjacencies do not not match the nodes and edge!")
-  }
-
-  # check to see if the graph is simple
+  # determine whether the graph is simple (No self-loops, no multi-edges)
+  # as well as making sure all nodes in the edges show up in nodes
   n_edges <- nrow(graph$edges)
-
-  parents = list()
+  parents = list() # this should probably be renamed; unclear
   for (i in 1:n_edges) {
     edge <- graph$edges[i,]
     if (edge[1] == edge[2]) {
@@ -81,7 +111,7 @@ is_valid_cgraph <- function(graph) {
       message("graph is a multigraph")
       return(FALSE)
     }
-    else
+    else # if the edge isn't in the list, add it
       parents[[edge[2]]][[edge[1]]] <- 1
     if (!(edge[1] %in% graph$nodes) || (!edge[2] %in% graph$nodes)) {
       message("graph contains nodes that are not in the node list")
@@ -90,6 +120,17 @@ is_valid_cgraph <- function(graph) {
   }
   return(TRUE)
 }
+
+
+
+# adjs <- .calculate_adjacencies_from_edges(graph$edges, graph$nodes)
+# for(node in names(adjs)) {
+#   calculated_node_adjs <- adjs[[node]]
+#   listed_node_adjs     <- graph$adjacencies[[node]]
+#   intersection         <- intersect(calculated_node_adjs, listed_node_adjs)
+#   if (!isTRUE(all.equal(intersection, listed_node_adjs)))
+#     stop("adjacencies do not not match the nodes and edge!")
+# }
 
 # these hidden (lol) variables are used to assign (sub)classes to craph objects
 .CGRAPH_CLASS  <- c(                     "causality.graph")
@@ -115,8 +156,10 @@ is_valid_cgraph <- function(graph) {
 
 
 # Casusality Graph is.* Functions ----------------------------------------------
- #' @usage is.cgraph(graph) Tests whether or not an object has the class
+ #' @usage is.cgraph(graph)
+ #' @details \code{is.cgraph} tests whether or not an object has the class
  #'   causality.graph
+ #'   @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
  #' @rdname cgraph
 is.cgraph <- function(graph) {
   if (.CGRAPH_CLASS %in% class(graph))
@@ -354,10 +397,10 @@ as.pag <- function(cgraph) {
 
 # Causality Graph as.cgraph Functions ------------------------------------------
 
-#' @details Why is this no work
-#' @usage as.cgraph(graph) S3 generic to attempt to convert not causality graph
-#'   to casuality.graph
-#' @param graph A graph to coerced or tested
+#' @details \code{as.cgraph} is an S3 generic that attempts to convert a not
+#' causality.cgraph to a "causalality.graph". It currently supports turning "bn"
+#' objects and r-causal objects to "causality.graphs".
+#' @usage as.cgraph(graph)
 #' @rdname cgraph
 as.cgraph <- function(graph) {
     UseMethod("as.cgraph")
@@ -367,10 +410,13 @@ as.cgraph.causality.graph <- function(graph) {
   return(graph)
 }
 
-as.cgraph.causality.default <- function(graph) {
-  if (is_valid_cgraph(graph))
+as.cgraph.default <- function(graph) {
+  if (is_valid_cgraph(graph)) {
     class(graph) <- .CGRAPH_CLASS
-  return(graph)
+    return(graph)
+  }
+  else
+    stop("Cannot coerce input to causality.graph")
 }
 
 # rcausal uses different classes for each algorithm, this makes it necessary to
@@ -396,11 +442,8 @@ as.cgraph.causality.default <- function(graph) {
         new_edges[i, 3] <- .SQUIGGLE # ~~>
     }
   }
-  adjacencies <- .calculate_adjacencies_from_edges(new_edges, graph$nodes)
-  cgraph      <- cgraph(graph$nodes, adjacencies, new_edges)
+  cgraph      <- cgraph(graph$nodes, new_edges)
 
-  if (!is_valid_cgraph(cgraph))
-    stop("Input is not a valid cgraph object")
   return(cgraph)
 }
 
@@ -415,13 +458,7 @@ as.cgraph.bn <- function(graph) {
     stop("Input is not of class bn!")
 
   names <- names(graph$nodes)
-  # get the adjacencies
-  adjacencies <- lapply(names, function(x) {
-    graph$nodes[[x]]$nbr
-  }
-  )
-  names(adjacencies) <- names
   # get the edges
   edges <- cbind(unname(graph$arcs), "-->")
-  return(cgraph(names, adjacencies, edges))
+  return(cgraph(names, edges))
 }
