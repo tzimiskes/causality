@@ -1,4 +1,4 @@
-#' Calculate the structural hamming distance between two patterns
+#' Structural Hamming Distance
 #'
 #' \code{shd} calculates the structural hamming distance (SHD) between two
 #' patterns
@@ -11,68 +11,66 @@
 #'   al(2006). DAGs will also work, as they will be converted into patterns.
 #'   Inputing PDAGs will work if the PDAGs admit DAG extensions. If (at least)
 #'   one of them does not, an error is thrown.
-#' @examples
-#' TODO(arix)
 #' @references Tsamardinos I, Brown LE, Aliferis CF (2006). "The Max-Min
 #'   Hill-Climbing Bayesian Network Structure Learning Algorithm". Machine
 #'   Learning, 65(1), 31-78.
 #' @examples TODO(arix)
 #' @family graph comparison statistics
-# TODO(arix) redo type checking
-shd <- function(pdag1, pdag2) {
-  if (!is.cgraph(pdag1))
-    stop("pdag1 must be a cgraph")
-  if (!is.cgraph(pdag2))
-    stop("pdag2 must be a cgraph")
-  if (!is.pattern(pdag1))
-    pdag1 <- as.pattern(pdag1)
-  if (!is.pattern(pdag2))
-    pdag1 <- as.pattern(pdag2)
+shd <- function(pattern1, pattern2) {
+  if (!is.cgraph(pattern1))
+    stop("pattern1 must be a cgraph")
+  if (!is.cgraph(pattern2))
+    stop("pattern2 must be a cgraph")
+  if (!is.pattern(pattern1))
+    pattern1 <- as.pattern(pattern1)
+  if (!is.pattern(pattern2))
+    pattern1 <- as.pattern(pattern2)
 
-  # generate the adjacency list of the children of pdag1
+  # generate the adjacency list of the children of pattern1
   true_children <- list()
-  for (i in 1:nrow(pdag1$edges)) {
-    pdag1_edge <- pdag1$edges[i,]
-    true_children[[pdag1_edge[1]]][[pdag1_edge[2]]] <- pdag1_edge[3]
+  for (i in 1:nrow(pattern1$edges)) {
+    pattern1_edge <- pattern1$edges[i,]
+    true_children[[pattern1_edge[1]]][[pattern1_edge[2]]] <- pattern1_edge[3]
   }
-  # now, do the same for pdag2
+  # now, do the same for pattern2
   est_children <- list()
-  for (j in 1:nrow(pdag2$edges)) {
-    pdag2_edge <- pdag2$edges[j,]
-    est_children[[pdag2_edge[1]]][[pdag2_edge[2]]] <- pdag2_edge[3]
+  for (j in 1:nrow(pattern2$edges)) {
+    pattern2_edge <- pattern2$edges[j,]
+    est_children[[pattern2_edge[1]]][[pattern2_edge[2]]] <- pattern2_edge[3]
   }
   distance <- 0
-  # loop through the pdag1 edges to see if pdag1 is missing edges, or misoriented edges.
-  for (i in 1:nrow(pdag1$edges)) {
-    pdag1_edge <- pdag1$edges[i, ]
-    pdag2_edge <- as.list(est_children[[pdag1_edge[1]]])[[pdag1_edge[2]]]
-    if (is.null(pdag2_edge)) {
-      if (pdag1_edge[3] == "-->") {
-        print(pdag1_edge)
+  # loop through the pattern1 edges to see if pattern1 is missing edges,
+  # or misoriented edges.
+  for (i in 1:nrow(pattern1$edges)) {
+    pattern1_edge <- pattern1$edges[i, ]
+    pattern2_edge <- as.list(est_children[[pattern1_edge[1]]])[[pattern1_edge[2]]]
+    if (is.null(pattern2_edge)) {
+      if (pattern1_edge[3] == "-->") {
+        print(pattern1_edge)
         distance <- distance + 1
       }
-      # if pdag1_edge is not of type -->, it is --- since (true_src, true_dst,
+      # if pattern1_edge is not of type -->, it is --- since (true_src, true_dst,
       # ---) is not in true graph, we ned to check to see if (true_dst,
       # true_src, ---) is
       else {
-        pdag2_edge <- as.list(est_children[[pdag1_edge[2]]])[[pdag1_edge[1]]]
+        pattern2_edge <- as.list(est_children[[pattern1_edge[2]]])[[pattern1_edge[1]]]
         # it isn't
-        if (is.null(pdag2_edge) || pdag2_edge != "---")
+        if (is.null(pattern2_edge) || pattern2_edge != "---")
           distance <- distance + 1
       }
-      # pdag2_edge is not null
-      # if the orientations don't match, pdag2_edge in not oriented in
-    } else if( pdag2_edge != pdag1_edge[3]) {
+      # pattern2_edge is not null
+      # if the orientations don't match, pattern2_edge in not oriented in
+    } else if( pattern2_edge != pattern1_edge[3]) {
       distance <- distance + 1
     }
   }
-  # we only need to see if pdag2_edge is extra in the true pdags
-  for(i in 1:nrow(pdag2$edges)) {
-    pdag2_edge <- pdag2$edges[i, ]
-    pdag1_edge <- as.list(true_children[[pdag2_edge[1]]])[[pdag2_edge[2]]]
-    if (is.null(pdag1_edge)) {
-      pdag1_edge <- as.list(true_children[[pdag2_edge[2]]])[[pdag2_edge[1]]]
-      if (is.null(pdag1_edge))
+  # we only need to see if pattern2_edge is extra in the true patterns
+  for(i in 1:nrow(pattern2$edges)) {
+    pattern2_edge <- pattern2$edges[i, ]
+    pattern1_edge <- as.list(true_children[[pattern2_edge[1]]])[[pattern2_edge[2]]]
+    if (is.null(pattern1_edge)) {
+      pattern1_edge <- as.list(true_children[[pattern2_edge[2]]])[[pattern2_edge[1]]]
+      if (is.null(pattern1_edge))
         distance <- distance + 1
     }
   }

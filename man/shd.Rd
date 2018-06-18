@@ -2,9 +2,9 @@
 % Please edit documentation in R/shd.R
 \name{shd}
 \alias{shd}
-\title{Calculate the structural hamming distance between two patterns}
+\title{Structural Hamming Distance}
 \usage{
-shd(pdag1, pdag2)
+shd(pattern1, pattern2)
 }
 \arguments{
 \item{pattern1}{A causality pattern}
@@ -27,7 +27,6 @@ patterns
   one of them does not, an error is thrown.
 }
 \examples{
-TODO(arix)
 TODO(arix)
 }
 \references{
