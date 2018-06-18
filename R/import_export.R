@@ -56,10 +56,9 @@ import_from_tetrad_file <- function(file, type = "cgraph", sort = F) {
     }
   }
 
-  # get the adjacencies from the edge representation
-  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
 
-  tmp_cgraph <- cgraph(nodes, adjacencies, edges)
+
+  tmp_cgraph <- cgraph(nodes, edges)
   # check to see if input is a legal cgraph object
   if(is_valid_cgraph(tmp_cgraph) == FALSE)
     stop("imported graph is not a valid cgraph object")
