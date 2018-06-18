@@ -21,6 +21,15 @@
 #' @family graph comparison statistics
 # TODO(arix) redo type checking
 shd <- function(pdag1, pdag2) {
+  if (!is.cgraph(pdag1))
+    stop("pdag1 must be a cgraph")
+  if (!is.cgraph(pdag2))
+    stop("pdag2 must be a cgraph")
+  if (!is.pattern(pdag1))
+    pdag1 <- as.pattern(pdag1)
+  if (!is.pattern(pdag2))
+    pdag1 <- as.pattern(pdag2)
+
   # generate the adjacency list of the children of pdag1
   true_children <- list()
   for (i in 1:nrow(pdag1$edges)) {
