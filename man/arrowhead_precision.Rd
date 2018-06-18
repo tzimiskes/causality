@@ -27,7 +27,8 @@ Length one numeric between 0 and 1.
 \code{arrowhead_precision} calculates the arrowhead precison between a graph
 and an oracle.
 
-\code{arrowhead_recall} calculates the arrowhead recall between a graph and an oracle
+\code{arrowhead_recall} calculates the arrowhead recall between a graph and
+  an oracle
 }
 \details{
 \code{arrowhead_precision} counts the number of directed edges

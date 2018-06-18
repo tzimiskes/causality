@@ -2,30 +2,29 @@
 % Please edit documentation in R/shd.R
 \name{shd}
 \alias{shd}
-\title{Calculate the Structural Hamming Distance between two PDAGS}
+\title{Calculate the structural hamming distance between two patterns}
 \usage{
 shd(pdag1, pdag2)
 }
 \arguments{
-\item{pdag1}{A causality pdag being used as the "true" pdag}
+\item{pattern1}{A causality pattern}
 
-\item{pdag2}{A causality pdag that is being compared to \code{pdag1}}
+\item{pattern2}{A causality pattern that is being compared to \code{pattern1}}
 }
 \value{
 Length one numeric between 0 and \eqn{n^2}, where n is the number of
-  nodes.
+  nodes. A Distance of 0 implies that the patterns are the same
 }
 \description{
-\code{adjacency_precision} calculates the adjacency precison between a graph
-and an oracle.
+\code{shd} calculates the structural hamming distance (SHD) between two
+patterns
 }
 \details{
-\code{shd} takes in objects of class pdag and calculates the
+\code{shd} takes in patterns and calculates the
   structural hamming distance between them as defined in Tsamardinos et
-  al(2006). Note that patterns are a subset of dpags, so inputing these
-  objects works as well. If the event the at least 1 of the inputs is a dag,
-  shd returns an error and states that you need to run \code{dag_to_pattern}
-  to coerce the dag to a pattern first.
+  al(2006). DAGs will also work, as they will be converted into patterns.
+  Inputing PDAGs will work if the PDAGs admit DAG extensions. If (at least)
+  one of them does not, an error is thrown.
 }
 \examples{
 TODO(arix)
