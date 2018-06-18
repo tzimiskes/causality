@@ -2,9 +2,12 @@
 % Please edit documentation in R/arrowhead.R
 \name{arrowhead_precision}
 \alias{arrowhead_precision}
+\alias{arrowhead_recall}
 \title{Determine the percentage of arrows in a graph are in the true graph}
 \usage{
 arrowhead_precision(true_graph, est_graph)
+
+arrowhead_recall(true_graph, est_graph)
 }
 \arguments{
 \item{true_graph}{graph being treated as the truth.}
@@ -12,20 +15,33 @@ arrowhead_precision(true_graph, est_graph)
 \item{est_graph}{The graph being compared to \code{true_graph}}
 }
 \value{
-Length one numeric between 0 and 1. If there are no oriented edges in
-  \code{est_graph}, \code{NA} is returned. 1 implies that every directed edge
-  in \code{est_graph} is also in \code{true_graph}, while 0 implies that no
-  directed ege in \code{est_graph} is in \code{true_graph}
+Length one numeric between 0 and 1.
+
+  \code{arrowhead_precision} returns \code{NA} if there are no oriented
+  edges in\code{est_graph}.
+
+\code{arrowhead_recall} returns \code{NA} if there are
+  no orriented edges (arrows) in \code{true_graph}
 }
 \description{
 \code{arrowhead_precision} calculates the arrowhead precison between a graph
 and an oracle.
+
+\code{arrowhead_recall} calculates the arrowhead recall between a graph and an oracle
 }
 \details{
 \code{arrowhead_precision} counts the number of directed edges
-  (\code{"<--"},\code{"-->"}) in \code{est_graph} and then counts how many
+  ("node1", "node2", \code{"-->"}) in \code{est_graph} and then counts how many
   directed edges in \code{est_graph} are also in \code{true_graph}. Then, the
-  ratio is returned.)
+  ratio is returned. 1 implies that every directed edge
+  in \code{est_graph} is also in \code{true_graph}, while 0 implies that no
+  directed edge in \code{est_graph} is in \code{true_graph}
+
+\code{arrowhead_recall} counts the number of directed edges (<--,
+-->) in \code{true_graph} and then counts how many directed edges in
+\code{est_graph} are in \code{true_graph}. Then, the ratio is returned. 1
+implies that every directed edge in \code{true_graph} is also in
+\code{est_graph}
 }
 \examples{
 TODO(arix)
@@ -39,5 +55,6 @@ Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
   2001, p. 109.
 }
 \seealso{
-\code{\link{arrowhead_recall}}
+Other graph comparison statistics: \code{\link{adjacency_precision}},
+  \code{\link{adjacency_recall}}, \code{\link{shd}}
 }

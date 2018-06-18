@@ -1,17 +1,20 @@
+
 #' Determine the percentage of arrows in a graph are in the true graph
 #'
 #' \code{arrowhead_precision} calculates the arrowhead precison between a graph
 #' and an oracle.
 #' @param true_graph graph being treated as the truth.
 #' @param est_graph The graph being compared to \code{true_graph}
-#' @return Length one numeric between 0 and 1. If there are no oriented edges in
-#'   \code{est_graph}, \code{NA} is returned. 1 implies that every directed edge
-#'   in \code{est_graph} is also in \code{true_graph}, while 0 implies that no
-#'   directed ege in \code{est_graph} is in \code{true_graph}
 #' @details \code{arrowhead_precision} counts the number of directed edges
-#'   (\code{"<--"},\code{"-->"}) in \code{est_graph} and then counts how many
+#'   ("node1", "node2", \code{"-->"}) in \code{est_graph} and then counts how many
 #'   directed edges in \code{est_graph} are also in \code{true_graph}. Then, the
-#'   ratio is returned.)
+#'   ratio is returned. 1 implies that every directed edge
+#'   in \code{est_graph} is also in \code{true_graph}, while 0 implies that no
+#'   directed edge in \code{est_graph} is in \code{true_graph}
+#' @return Length one numeric between 0 and 1.
+#'
+#'   \code{arrowhead_precision} returns \code{NA} if there are no oriented
+#'   edges in\code{est_graph}.
 #' @examples
 #' TODO(arix)
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
@@ -20,7 +23,7 @@
 #'
 #'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
-#' @seealso \code{\link{arrowhead_recall}}
+#' @family @family graph comparison statistics
 arrowhead_precision <- function(true_graph, est_graph) {
   # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
   #   stop("at least of the graphs are not the correct type!")
@@ -45,11 +48,7 @@ arrowhead_precision <- function(true_graph, est_graph) {
     # if the edge in unoriented, skip
     if (eg_edge[3] == "---")
       next
-    if (eg_edge[3] == "<->") {
-      warning(sprintf("edge %i in est_graph is a bidirected edge.
-                      Treating the edge as ---", i))
-      next
-    }
+
     if(!(eg_edge[2] %in% true_graph$adjacencies[[eg_edge[1]]]))
       next
     for (j in 1:length(true_graph$edges[, 1])) {
@@ -83,25 +82,17 @@ arrowhead_precision <- function(true_graph, est_graph) {
 
 #' Determine how many arrows in graph 1 are in graph2.
 #'
-#' \code{arrowhead_recall} calculates the arrowhead recall between a graph and an oracle
-#' @param true_graph graph being treated as as the truth.
-#' @param est_graph The graph being compared to the \code{true_graph}
-#' @return Numeric between 0 and 1;
-#' \code{arrowhead_recall} returns \code{NA} if there are
+#' \code{arrowhead_recall} calculates the arrowhead recall between a graph and
+#'   an oracle
+#' @return \code{arrowhead_recall} returns \code{NA} if there are
 #'   no orriented edges (arrows) in \code{true_graph}
 #' @details \code{arrowhead_recall} counts the number of directed edges (<--,
 #' -->) in \code{true_graph} and then counts how many directed edges in
 #' \code{est_graph} are in \code{true_graph}. Then, the ratio is returned. 1
 #' implies that every directed edge in \code{true_graph} is also in
 #' \code{est_graph}
-#' @examples
-#' TODO(arix)
-#' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
-#'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
-#'
-#'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
-#'   2001, p. 109.
-#' @seealso arrowhead_precision
+#' @family graph comparison statistics
+#' @rdname arrowhead_precision
 arrowhead_recall <- function(true_graph, est_graph) {
   #TODO(arix) implement type checking
 

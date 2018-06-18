@@ -16,13 +16,12 @@
 #'   adjacencies in \code{est_graph} is returned.
 #' @examples
 #' TODO(arix)
-#' @seealso   \code{\link{adjacency_recall}} \code{\link{arrowhead_precision}} \code{\link{arrowhead_recall}}
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
 #'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
 #'
 #'   Spirtes et al: “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
-
+#' @family graph comparison statistics
 # TODO(arix) look at implementation to see why i index over names of skeleton
 adjacency_precision <- function(true_graph, est_graph) {
   if(!is.cgraph(true_graph))
@@ -66,12 +65,13 @@ adjacency_precision <- function(true_graph, est_graph) {
 #'   adjacencies in \code{true_graph} is returned.
 #' @examples
 #' TODO(arix)
-#' @seealso   \code{\link{adjacency_precision}} \code{\link{arrowhead_precision}} \code{\link{arrowhead_recall}}
+#' @family graphstatistics
 #' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
 #'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
 #'
 #'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
+#'@family graph comparison statistics
 adjacency_recall <- function(true_graph, est_graph) {
   if(!is.cgraph(true_graph))
     stop("true_graph is not of type cgraph")

@@ -29,6 +29,7 @@ and an oracle.
 }
 \examples{
 TODO(arix)
+TODO(arix)
 }
 \references{
 Tsamardinos I, Brown LE, Aliferis CF (2006). "The Max-Min
@@ -36,5 +37,7 @@ Tsamardinos I, Brown LE, Aliferis CF (2006). "The Max-Min
   Learning, 65(1), 31-78.
 }
 \seealso{
-\code{\link{dag_to_pattern}}
+Other graph comparison statistics: \code{\link{adjacency_precision}},
+  \code{\link{adjacency_recall}},
+  \code{\link{arrowhead_precision}}
 }

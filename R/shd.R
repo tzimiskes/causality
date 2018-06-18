@@ -17,7 +17,8 @@
 #' @references Tsamardinos I, Brown LE, Aliferis CF (2006). "The Max-Min
 #'   Hill-Climbing Bayesian Network Structure Learning Algorithm". Machine
 #'   Learning, 65(1), 31-78.
-#' @seealso \code{\link{dag_to_pattern}}
+#' @examples TODO(arix)
+#' @family graph comparison statistics
 # TODO(arix) redo type checking
 shd <- function(pdag1, pdag2) {
   # generate the adjacency list of the children of pdag1

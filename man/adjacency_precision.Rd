@@ -39,5 +39,6 @@ Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
   2001, p. 109.
 }
 \seealso{
-\code{\link{adjacency_recall}} \code{\link{arrowhead_precision}} \code{\link{arrowhead_recall}}
+Other graph comparison statistics: \code{\link{adjacency_recall}},
+  \code{\link{arrowhead_precision}}, \code{\link{shd}}
 }
