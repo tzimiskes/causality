@@ -43,7 +43,16 @@
 #' @return \code{cgraph} returns object of class "causality.graph", or an error
 #'   if the graph is invalid.
 #' @author Alexander Rix
-#' @examples TODO(arix)
+#' @examples
+#' nodes <- c("X1", "X2", "X3", "X4")
+#' edges <- matrix(c("X1", "X2", "-->",
+#'                   "X3", "X2", "-->",
+#'                   "X4", "X1", "---",
+#'                   "X4", "X3", "-->",
+#'                   "X4", "X2", "-->"), ncol = 3, byrow = T)
+#' cgraph(nodes, edges)
+
+#'
 #' @references
 #'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
@@ -246,10 +255,13 @@ is.latent <- function(cgraph) {
 # Causality Graph as.dag Functions ---------------------------------------------
 
 as.dag <- function(cgraph) {
+  UseMethod("as.dag")
+}
+as.dag.default <- function(cgraph) {
+  if (is.dag(cgraph))
+    return(cgraph)
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
-  if(is.dag(cgraph))
-    return(cgraph)
 }
 
 as.dag.causality.graph <- function(cgraph) {

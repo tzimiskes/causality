@@ -77,7 +77,14 @@ causality.cgraph to a "causalality.graph". It currently supports turning "bn"
 objects and r-causal objects to "causality.graphs".
 }
 \examples{
-TODO(arix)
+nodes <- c("X1", "X2", "X3", "X4")
+edges <- matrix(c("X1", "X2", "-->",
+                  "X3", "X2", "-->",
+                  "X4", "X1", "---",
+                  "X4", "X3", "-->",
+                  "X4", "X2", "-->"), ncol = 3, byrow = T)
+cgraph(nodes, edges)
+
 }
 \references{
 Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
