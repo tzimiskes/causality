@@ -13,7 +13,7 @@ shd(pattern1, pattern2)
 }
 \value{
 Length one numeric between 0 and \eqn{n^2}, where n is the number of
-  nodes. A Distance of 0 implies that the patterns are the same
+  nodes. A distance of 0 implies that the patterns are the same
 }
 \description{
 \code{shd} calculates the structural hamming distance (SHD) between two
@@ -35,7 +35,10 @@ Tsamardinos I, Brown LE, Aliferis CF (2006). "The Max-Min
   Learning, 65(1), 31-78.
 }
 \seealso{
-Other graph comparison statistics: \code{\link{adjacency_precision}},
-  \code{\link{adjacency_recall}},
-  \code{\link{arrowhead_precision}}
+Other graph comparison statistics:
+\code{\link{arrowhead_precision}}, \code{\link{arrowhead_recall}},
+  \code{\link{adjacency_precision}}, and \code{\link{adjacency_recall}}
+}
+\author{
+Alexander Rix
 }
