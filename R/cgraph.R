@@ -45,12 +45,14 @@
 #' @author Alexander Rix
 #' @examples TODO(arix)
 #' @references
-#' Spirtes, Peter, Clark N. Glymour, Richard Scheines, David Heckerman,
-#' Christopher Meek, Gregory Cooper, and Thomas Richardson.
-#' Causation, prediction, and search. MIT press, 2000.
+#'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
+#'   2001, p. 109.
 #'
-#' Pearl, Judea. Causality. Cambridge university press, 2009.
-#' @family causality.graph.types
+#'  Spirtes P. Introduction to causal inference.
+#'  Journal of Machine Learning Research. 2010;11(May):1643-62.
+#'
+#'   Pearl, Judea. Causality. Cambridge university press, 2009.
+#' @family causality graph types
 cgraph <- function(nodes, edges, validate = T) {
   if(!is.logical(validate))
     stop("validate must take on a logical value")
@@ -442,7 +444,7 @@ as.cgraph.default <- function(graph) {
         new_edges[i, 3] <- .SQUIGGLE # ~~>
     }
   }
-  cgraph      <- cgraph(graph$nodes, new_edges)
+  cgraph <- cgraph(graph$nodes, new_edges)
 
   return(cgraph)
 }

@@ -11,7 +11,7 @@
 #' @examples TODO(arix)
 as.lavaan.formula <- function(cgraph) {
   if (!is.cgraph(cgraph)) {
-    stop("Input is not a cgraph")
+    stop("Input must be a causality graph")
   }
   if (!is.dag(cgraph))
     cgraph <- as.dag(cgraph)
