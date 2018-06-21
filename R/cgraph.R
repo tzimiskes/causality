@@ -65,8 +65,7 @@ cgraph <- function(nodes, edges, validate = T) {
     if (!is_valid_cgraph(graph))
       stop("Input is not a valid causality graph")
   }
-  else
-    return(graph)
+  return(graph)
 }
 
 #' @details \code{is_valid_cgraph} checks to see if the input is a valid
@@ -87,7 +86,7 @@ is_valid_cgraph <- function(graph) {
     return(FALSE)
   }
   if (!is.character(graph$nodes)) {
-    message("graph nodes is not a character matrix")
+    message("graph nodes is not a character array")
     return(FALSE)
   }
   # check to make sure that there are no duplicate nodes
