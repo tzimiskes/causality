@@ -1,153 +1,105 @@
-
-#' Determine the percentage of arrows in a graph are in the true graph
+#' Arrowhead Precision and Recall
 #'
-#' \code{arrowhead_precision} calculates the arrowhead precison between a graph
-#' and an oracle.
-#' @param true_graph graph being treated as the truth.
-#' @param est_graph The graph being compared to \code{true_graph}
+#' \code{arrowhead_precision} calculates the arrowhead precision between two
+#' causality graphs
+#' @param pdag1 A causality PDAG
+#' @param pdag2 A causality PDAG
 #' @details \code{arrowhead_precision} counts the number of directed edges
-#'   ("node1", "node2", \code{"-->"}) in \code{est_graph} and then counts how many
-#'   directed edges in \code{est_graph} are also in \code{true_graph}. Then, the
-#'   ratio is returned. 1 implies that every directed edge
-#'   in \code{est_graph} is also in \code{true_graph}, while 0 implies that no
-#'   directed edge in \code{est_graph} is in \code{true_graph}
+#'   (\code{"-->"}) in \code{pdag1} and then counts how many directed edges in
+#'   \code{pdag1} are also in \code{pdag2}. Then, the ratio is returned.
 #' @return Length one numeric between 0 and 1.
 #'
 #'   \code{arrowhead_precision} returns \code{NA} if there are no oriented
-#'   edges in\code{est_graph}.
+#'   edges in \code{pdag2}.
 #' @examples
 #' TODO(arix)
-#' @references Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
-#'   Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749
-#'   [cs.AI]}.
+#' @references
+#' Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous Variables”,
+#'  2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749[cs.AI]}.
 #'
 #'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
-#' @family @family graph comparison statistics
-arrowhead_precision <- function(true_graph, est_graph) {
-  # if (class(true_graph) != "cgraph" || class(est_graph) != "cgraph")
-  #   stop("at least of the graphs are not the correct type!")
-  # if (!setequal(true_graph$names,est_graph$names))
-  #   stop ("names of the nodes do not match!")
-  n_predicted_arrows <- 0
-  for (i in 1:nrow(est_graph$edges)) {
-     edge <- est_graph$edges[i, ]
-    if (edge[3] == "-->") {
-    # if (edge[1] %in% true_graph$adjacencies[[edge[2]]])
-        n_predicted_arrows <- n_predicted_arrows + 1
-    }
+#' @author Alexander Rix
+#' @seealso Other graph comparison statistics:
+#'   \code{\link{adjacency_precision}}, \code{\link{adjacency_recall}},
+#'   and \code{\link{shd}}
+arrowhead_precision <- function(pdag1, pdag2) {
+  if (!is.cgraph(pdag1))
+    stop("pdag1 must be a causality graph")
+  if (!is.cgraph(pdag2))
+    stop("pdag2 must be a causality graph")
+  if (!(is.pdag(pdag1 | is.dag(pdag1) | is.pattern(pdag1))))
+    stop("pdag1 must be either a DAG, PDAG, or pattern!")
+  if (!(is.pdag(pdag2 | is.dag(pdag2) | is.pattern(pdag2))))
+    stop("pdag2 must be either a DAG, PDAG, or pattern!")
+
+  n_pdag2_arrows <- 0
+  for (i in 1:nrow(pdag2$edges)) {
+    edges <- pdag2$edges
+    if (edges[i, 3] == .DIRECTED)
+      n_pdag2_arrows <- n_pdag2_arrows + 1
   }
-  if(n_predicted_arrows == 0) {
-    warning("est_graph contains no oriented edges. Returning NA")
+  if(n_pdag2_arrows == 0) {
+    warning("pdag2 contains no oriented edges. Returning NA")
     return(NA)
   }
-
-  n_correctly_predicted <- 0
-  for (i in 1:length(est_graph$edges[, 1])) {
-    eg_edge <- est_graph$edges[i, ]
-    # if the edge in unoriented, skip
-    if (eg_edge[3] == "---")
-      next
-
-    if(!(eg_edge[2] %in% true_graph$adjacencies[[eg_edge[1]]]))
-      next
-    for (j in 1:length(true_graph$edges[, 1])) {
-      tg_edge <- true_graph$edges[j, ]
-      # if the edge is unoriented, skip
-      if (tg_edge[3] == "---")
-        next
-      if (tg_edge[3] == "<->") {
-        warning(sprintf("Edge %i in true_graph is a bidirected edge.
-                        Treating the edge as unidirected", i))
-        next
-      }
-      # check to see if the edges have the same edge type,
-      # and if the eg_edge is unoriented
-      if (eg_edge[3] == tg_edge[3]) {
-        # if they do have the same edge type, check to see if they have the same
-        # origin and destination
-        if (eg_edge[1] == tg_edge[1] && eg_edge[2] == tg_edge[2])
-          n_correctly_predicted <- n_correctly_predicted + 1
-        # if they don't have the same edge type, check to see if
-        # they are reversed
-      } else if ( (eg_edge[3] == "<--" && tg_edge[3] == "--> ") ||
-                  (eg_edge[3] == "-->" && tg_edge[3] == "<--") ) {
-        if (eg_edge[1] == tg_edge[2] && eg_edge[2] == tg_edge[1])
-          n_correctly_predicted <- n_correctly_predicted + 1
-      }
-    }
-  }
-  return(n_correctly_predicted/n_predicted_arrows)
+  return(.arrow_intersect(pdag1, pdag2)/n_pdag1_arrows)
 }
-
 #' Determine how many arrows in graph 1 are in graph2.
 #'
-#' \code{arrowhead_recall} calculates the arrowhead recall between a graph and
-#'   an oracle
+#' \code{arrowhead_recall} calculates the arrowhead recall between two
+#' causality graphs
 #' @return \code{arrowhead_recall} returns \code{NA} if there are
-#'   no orriented edges (arrows) in \code{true_graph}
-#' @details \code{arrowhead_recall} counts the number of directed edges (<--,
-#' -->) in \code{true_graph} and then counts how many directed edges in
-#' \code{est_graph} are in \code{true_graph}. Then, the ratio is returned. 1
-#' implies that every directed edge in \code{true_graph} is also in
-#' \code{est_graph}
-#' @family graph comparison statistics
+#'   no oriented edges (arrows) in \code{pdag1}
+#' @details \code{arrowhead_recall} counts the number of directed edges
+#'   \code{pdag1} and then counts how many directed edges in
+#'   \code{pdag2} are in \code{pdag1}. Then, the ratio is returned. 1
+#'   implies that every directed edge in \code{pdag1} are also in \code{pdag2}.
 #' @rdname arrowhead_precision
-arrowhead_recall <- function(true_graph, est_graph) {
-  #TODO(arix) implement type checking
-
-  # calculate the number of arrow in the true graph
-  n_true_arrows <- 0
-  for (i in 1:length(true_graph$edges[, 3])) {
-    edge <- true_graph$edges[i, ]
-    if (edge[3] == "-->") {
-      # if (edge[1] %in% est_graph$adjacencies[[edge[2]]])
-        n_true_arrows <- n_true_arrows + 1
-    }
+arrowhead_recall <- function(pdag1, pdag2) {
+  if (!is.cgraph(pdag1))
+    stop("pdag1 must be a causality graph")
+  if (!is.cgraph(pdag2))
+    stop("pdag2 must be a causality graph")
+  if (!(is.pdag(pdag1 | is.dag(pdag1) | is.pattern(pdag1))))
+    stop("pdag1 must be either a DAG, PDAG, or pattern!")
+  if (!(is.pdag(pdag2 | is.dag(pdag2) | is.pattern(pdag2))))
+    stop("pdag2 must be either a DAG, PDAG, or pattern!")
+  n_pdag1_arrows <- 0
+  edges <- pdag1$edges
+  for (i in 1:nrow(edges)) {
+    if (edges[i, 3] == .DIRECTED)
+      n_pdag1_arrows <- n_pdag1_arrows + 1
   }
-  if(n_true_arrows == 0) {
-    warning("true_graph contains no oriented edges. Returning NA")
+  if(n_pdag1_arrows == 0) {
+    warning("pdag1 contains no oriented edges. Returning NA")
     return(NA)
   }
-  n_correctly_predicted <- 0
-  # index over the edges in the true graph and estimated graph. Recall that an
+  return(.arrow_intersect(pdag1, pdag2)/n_pdag1_arrows)
+}
+
+
+
+.arrow_intersect <- function(pdag1, pdag2) {
+  n_same <- 0
+  # index over the edges in the pdag1 graph and estimated graph. Recall that an
   # edge is a vector that consists of (origin, destination, edge_type) eg
   # ("X1", "X2", "-->")
-  for (i in 1:length(est_graph$edges[, 1])) {
-    eg_edge <- est_graph$edges[i, ]
+  pdag1_edges <- pdag1$edges
+  pdag2_edges <- pdag2$edges
+  for (i in 1:nrow(pdag1_edges)) {
+    pdag1_edge <- pdag1_edges[i, ]
     # if the edge in unoriented, skip
-    if (eg_edge[3] == "---")
+    if (pdag1_edge[3] == .UNDIRECTED)
       next
-    if (eg_edge[3] == "<->") {
-      warning(sprintf("Edge %i in est_graph is a bidirected edge.
-                      Treating the edge as unidirected", i))
-      next
-    }
-    for (j in 1:length(true_graph$edges[, 1])) {
-      tg_edge <- true_graph$edges[j, ]
+    for (j in 1:nrow(pdag2_edges)) {
+      pdag2_edge <- pdag2_edges[j, ]
       # if the edge is unoriented, skip
-      if (tg_edge[3] == "---")
+      if (pdag2_edge[3] == .UNDIRECTED)
         next
-      if (tg_edge[3] == "<->") {
-        warning(sprintf("Edge %i in true_graph is a bidirected edge.
-                        Treating the edge as unidirected", i))
-        next
-      }
-      # check to see if the edges have the same edge type,
-      # and if the eg_edge is unoriented
-      if (eg_edge[3] == tg_edge[3]) {
-        # if they do have the same edge type, check to see if they have the same
-        # origin and destination
-        if (eg_edge[1] == tg_edge[1] && eg_edge[2] == tg_edge[2])
-          n_correctly_predicted <- n_correctly_predicted + 1
-        # if they don't have the same edge type, check to see if
-        # they are reversed
-      } else if ( (eg_edge[3] == "<--" && tg_edge[3] == "--> ") ||
-                  (eg_edge[3] == "-->" && tg_edge[3] == "<--") ) {
-        if (eg_edge[1] == tg_edge[2] && eg_edge[2] == tg_edge[1])
-          n_correctly_predicted <- n_correctly_predicted + 1
-      }
+      if (pdag2_edge[1] == pdag1_edge[1] && pdag2_edge[2] == pdag1_edge[2])
+        n_same <- n_same + 1
     }
   }
-  return(n_correctly_predicted/n_true_arrows)
+  return(n_same)
 }

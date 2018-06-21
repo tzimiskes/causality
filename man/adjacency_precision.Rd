@@ -2,43 +2,55 @@
 % Please edit documentation in R/adjacency.R
 \name{adjacency_precision}
 \alias{adjacency_precision}
-\title{Determine the percentage of adjacencies in a graph are in the true graph}
+\alias{adjacency_recall}
+\title{Adjacency Precision and Recall}
 \usage{
-adjacency_precision(true_graph, est_graph)
+adjacency_precision(cgraph1, cgraph2)
+
+adjacency_recall(cgraph1, cgraph2)
 }
 \arguments{
-\item{true_graph}{graph being treated as the truth.}
+\item{cgraph1}{A causality graph}
 
-\item{est_graph}{The graph being compared to \code{true_graph}}
+\item{cgraph2}{A causality graph}
 }
 \value{
-Length one numeric between 0 and 1. If every node in \code{est_graph}
+Numeric between 0 and 1.
+
+\code{adjacency_precision} returns \code{NA} if \code{cgprah2} has no
+adjacencies.
+
+Length one numeric between 0 and 1. If every node in \code{true_graph}
   is an orphan, \code{NA} is returned. A return value of 1 implies every
-  adjacency in \code{est_graph} is also in \code{true_graph}
+  adjacency in \code{true_graph} is also in \code{est_graph}
 }
 \description{
-\code{adjacency_precision} calculates the adjacency precison between a graph
-and an oracle.
+\code{adjacency_precision} calculates the adjacency precison between two
+causality graphs.
+
+\code{adjacency_recall} calculates the adjacency recall between two
+causality graphs.
 }
 \details{
-First, \code{adjacency_precision} caclulates the total number of
-  adjacencies in \code{est_graph}. Then, for each vertex, \eqn{V} in
-  \code{est_graph}, \eqn{EG}, \code{adjacency_precision} calculates the size
-  of  the itersection of \eqn{Adj(V, EG)} and  \eqn{Adj(V, TG)}. After that,
-  the results for each vertex is summed and the ratio to number of
-  adjacencies in \code{est_graph} is returned.
+TODO(arix)
+
+TODO(arix)
 }
 \examples{
 TODO(arix)
 }
 \references{
-Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
-  Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
+Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous Variables
+  ”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749 [cs.AI]}.
 
   Spirtes et al: “Causation, Prediction, and Search.”, Mit Press,
   2001, p. 109.
 }
 \seealso{
-Other graph comparison statistics: \code{\link{adjacency_recall}},
-  \code{\link{arrowhead_precision}}, \code{\link{shd}}
+Other graph comparison statistics:
+\code{\link{arrowhead_precision}}, \code{\link{arrowhead_recall}},
+  and \code{\link{shd}}
+}
+\author{
+Alexander Rix
 }

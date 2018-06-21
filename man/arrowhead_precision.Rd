@@ -3,59 +3,58 @@
 \name{arrowhead_precision}
 \alias{arrowhead_precision}
 \alias{arrowhead_recall}
-\title{Determine the percentage of arrows in a graph are in the true graph}
+\title{Arrowhead Precision and Recall}
 \usage{
-arrowhead_precision(true_graph, est_graph)
+arrowhead_precision(pdag1, pdag2)
 
-arrowhead_recall(true_graph, est_graph)
+arrowhead_recall(pdag1, pdag2)
 }
 \arguments{
-\item{true_graph}{graph being treated as the truth.}
+\item{pdag1}{A causality PDAG}
 
-\item{est_graph}{The graph being compared to \code{true_graph}}
+\item{pdag2}{A causality PDAG}
 }
 \value{
 Length one numeric between 0 and 1.
 
   \code{arrowhead_precision} returns \code{NA} if there are no oriented
-  edges in\code{est_graph}.
+  edges in \code{pdag2}.
 
 \code{arrowhead_recall} returns \code{NA} if there are
-  no orriented edges (arrows) in \code{true_graph}
+  no oriented edges (arrows) in \code{pdag1}
 }
 \description{
-\code{arrowhead_precision} calculates the arrowhead precison between a graph
-and an oracle.
+\code{arrowhead_precision} calculates the arrowhead precision between two
+causality graphs
 
-\code{arrowhead_recall} calculates the arrowhead recall between a graph and
-  an oracle
+\code{arrowhead_recall} calculates the arrowhead recall between two
+causality graphs
 }
 \details{
 \code{arrowhead_precision} counts the number of directed edges
-  ("node1", "node2", \code{"-->"}) in \code{est_graph} and then counts how many
-  directed edges in \code{est_graph} are also in \code{true_graph}. Then, the
-  ratio is returned. 1 implies that every directed edge
-  in \code{est_graph} is also in \code{true_graph}, while 0 implies that no
-  directed edge in \code{est_graph} is in \code{true_graph}
+  (\code{"-->"}) in \code{pdag1} and then counts how many directed edges in
+  \code{pdag1} are also in \code{pdag2}. Then, the ratio is returned.
 
-\code{arrowhead_recall} counts the number of directed edges (<--,
--->) in \code{true_graph} and then counts how many directed edges in
-\code{est_graph} are in \code{true_graph}. Then, the ratio is returned. 1
-implies that every directed edge in \code{true_graph} is also in
-\code{est_graph}
+\code{arrowhead_recall} counts the number of directed edges
+  \code{pdag1} and then counts how many directed edges in
+  \code{pdag2} are in \code{pdag1}. Then, the ratio is returned. 1
+  implies that every directed edge in \code{pdag1} are also in \code{pdag2}.
 }
 \examples{
 TODO(arix)
 }
 \references{
-Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous
-  Variables”, 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749
-  [cs.AI]}.
+Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous Variables”,
+ 2015; \href{http://arxiv.org/abs/1507.07749}{arxiv:1507.07749[cs.AI]}.
 
   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
   2001, p. 109.
 }
 \seealso{
-Other graph comparison statistics: \code{\link{adjacency_precision}},
-  \code{\link{adjacency_recall}}, \code{\link{shd}}
+Other graph comparison statistics:
+  \code{\link{adjacency_precision}}, \code{\link{adjacency_recall}},
+  and \code{\link{shd}}
+}
+\author{
+Alexander Rix
 }
