@@ -4,7 +4,6 @@
 \alias{cgraph}
 \alias{is_valid_cgraph}
 \alias{is.cgraph}
-\alias{as.cgraph}
 \title{Casuality Graphs}
 \usage{
 cgraph(nodes, edges, validate = T)
@@ -12,8 +11,6 @@ cgraph(nodes, edges, validate = T)
 is_valid_cgraph(graph)
 
 is.cgraph(graph)
-
-as.cgraph(graph)
 }
 \arguments{
 \item{nodes}{A character array of node names}
@@ -22,7 +19,7 @@ as.cgraph(graph)
 of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid
 edge types are listed below}
 
-\item{validate}{logical number to determine whether or not to check to see
+\item{validate}{logical value to determine whether or not to check to see
 if the cgraph is valid before returning it. Default is \code{TRUE}}
 
 \item{graph}{A graph to coerced or tested}
@@ -59,22 +56,18 @@ A causality-graph consists of three things
   \itemize{
     \item \code{o-o}
     \item \code{o->}
-    \item \code{++>}
-    \item \code{~~>}
+    \item \code{++>} (in Tetrad this is known as --> dd nl)
+    \item \code{~~>} (in Tetrad this is known as --> pd nl)
     \item \code{<->}
   }
 
 \code{is_valid_cgraph} checks to see if the input is a valid
-"causality.graph." Specifally, it checks that there are no duplicate nodes,
-as well as if the input is simple (no self-loops and is not a multi-graph).
+  "causality.graph." Specifally, it checks that there are no duplicate nodes,
+  as well as if the input is simple (no self-loops and is not a multi-graph).
 
 \code{is.cgraph} tests whether or not an object has the class
   causality.graph
   @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
-
-\code{as.cgraph} is an S3 generic that attempts to convert a not
-causality.cgraph to a "causalality.graph". It currently supports turning "bn"
-objects and r-causal objects to "causality.graphs".
 }
 \examples{
 nodes <- c("X1", "X2", "X3", "X4")
@@ -83,8 +76,14 @@ edges <- matrix(c("X1", "X2", "-->",
                   "X4", "X1", "---",
                   "X4", "X3", "-->",
                   "X4", "X2", "-->"), ncol = 3, byrow = T)
-cgraph(nodes, edges)
+graph <- cgraph(nodes, edges)
 
+# cgraph defaults to validate = TRUE, but if you want to make sure it is
+is_valid_cgraph(graph)
+
+# you can coerce graphs from bnlearn to causality.graphs
+library(bnlearn)
+sachs <- as.cgraph(mmhc(sachs.df))
 }
 \references{
 Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
@@ -94,6 +93,9 @@ Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
  Journal of Machine Learning Research. 2010;11(May):1643-62.
 
   Pearl, Judea. Causality. Cambridge university press, 2009.
+}
+\seealso{
+coercing non causality graphs to causality.graphs : \code{\link{as.cgraph}}
 }
 \author{
 Alexander Rix
