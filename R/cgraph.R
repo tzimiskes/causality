@@ -10,7 +10,7 @@
 #' @param edges A \eqn{m x 3} character matrix. Each row is an edge in the form
 #'   of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid
 #'   edge types are listed below
-#' @param validate logical number to determine whether or not to check to see
+#' @param validate logical value to determine whether or not to check to see
 #'   if the cgraph is valid before returning it. Default is \code{TRUE}
 #' @param graph A graph to coerced or tested
 #' @details A causality-graph consists of three things
@@ -34,8 +34,8 @@
 #'   \itemize{
 #'     \item \code{o-o}
 #'     \item \code{o->}
-#'     \item \code{++>}
-#'     \item \code{~~>}
+#'     \item \code{++>} (in Tetrad this is known as --> dd nl)
+#'     \item \code{~~>} (in Tetrad this is known as --> pd nl)
 #'     \item \code{<->}
 #'   }
 #'
@@ -50,9 +50,14 @@
 #'                   "X4", "X1", "---",
 #'                   "X4", "X3", "-->",
 #'                   "X4", "X2", "-->"), ncol = 3, byrow = T)
-#' cgraph(nodes, edges)
-
+#' graph <- cgraph(nodes, edges)
 #'
+#' # cgraph defaults to validate = TRUE, but if you want to make sure it is
+#' is_valid_cgraph(graph)
+#'
+#' # you can coerce graphs from bnlearn to causality.graphs
+#' library(bnlearn)
+#' sachs <- as.cgraph(mmhc(sachs.df))
 #' @references
 #'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
@@ -61,9 +66,11 @@
 #'  Journal of Machine Learning Research. 2010;11(May):1643-62.
 #'
 #'   Pearl, Judea. Causality. Cambridge university press, 2009.
-#' @family causality graph types
-cgraph <- function(nodes, edges, validate = T) {
-  if(!is.logical(validate))
+#' @seealso
+#' coercing non causality graphs to causality.graphs : \code{\link{as.cgraph}}
+#' @export
+cgraph <- function(nodes, edges, validate = TRUE) {
+  if (!is.logical(validate))
     stop("validate must take on a logical value")
   adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
 
@@ -78,12 +85,13 @@ cgraph <- function(nodes, edges, validate = T) {
 }
 
 #' @details \code{is_valid_cgraph} checks to see if the input is a valid
-#' "causality.graph." Specifally, it checks that there are no duplicate nodes,
-#' as well as if the input is simple (no self-loops and is not a multi-graph).
+#'   "causality.graph." Specifally, it checks that there are no duplicate nodes,
+#'   as well as if the input is simple (no self-loops and is not a multi-graph).
 #' @usage is_valid_cgraph(graph)
 #' @rdname cgraph
 #' @return \code{is_valid_cgraph} returns \code{TRUE} or \code{FALSE} depending
 #'   on whether or not the input is valid
+#' @export
 is_valid_cgraph <- function(graph) {
   # check to make sure it has valid fields (in the right order)
   if(!isTRUE(all.equal(c("nodes", "adjacencies","edges"), names(graph)))) {
@@ -166,90 +174,45 @@ is_valid_cgraph <- function(graph) {
 
 
 # Casusality Graph is.* Functions ----------------------------------------------
- #' @usage is.cgraph(graph)
- #' @details \code{is.cgraph} tests whether or not an object has the class
- #'   causality.graph
- #'   @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
- #' @rdname cgraph
+#' @usage is.cgraph(graph)
+#' @details \code{is.cgraph} tests whether or not an object has the class
+#'   causality.graph
+#'   @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
+#' @rdname cgraph
+#' @export
 is.cgraph <- function(graph) {
   if (.CGRAPH_CLASS %in% class(graph))
     return(TRUE)
   else
     return(FALSE)
 }
-
+#' @export
 is.dag <- function(cgraph) {
   if (isTRUE(all.equal(.DAG_CLASS, class(cgraph))))
     return(TRUE)
   else
     return(FALSE)
 }
-
+#' @export
 is.pattern <- function(cgraph) {
   if (isTRUE(all.equal(.PATTERN_CLASS, class(cgraph))))
     return(TRUE)
   else
     return(FALSE)
 }
-
+#' @export
 is.pdag <-function(cgraph) {
   if (isTRUE(all.equal(.PDAG_CLASS, class(cgraph))))
     return(TRUE)
   else
     return(FALSE)
 }
-
+#' @export
 is.pag <-function(cgraph) {
   if (isTRUE(all.equal(.PAG_CLASS, class(cgraph))))
     return(TRUE)
   else
     return(FALSE)
-}
-
-is.cyclic <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
-  if (is.null(.topological_sort(cgraph)))
-    return(TRUE)
-  else
-    return(FALSE)
-}
-
-is.directed <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
-  edge_types <- cgraph$edges[, 3]
-  n_edges <- length(edge_types)
-  for (i in 1:n_edges) {
-    if (edge_types[i] != .DIRECTED) { # ie  edge_type != -->
-      return(FALSE)
-    }
-  }
-  return(TRUE)
-}
-
-is.nonlatent <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a causality.graph")
-  edge_types <- cgraph$edges[, 3]
-  n_edges <- length(edge_types)
-  for (i in 1:n_edges) {
-    if (!(edge_types[i] %in% .NONLATENT_EDGE_TYPES))
-      return(FALSE)
-  }
-  return(TRUE)
-}
-
-is.latent <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
-  edge_types <- cgraph$edges[, 3]
-  n_edges <- length(edge_types)
-  for (i in 1:n_edges) {
-    if (!(edge_types[i] %in% .LATENT_EDGE_TYPES))
-      return(FALSE)
-  }
-  return(TRUE)
 }
 
 # Causality Graph as.dag Functions ---------------------------------------------
@@ -409,20 +372,24 @@ as.pag <- function(cgraph) {
 
 
 # Causality Graph as.cgraph Functions ------------------------------------------
-
+#' Coerce a graph to a Causality Graph
 #' @details \code{as.cgraph} is an S3 generic that attempts to convert a not
 #' causality.cgraph to a "causalality.graph". It currently supports turning "bn"
 #' objects and r-causal objects to "causality.graphs".
 #' @usage as.cgraph(graph)
-#' @rdname cgraph
+#' @return \code{as.cgraph} returns a causality graph object, or throws an error
+#' @seealso See \link{\code{cgraph}} for the documentation of object
+#' @export
 as.cgraph <- function(graph) {
     UseMethod("as.cgraph")
 }
-
+#' @rdname as.cgraph
+#' @export
 as.cgraph.causality.graph <- function(graph) {
   return(graph)
 }
-
+#' @rdname as.cgraph
+#' @export
 as.cgraph.default <- function(graph) {
   if (is_valid_cgraph(graph)) {
     class(graph) <- .CGRAPH_CLASS
@@ -435,7 +402,7 @@ as.cgraph.default <- function(graph) {
 # rcausal uses different classes for each algorithm, this makes it necessary to
 # create this 'dummy' function to handle converting the algorithm output to
 # causality
-.as.cgraph.rcausal <- function(graph) {
+as.cgraph.rcausal <- function(graph) {
 
   edges <- graph$edges
   new_edges <- matrix("", nrow = length(edges), ncol = 3)
@@ -461,17 +428,45 @@ as.cgraph.default <- function(graph) {
 }
 
 # tetrad sucks. this exists to support the generic as.cgraph function
-as.cgraph.fges <- as.cgraph.fges.discrete <- as.cgraph.fges.mixed   <-
-  as.cgraph.gfci <- as.cgraph.gfci.discrete <- as.cgraph.gfci.mixed <-
-  as.cgraph.pc   <- as.cgraph.cpc           <- as.cgraph.pcstable   <-
-  as.cgraph.cpcstable <- .as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.fges <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.fges.discrete <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.fges.mixed <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.gfci <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.gfci.discrete <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.gfci.mixed <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.pc <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.cpc <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.pcstable <- as.cgraph.rcausal
+#' @rdname as.cgraph
+#' @export
+as.cgraph.cpcstable <- as.cgraph.rcausal
 
+#' @rdname as.cgraph
+#' @export
 as.cgraph.bn <- function(graph) {
   if (!(class(graph) == "bn"))
     stop("Input is not of class bn!")
 
   names <- names(graph$nodes)
   # get the edges
-  edges <- cbind(unname(graph$arcs), "-->")
+  edges <- cbind(unname(graph$arcs), .DIRECTED)
   return(cgraph(names, edges))
 }
