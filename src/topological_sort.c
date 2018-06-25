@@ -27,6 +27,7 @@ void visit(const int i,
            int_a_stack_ptr restrict stack_ptr
 );
 
+
 // These two functions (along with the above) implement the algorithm that
 // converts DAGs to Patterns (aka CPDAGs). The Algorithm is due to Chickering
 // c_dag_to_pattern returns the "patterned" edge list to R,
@@ -60,7 +61,6 @@ void visit(const int i,
 }
 
 SEXP cf_topological_sort(SEXP dag) {
-
   const int n_nodes = length(VECTOR_ELT(dag, NODES));
   // the hash table stores the children of each node
 
