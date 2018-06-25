@@ -22,6 +22,8 @@
 #' @seealso   \code{\link{as.dag}} \code{\link{dag_to_pattern}}
 #' @references Cormen, Thomas H., et al. Introduction to Algorithms. The MIT
 #'   Press, 2014.
+#' @useDynLib causality cf_topological_sort
+#' @export
 sort.causality.graph <- function(graph, decreasing = FALSE) {
   if (!is.cgraph(graph))
     stop("graph must be a causality.graph")

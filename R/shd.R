@@ -19,6 +19,7 @@
 #' @seealso Other graph comparison statistics:
 #' \code{\link{arrowhead_precision}}, \code{\link{arrowhead_recall}},
 #'   \code{\link{adjacency_precision}}, and \code{\link{adjacency_recall}}
+#' @export
 shd <- function(pattern1, pattern2) {
   if (!is.cgraph(pattern1))
     stop("pattern1 must be a cgraph")
