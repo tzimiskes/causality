@@ -6,7 +6,7 @@
 \alias{is.cgraph}
 \title{Casuality Graphs}
 \usage{
-cgraph(nodes, edges, validate = T)
+cgraph(nodes, edges, validate = TRUE)
 
 is_valid_cgraph(graph)
 

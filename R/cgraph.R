@@ -282,13 +282,14 @@ as.dag.causality.pag <- function(cgraph) {
 
 # Causality Graph as.pattern Functions -----------------------------------------
 
+#' @export
 as.pattern <- function(cgraph) {
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
   if (is.pattern(cgraph))
     return(cgraph)
 }
-
+#' @export
 as.pattern.causality.dag <- function(cgraph) {
   if (!is.dag(cgraph))
     stop("input is not a dag")
@@ -378,7 +379,7 @@ as.pag <- function(cgraph) {
 #' objects and r-causal objects to "causality.graphs".
 #' @usage as.cgraph(graph)
 #' @return \code{as.cgraph} returns a causality graph object, or throws an error
-#' @seealso See \link{\code{cgraph}} for the documentation of object
+#' @seealso See \code{\link{cgraph}} for the documentation of object
 #' @export
 as.cgraph <- function(graph) {
     UseMethod("as.cgraph")

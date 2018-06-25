@@ -57,5 +57,5 @@ causality.cgraph to a "causalality.graph". It currently supports turning "bn"
 objects and r-causal objects to "causality.graphs".
 }
 \seealso{
-See \link{\code{cgraph}} for the documentation of object
+See \code{\link{cgraph}} for the documentation of object
 }

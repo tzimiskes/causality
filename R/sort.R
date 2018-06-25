@@ -31,7 +31,7 @@ sort.causality.graph <- function(graph, decreasing = FALSE) {
   # creating a "hash table" makes the next operation faster
   hash <- list()
   for (i in 1:length(graph$nodes))
-    hash[[dag$nodes[[i]]]] <- i - 1
+    hash[[graph$nodes[[i]]]] <- i - 1
   for (i in 1:nrow(graph$edges)) {
     graph$edges[i, 1] <- hash[[graph$edges[i, 1]]]
     graph$edges[i, 2] <- hash[[graph$edges[i, 2]]]

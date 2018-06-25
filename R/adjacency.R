@@ -21,6 +21,7 @@
 #' @seealso Other graph comparison statistics:
 #' \code{\link{arrowhead_precision}}, \code{\link{arrowhead_recall}},
 #'   and \code{\link{shd}}
+#' @export
 adjacency_precision <- function(cgraph1, cgraph2) {
   # type checking
   if (!is.cgraph(cgraph1))
@@ -48,6 +49,7 @@ adjacency_precision <- function(cgraph1, cgraph2) {
 #'   is an orphan, \code{NA} is returned. A return value of 1 implies every
 #'   adjacency in \code{true_graph} is also in \code{est_graph}
 #' @rdname adjacency_precision
+#' @export
 adjacency_recall <- function(cgraph1, cgraph2) {
   # type checking
   if (!is.cgraph(cgraph1))

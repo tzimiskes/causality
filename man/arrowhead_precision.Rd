@@ -54,6 +54,7 @@ Joseph D. Ramsey: “Scaling up Greedy Causal Search for Continuous Variables”
 Other graph comparison statistics:
   \code{\link{adjacency_precision}}, \code{\link{adjacency_recall}},
   and \code{\link{shd}}
+  @export
 }
 \author{
 Alexander Rix
