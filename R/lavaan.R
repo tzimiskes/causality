@@ -8,7 +8,13 @@
 #'   DAG extensions are accepted. Future work will inlcude PAGs, and including
 #'   output from the FnFC family as a latent measurement model.
 #' @return a \code{lavaan} formula, or an error
-#' @examples TODO(arix)
+#' @examples
+#' TODO(arix) change this to the alarm data
+#' # turn the dag from Sachs(2009) into a lavaan compatable formula
+#' library(lavaan)
+#' lavaan.forumula <- as.lavaan.formula(sachs.dag)
+#' fit <- cfa(lavaan.formula, data = sachs.df)
+#' @export
 as.lavaan.formula <- function(cgraph) {
   if (!is.cgraph(cgraph)) {
     stop("Input must be a causality graph")

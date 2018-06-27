@@ -16,10 +16,10 @@
 #' @details A causality-graph consists of three things
 #'   \itemize{
 #'     \item nodes: a character vector of the nodes of the in the causal graph
-#'     \item adjacencies a list of character vectors that contain the
+#'     \item adjacencies: a list of character vectors that contain the
 #'       adjacencies of each node. This is calculated when a cgraph is created.
-#'     \item edges a m x 3 character matrix which represents the edges in a
-#'       causal graph in the form (from, to, edge). For example, if we are
+#'     \item edges: a \eqn{m x 3} character matrix which represents the edges in
+#'       a causal graph in the form (from, to, edge). For example, if we are
 #'       dealing with a causal graph regarding drug use and cancer, The edge
 #'       "Smoking --> Cancer" would be stored as ("Smoking", "Cancer", "-->")
 #'       in the edge matrix
@@ -55,7 +55,7 @@
 #' # cgraph defaults to validate = TRUE, but if you want to make sure it is
 #' is_valid_cgraph(graph)
 #'
-#' # you can coerce graphs from bnlearn to causality.graphs
+#' # you can coerce graphs from package \code{bnlearn} to causality.graphs
 #' library(bnlearn)
 #' sachs <- as.cgraph(mmhc(sachs.df))
 #' @references
@@ -186,13 +186,7 @@ is.cgraph <- function(graph) {
   else
     return(FALSE)
 }
-#' @export
-is.dag <- function(cgraph) {
-  if (isTRUE(all.equal(.DAG_CLASS, class(cgraph))))
-    return(TRUE)
-  else
-    return(FALSE)
-}
+
 #' @export
 is.pattern <- function(cgraph) {
   if (isTRUE(all.equal(.PATTERN_CLASS, class(cgraph))))
@@ -217,68 +211,7 @@ is.pag <-function(cgraph) {
 
 # Causality Graph as.dag Functions ---------------------------------------------
 
-as.dag <- function(cgraph) {
-  UseMethod("as.dag")
-}
-as.dag.default <- function(cgraph) {
-  if (is.dag(cgraph))
-    return(cgraph)
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
-}
 
-as.dag.causality.graph <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
-
-  if (is.nonlatent(cgraph)) {
-    if (!is.cyclic(cgraph)) {
-      if (is.directed(cgraph)) {
-        class(cgraph) <- .DAG_CLASS
-        return(cgraph)
-      }
-      else { # we have a a pdag
-       dag <- .dag_from_pdag(cgraph)
-       if (is.null(dag))
-         warning("Unable to coerce input to causality.dag")
-       return(dag)
-      }
-    }
-    else { # cylcic, so we can't coerce it
-      warning("Unable to coerce input to causality.dag")
-      return(NULL)
-    }
-  }
-  else if (is.latent(cgraph)) {
-    stop("Not implemented")
-  }
-  else {
-    stop("Unrecognized graph! Can't coerce!")
-  }
-}
-
-as.dag.causality.pdag <- function(cgraph) {
-  if (!is.pdag(cgraph))
-    stop("input is not a causality.graph")
-
-  dag <- .dag_from_pdag(cgraph)
-  if (is.null(dag)) {
-    warning("Unable to coerce input to causality.dag")
-  }
-  return(dag)
-}
-
-as.dag.causality.pattern <- function(cgraph) {
-  if (!is.pattern(cgraph))
-    stop("input is not a causality.pattern")
-  return(.dag_from_pattern(cgraph))
-}
-
-as.dag.causality.pag <- function(cgraph) {
-  if (!is.pag(cgraph))
-    stop("input is not a causality.pag")
-  stop("Not implemented")
-}
 
 # Causality Graph as.pattern Functions -----------------------------------------
 

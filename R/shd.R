@@ -61,17 +61,17 @@ shd <- function(pattern1, pattern2) {
       else {
         pat2_edge <- as.list(pat2_children[[node2]])[[node1]]
         # it isn't
-        if (is.null(pattern2_edge) || pattern2_edge != .UNDIRECTED)
+        if (is.null(pat2_edge) || pat2_edge != .UNDIRECTED)
           distance <- distance + 1
       }
       # pat2_edge is not null
       # if the orientations don't match, pattern2_edge in not oriented in
-    } else if( pat2_edge != edge) {
+    } else if ( pat2_edge != edge) {
       distance <- distance + 1
     }
   }
   # we only need to see if pattern2_edge is extra in the true patterns
-  for(i in 1:nrow(pattern2$edges)) {
+  for (i in 1:nrow(pattern2$edges)) {
     pat2_edge <- pattern2$edges[i, ]
     node1 <- pat2_edge[1]
     node2 <- pat2_edge[2]

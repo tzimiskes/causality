@@ -38,10 +38,10 @@ Create or test for objects of type "causality.graph"
 A causality-graph consists of three things
   \itemize{
     \item nodes: a character vector of the nodes of the in the causal graph
-    \item adjacencies a list of character vectors that contain the
+    \item adjacencies: a list of character vectors that contain the
       adjacencies of each node. This is calculated when a cgraph is created.
-    \item edges a m x 3 character matrix which represents the edges in a
-      causal graph in the form (from, to, edge). For example, if we are
+    \item edges: a \eqn{m x 3} character matrix which represents the edges in
+      a causal graph in the form (from, to, edge). For example, if we are
       dealing with a causal graph regarding drug use and cancer, The edge
       "Smoking --> Cancer" would be stored as ("Smoking", "Cancer", "-->")
       in the edge matrix
@@ -81,7 +81,7 @@ graph <- cgraph(nodes, edges)
 # cgraph defaults to validate = TRUE, but if you want to make sure it is
 is_valid_cgraph(graph)
 
-# you can coerce graphs from bnlearn to causality.graphs
+# you can coerce graphs from package \\code{bnlearn} to causality.graphs
 library(bnlearn)
 sachs <- as.cgraph(mmhc(sachs.df))
 }

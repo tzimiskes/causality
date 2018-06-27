@@ -1,25 +1,22 @@
-#' Get the topological ordering of a dag
+#' Sort the nodes of a acylcic graph
 #'
-#' \code{topological_order} calculates the topological ordering of dag.
+#' \code{sort} calculates the topological ordering of graph, that is sorts it.
 #' @param dag causality dag that you wish to calculate the topological ordering
 #'   of
-#' @return A charcter vector that contains the nodes of the dag ordered
-#'   according to their topological order. In the event that \code{dag} contains
-#'   a cycle (ie isn't actually a dag) a error is thrown and NA is teturned
+#' @param decreasing logical value to determine whether or the not sort should
+#'   be in decreasing order. default is \code{FALSE}
+#' @return A charcter vector that contains the nodes of the graph ordered
+#'   according to their topological order. in the event that \code{graph} is
+#'   cyclic, a warning is issued and \code{NA} is returning
+#' @details \code{sort.causality.graph} generates a topological ordering of the
+#'   given \code{graph} by using a depth first search as described in CLRS.
+#'   A topological ordering is DEFINITION NEEDED.
 #'
-#' @details \code{topological_sort} generates a topological ordering of the
-#'   given dag by using a depth first search as described in CLRS. The
-#'   underlying C implementation of this function is used in the function
-#'   \code{\link{dag_to_pattern}} and a slightly different version is used in
-#'   \code{\link{as.dag}}: see below.
 #' @examples
 #' TODO(arix)
-#' @note This function is designed to get the topological order from a dag, not
-#'   determine whether or not a function is a dag. If you wish to test whether
-#'   or not a cgraph object is a dag or not, use the function
-#'   \code{\link{as.dag}} instead. It performs additional checking on top of
-#'   performing a topological ordering.
-#' @seealso   \code{\link{as.dag}} \code{\link{dag_to_pattern}}
+#' @seealso \code{sort} is used in various \code{causality} functions, including
+#' \code{\link{as.dag}}, \code{\link{is.cyclic}}/\code{\link{is.acylic}}, and
+#' \code{\link{as.pattern}}
 #' @references Cormen, Thomas H., et al. Introduction to Algorithms. The MIT
 #'   Press, 2014.
 #' @useDynLib causality cf_topological_sort
