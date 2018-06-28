@@ -4,7 +4,7 @@
 
 typedef struct cmpct_cg* cmpct_cg_ptr;
 typedef struct cmpct_cg {
-  ill_ptr* parents;
+  ill_ptr* nodes;
   int n_nodes;
   int n_edges;
 } cmpct_cg;
@@ -13,21 +13,20 @@ cmpct_cg_ptr create_cmpct_cg(int n_nodes, int n_edges) {
   cmpct_cg_ptr cg = malloc(sizeof(cg));
   if (cg == NULL)
     error("Failed to allocate memory for cg pointer in create_cmpct_cg!\n");
-
   cg->n_nodes = n_nodes;
   cg->n_edges = n_edges;
   /*
    * allocate memory for parents representation and 1 to hold the pointer
    * to the nodes. this saves space in the struct so that its only 16 bytes
    */
-  ill_ptr* parents = create_ptr_to_ill_ptr(n_nodes + 1);
-  if(parents == NULL)
+  ill_ptr* nodes = create_ptr_to_ill_ptr(n_nodes + 1);
+  if(nodes == NULL)
     error("Failed to allocate memory for parents pointer!\n");
   // allocate nodes pointer and set it to be the last element in parents
-  parents[n_nodes] = create_ill_ptr(n_edges);
-  if(parents == NULL)
+  nodes[n_nodes] = create_ill_ptr(n_edges);
+  if(nodes[n_nodes] == NULL)
     error("Failed to allocate memory for nodes pointer!\n");
-  cg->parents = parents;
+  cg->nodes = nodes;
   return cg;
 }
 /*
@@ -35,26 +34,35 @@ cmpct_cg_ptr create_cmpct_cg(int n_nodes, int n_edges) {
  * pointer to an ill insertion routine
  */
 void fill_in_cmpct_cg(cmpct_cg_ptr cg, int* edges_ptr,
-                      void (*insert_fp)(ill_ptr*, int, int, int, ill_ptr))
+                      void (*insert_routine)(ill_ptr*, int, int, int, int, int))
 {
-  int n_edges      = cg->n_edges;
-  int n_edges_2t   = n_edges*2; /* saves some computations */
-  ill_ptr* parents = cg->parents;
-  ill_ptr nodes    = parents[cg->n_nodes];
-  // fill in cg
+  int n_edges       = cg->n_edges;
+  int n_nodes       = cg->n_nodes;
+  ill_ptr* nodes    = cg->nodes;
+  int* node1_ptr     = edges_ptr;
+  int* node2_ptr     = edges_ptr + n_edges;
+  int* edge_type_ptr = edges_ptr + 2*n_edges;
   for(int i = 0; i < n_edges; ++i) {
-    int parent     = edges_ptr[i             ];
-    int child      = edges_ptr[i + n_edges   ];
-    int edge_type  = edges_ptr[i + n_edges_2t];
-    insert_fp(&parents[child], parent, edge_type, i, nodes);
+    int node1      = node1_ptr[i];
+    int node2      = node2_ptr[i];
+    int edge_type  = edge_type_ptr[i];
+    insert_routine(nodes, node1, node2, edge_type, i, n_nodes);
   }
 }
 
+void by_children(ill_ptr *nodes, int node1, int node2, int i, int n_nodes) {
+    nodes[n_nodes][i].next = nodes[node1];
+    nodes[n_nodes][i].key   = node2;
+    nodes[n_nodes][i].value = edge_type;
+    *root          = &nodes[i];
+}
+
+
 void free_cmpct_cg(cmpct_cg_ptr cg) {
   // free nodes
-  free(cg->parents[cg->n_nodes]);
+  free(cg->nodes[cg->n_nodes]);
   // free parents
-  free(cg->parents);
+  free(cg->nodes);
   // free cg
   free(cg);
 }
@@ -68,13 +76,13 @@ int get_cmpct_cg_n_nodes (cmpct_cg_ptr cg) {
 }
 
 ill_ptr* get_cmpct_cg_parents(cmpct_cg_ptr cg) {
-  return cg->parents;
+  return cg->nodes;
 }
 
 void print_cmpct_cg(cmpct_cg_ptr cg) {
   for(int i = 0; i < cg->n_nodes; ++i) {
     Rprintf("Parent: %i\n", i);
-    ill_print(cg->parents[i]);
+    ill_print(cg->nodes[i]);
   }
 }
 /*
@@ -83,14 +91,14 @@ void print_cmpct_cg(cmpct_cg_ptr cg) {
  */
 int adjacent_in_cg(cmpct_cg_ptr cg, const int node1, const int node2) {
   // look through the parents of node1 to see if node2 is a parent
-  ill_ptr node1_parents = cg->parents[node1];
+  ill_ptr node1_parents = cg->nodes[node1];
   while(node1_parents != NULL) {
     if(ill_key(node1_parents) == node2)
       return 1;
     node1_parents = ill_next(node1_parents);
   }
   // look through the parents of node2 to see if node1 is a parent
-  ill_ptr node2_parents = cg->parents[node2];
+  ill_ptr node2_parents = cg->nodes[node2];
   while(node2_parents != NULL) {
     if(ill_key(node2_parents) == node1)
       return 1;
@@ -103,13 +111,13 @@ int adjacent_in_cg(cmpct_cg_ptr cg, const int node1, const int node2) {
  * between them in the cg, and 0 otherwise
  */
 int edge_undirected_in_cg(cmpct_cg_ptr cg, const int node1, const int node2)  {
-  ill_ptr node1_parents = cg->parents[node1];
+  ill_ptr node1_parents = cg->nodes[node1];
   while(node1_parents != NULL) {
     if(ill_key(node1_parents) == node2)
     return ill_value(node1_parents) == UNDIRECTED;
     node1_parents = ill_next(node1_parents);
   }
-  ill_ptr node2_parents = cg->parents[node2];
+  ill_ptr node2_parents = cg->nodes[node2];
   while(node2_parents != NULL) {
     if(ill_key(node2_parents) == node1)
     return ill_value(node2_parents) == UNDIRECTED;
@@ -122,7 +130,7 @@ int edge_undirected_in_cg(cmpct_cg_ptr cg, const int node1, const int node2)  {
  * is in the causality graph pointer, cg_ptr
  */
 int edge_directed_in_cg(cmpct_cg_ptr cg, const int parent, const int child) {
-  ill_ptr parents = cg->parents[child];
+  ill_ptr parents = cg->nodes[child];
   while(parents != NULL) {
     if(ill_key(parents) == parent)
       return ill_value(parents) == DIRECTED;
@@ -135,7 +143,7 @@ int edge_directed_in_cg(cmpct_cg_ptr cg, const int parent, const int child) {
 void orient_cmpct_cg_edge(cmpct_cg_ptr cg, int node1, int node2,
                           void (*insert_fp)(ill_ptr*, int, int, int, ill_ptr))
   {
-  ill_ptr* parents = cg->parents;
+  ill_ptr* parents = cg->nodes;
   // check to see if node1 is already a parent of node2
   ill_ptr edge = ill_search(parents[node2], node1);
   // if edge is not NULL, set the edge type to directed
@@ -151,7 +159,7 @@ void orient_cmpct_cg_edge(cmpct_cg_ptr cg, int node1, int node2,
     if(ill_key(node1_parents) == node2) {
       index = (int) (node1_parents - nodes); /* ptr arithmetic -- gives offset */
       // remove the node and set root to be the next node in the list
-      cg->parents[node1] = ill_next(parents[node1]);
+      cg->nodes[node1] = ill_next(parents[node1]);
     }
     // now, we need to search node1_parents for node2, record its index,
     // and then relink up the linked list so node2 can be reused

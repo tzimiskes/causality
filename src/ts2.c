@@ -8,16 +8,20 @@
 #define UNMARKED 0
 #define MARKED 1
 #define TEMPORARY -1
-
+#define ERROR -1
 // macros for dag_to_pattern
-#define UNKNOWN -1
-#define COMPELLED 1
-#define REVERSABLE 2
 
 int* ccf_sort(int n_nodes, int n_edges, const int* restrict edges);
 
+
+
+/*
+ * ccf_sort_wrapper takes in an R object, proccesses it down to the C level
+ * and then runs C level sort on this lower level representation. In then takes
+ * the output of ccf_sort and turns it back into an R object.
+ */
 SEXP ccf_sort_wrapper(SEXP Graph) {
-  int* edges_ptr = calculate_edges_ptr(Graph);
+  int * edges_ptr = calculate_edges_ptr(Graph);
   // grab the R structure that holds the Nodes (Char* vector) of the Graph
   SEXP Nodes           = PROTECT(VECTOR_ELT(Graph, NODES));
   int n_nodes          = length(Nodes);
@@ -51,6 +55,7 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
 
 // The following two functions implement the topological sort
 // algorithm as found in CLRS
+/*
 
 int visit(int i, int* restrict marked, int * restrict n_marked, )
 
@@ -75,63 +80,33 @@ void visit(int i,
     int_a_stack_push(stack_ptr, i);
   }
 }
+*/
 
-int* ccf_sort(int n_nodes, int n_edges, int* restrict edges_ptr) {
+int* ccf_sort(int n_nodes, int n_edges, const int* restrict edges_ptr) {
 
-  // the hash table stores the children of each node
-
-  ill_ptr* children = create_ptr_to_ill_ptr(n_nodes);
-
-  // grab the edge matrix and number of edges
-
-  // fill in the hash table
-  for(int i = 0; i < n_edges; ++i) {
-    // matrices are stored as 1d arrays in R, with column major ordering
-    int parent = edges_ptr[i];
-    int child = edges_ptr[i + n_edges];
-    int edge = edges_ptr[i+ 2*n_edges];
-    children[parent] = ill_insert(children[parent], child, edge);
-  }
+  cmpct_cg_ptr cg = create_cmpct_cg(n_nodes, n_edges);
+  fill_in_cmpct_cg(cg, edges_ptr, by_children);
   // we no longer need edges
-  UNPROTECT(1);
-  edges_ptr = NULL;
-
-  // create a stack to store the topological order
-  int_a_stack_ptr stack_ptr = int_a_stack_instantiate(n_nodes);
-
-  // instantiate the topological order. It will be returned at the end of the
-  // function, so it is declared as a SEXP.
-  // it will be filled in by the results of stack_ptr
-  SEXP order = PROTECT(allocVector(INTSXP, n_nodes));
-  int* restrict order_ptr = INTEGER(order);
 
   // create an array to signify whether or not a node has been marked,
   // in accordance with the algorithm in CLRS.
   // 0 means UNMARKED, so calloc is called
-  int* const marked = calloc(n_nodes, sizeof(int));
-
+  int* marked  = calloc(n_nodes, sizeof(int));
+  int* sort    = malloc(n_nodes*sizeof(int));
   // this is also pretty much from CLRS
   int n_marked = 0;
-  int index = 0;
+  int node     = 0;
   while(n_marked < n_nodes) {
-    if(marked[index] == UNMARKED)
-      // need to pass the adress of n_marked since it is not a pointer
-      visit(index, marked, &n_marked, children, stack_ptr);
+    if(!marked[node])
+      n_marked = visit(node, marked, children, sort);
     else
-      index++;
+      node++;
   }
 
   // copy the contents of the stack pointer to order_ptr
-  int* restrict stack_contents_ptr =  int_a_stack_get_stack(stack_ptr);
-  memcpy(order_ptr, stack_contents_ptr, n_nodes*sizeof(int));
-
-  // free all the malloc'd memory
-  free(stack_ptr);
-  for(int i = 0; i < n_nodes; ++i)
-    ill_free(children[i]);
-  free(children);
+  free_cmpct_cg(cg);
   free(marked);
   //unprotect order
   UNPROTECT(1);
-  return(order);
+  return(sort);
 }
