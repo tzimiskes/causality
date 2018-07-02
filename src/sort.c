@@ -11,10 +11,10 @@
 #define TEMPORARY -1
 
 int * ccf_sort(int n_nodes, const ill_ptr * restrict children);
-void visit(const int node,
+void  visit(const int node,
            int * restrict marked,
            int * restrict n_unmarked,
-           const ill_ptr* children,
+           const ill_ptr * children,
            int * restrict sort);
 
 /* In order to account for the possibility that the input may contain a cycle,
@@ -61,9 +61,10 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
   return(output);
 }
 
-/* ccf_sort
- *
- *
+/* ccf_sort implements a topological sort by using a breadth first search as
+ * described in CLRS. This function takes in a C level representation
+ * (currently an integer linked list) of the edge list of an causality.graph,
+ * and returns a pointer to the sorted (C level representation) of the nodes
  */
 int* ccf_sort(int n_nodes, const ill_ptr * restrict children) {
   /* create an array to signify whether or not a node has been marked,
@@ -129,7 +130,10 @@ void visit(const int node,
     marked[node] = TEMPORARY;
     ill_ptr child = children[node];
     while(child != NULL) {
-      if(ill_value(child) == DIRECTED)
+      int edge_type = ill_value(child);
+      if(edge_type == DIRECTED || edge_type == CIRCLEARROW ||
+         edge_type == PLUSPLUSARROW || edge_type == SQUIGGLEARROW
+      )
         visit(ill_key(child), marked, n_unmarked, children, sort);
       child = ill_next(child);
     }
