@@ -42,7 +42,7 @@ SEXP cf_meek_rules(SEXP Pdag) {
    * causal graph), and fill it in using regular insertion
    */
   cmpct_cg_ptr cg_ptr = create_cmpct_cg(n_nodes, n_edges);
-  fill_in_cmpct_cg(cg_ptr, edges_ptr, ill_insert2);
+  fill_in_cmpct_cg(cg_ptr, edges_ptr, ill_insert2, BY_PARENTS);
   /*
    * idea for loop: index through the edges of graph, and attempt to apply meek
    * rules to unidrected edges. repeat this process until no rules are applied

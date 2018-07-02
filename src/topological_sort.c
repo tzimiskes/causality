@@ -20,6 +20,7 @@
 // the user can call to get the topoligical sort
 
 SEXP cf_topological_sort(SEXP dag);
+
 void visit(const int i,
            int* const restrict marked,
            int* const restrict n_marked,
@@ -38,7 +39,7 @@ SEXP cf_dag_to_pattern(SEXP dag);
 
 // The following two functions implement the topological sort
 // algorithm as found in CLRS
-void visit(const int i,
+void visit2(const int i,
            int* const restrict marked,
            int* const restrict n_marked,
            const ill_ptr* const restrict children,
@@ -105,7 +106,7 @@ SEXP cf_topological_sort(SEXP dag) {
   while(n_marked < n_nodes) {
     if(marked[index] == UNMARKED)
       // need to pass the adress of n_marked since it is not a pointer
-      visit(index, marked, &n_marked, children, stack_ptr);
+      visit2(index, marked, &n_marked, children, stack_ptr);
     else
       index++;
   }
@@ -151,7 +152,7 @@ cmpct_cg_ptr order_edges(SEXP dag, SEXP top_order, const int n_nodes) {
     edges_ptr_offset[i] = top_order_hash[edges_ptr[i]];
 
   cmpct_cg_ptr cg = create_cmpct_cg(n_nodes, n_edges);
-  fill_in_cmpct_cg(cg, edges_ptr, ill_insert_by_value);
+  fill_in_cmpct_cg(cg, edges_ptr, ill_insert_by_value, BY_PARENTS);
 
 
   // free all the malloc'd memory
