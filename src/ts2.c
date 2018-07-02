@@ -8,7 +8,7 @@
 #define UNMARKED 0
 #define MARKED 1
 #define TEMPORARY -1
-#define ERROR -1
+
 // macros for dag_to_pattern
 
 int* ccf_sort(int n_nodes, int n_edges, const int* restrict edges);
@@ -55,10 +55,6 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
 
 // The following two functions implement the topological sort
 // algorithm as found in CLRS
-/*
-
-int visit(int i, int* restrict marked, int * restrict n_marked, )
-
 void visit(int i,
            int* restrict marked,
            int* restrict n_marked,
@@ -66,39 +62,43 @@ void visit(int i,
            restrict int_a_stack_ptr stack_ptr) {
 
   if(marked[i] == TEMPORARY)
-    error("dag contains a cycle, so the input is not actually a dag.");
+    goto FAIL_STATE; /* need to figure this out*/
   else if(marked[i] == UNMARKED) {
     marked[i] = TEMPORARY;
-    ill_ptr parent = children[i];
-    while(parent != NULL) {
-      if(ill_value(parent) == DIRECTED)
-        visit(ill_key(parent), marked, n_marked, children, stack_ptr);
-      parent = ill_next(parent);
+    ill_ptr child = children[i];
+    while(child != NULL) {
+      if(ill_value(child) == DIRECTED)
+        visit(ill_key(child), marked, n_marked, children, stack_ptr);
+      child = ill_next(child);
     }
     marked[i] = MARKED;
     (*n_marked)++;
     int_a_stack_push(stack_ptr, i);
   }
 }
-*/
+
 
 int* ccf_sort(int n_nodes, int n_edges, const int* restrict edges_ptr) {
 
-  cmpct_cg_ptr cg = create_cmpct_cg(n_nodes, n_edges);
+  cmpct_cg_ptr cg    = create_cmpct_cg(n_nodes, n_edges);
   fill_in_cmpct_cg(cg, edges_ptr, by_children);
-  // we no longer need edges
 
-  // create an array to signify whether or not a node has been marked,
-  // in accordance with the algorithm in CLRS.
-  // 0 means UNMARKED, so calloc is called
-  int* marked  = calloc(n_nodes, sizeof(int));
-  int* sort    = malloc(n_nodes*sizeof(int));
+  ill_ptr * children = get_cmpct_cg_parents(cg);
+  /* create an array to signify whether or not a node has been marked,
+   * in accordance with the algorithm in CLRS.
+   * 0 means UNMARKED, so calloc is called */
+  int* marked        = calloc(n_nodes, sizeof(int));
+  int* sort          = malloc(n_nodes*sizeof(int));
   // this is also pretty much from CLRS
-  int n_marked = 0;
-  int node     = 0;
+  int n_marked       = 0;
+  int node           = 0;
   while(n_marked < n_nodes) {
-    if(!marked[node])
-      n_marked = visit(node, marked, children, sort);
+    if(!marked[node]) {
+      visit(node, marked, children, sort);
+      marked[i] = MARKED;
+      n_marked++;
+      int_a_stack_push(stack_ptr, i);
+    }
     else
       node++;
   }
