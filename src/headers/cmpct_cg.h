@@ -1,15 +1,23 @@
 #include"int_linked_list.h"
 
-#ifndef _CMPCT_CG_
-#define _CMPCT_CG_
+#ifndef _CMPCT_CG_H_
+#define _CMPCT_CG_H_
+
+#define BY_CHILDREN 1
+#define BY_PARENTS  2
 
 typedef struct cmpct_cg* cmpct_cg_ptr;
-typedef struct cmpct_cg cmpct_cg;
+typedef struct cmpct_cg {
+  ill_ptr* nodes;
+  int n_nodes;
+  int n_edges;
+} cmpct_cg;
 
 cmpct_cg_ptr create_cmpct_cg(int n_nodes, int n_edges);
 void free_cmpct_cg(cmpct_cg_ptr cg);
 void fill_in_cmpct_cg(cmpct_cg_ptr cg, int* edges_ptr,
-                      void (*insert_fp)(ill_ptr*, int, int, int, ill_ptr));
+                      void (*insert_fp)(ill_ptr*, int, int, int, ill_ptr),
+                      int by);
 
 void print_cmpct_cg(cmpct_cg_ptr cg);
 

@@ -1,13 +1,8 @@
 #include "headers/causality.h"
 #include "headers/int_linked_list.h"
 #include "headers/edgetypes.h"
+#include "headers/cmpct_cg.h"
 
-typedef struct cmpct_cg* cmpct_cg_ptr;
-typedef struct cmpct_cg {
-  ill_ptr* nodes;
-  int n_nodes;
-  int n_edges;
-} cmpct_cg;
 
 cmpct_cg_ptr create_cmpct_cg(int n_nodes, int n_edges) {
   cmpct_cg_ptr cg = malloc(sizeof(cg));
@@ -34,29 +29,29 @@ cmpct_cg_ptr create_cmpct_cg(int n_nodes, int n_edges) {
  * pointer to an ill insertion routine
  */
 void fill_in_cmpct_cg(cmpct_cg_ptr cg, int* edges_ptr,
-                      void (*insert_routine)(ill_ptr*, int, int, int, int, int))
+                      void (*insert_routine)(ill_ptr*, int, int, int , ill_ptr),
+                      int by)
 {
-  int n_edges       = cg->n_edges;
-  int n_nodes       = cg->n_nodes;
-  ill_ptr* nodes    = cg->nodes;
+  int n_edges        = cg->n_edges;
+  int n_nodes        = cg->n_nodes;
+  ill_ptr* nodes     = cg->nodes;
   int* node1_ptr     = edges_ptr;
   int* node2_ptr     = edges_ptr + n_edges;
   int* edge_type_ptr = edges_ptr + 2*n_edges;
   for(int i = 0; i < n_edges; ++i) {
-    int node1      = node1_ptr[i];
-    int node2      = node2_ptr[i];
-    int edge_type  = edge_type_ptr[i];
-    insert_routine(nodes, node1, node2, edge_type, i, n_nodes);
+    int node1        = node1_ptr[i];
+    int node2        = node2_ptr[i];
+    int edge_type    = edge_type_ptr[i];
+    switch(by) {
+      case BY_CHILDREN: {
+        insert_routine(&nodes[node1], node2, edge_type, i, nodes[n_nodes]);
+        break;
+      }
+      case BY_PARENTS:
+        insert_routine(&nodes[node2], node1, edge_type, i, nodes[n_nodes]);
+    }
   }
 }
-
-void by_children(ill_ptr *nodes, int node1, int node2, int i, int n_nodes) {
-    nodes[n_nodes][i].next = nodes[node1];
-    nodes[n_nodes][i].key   = node2;
-    nodes[n_nodes][i].value = edge_type;
-    *root          = &nodes[i];
-}
-
 
 void free_cmpct_cg(cmpct_cg_ptr cg) {
   // free nodes
