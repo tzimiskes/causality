@@ -6,38 +6,35 @@
 #' @param decreasing logical value to determine whether or the not sort should
 #'   be in decreasing order. default is \code{FALSE}
 #' @return A charcter vector that contains the nodes of the graph ordered
-#'   according to their topological order. in the event that \code{graph} is
-#'   cyclic, a warning is issued and \code{NA} is returning
+#'   according to their topological order. In the event that \code{graph} is
+#'   cyclic, a warning is issued and \code{NA} is returned.
 #' @details \code{sort.causality.graph} generates a topological ordering of the
 #'   given \code{graph} by using a depth first search as described in CLRS.
-#'   A topological ordering is DEFINITION NEEDED.
-#'
+#'   A topological sort (or ordering) is a linear ordering of nodes in a PDAG.
+#'   That is if we have \eqn{x --> y}, then x < y (x comes before y) in the sort.
+#'   This ordering is not unique; a PDAG may have multiple valid orderings.
 #' @examples
-#' TODO(arix)
+#' sort(sachs.dag)
+#'
+#' # sort also works with pdags/patterns
+#' sort(as.pattern(sachs.dag))
 #' @seealso \code{sort} is used in various \code{causality} functions, including
 #' \code{\link{as.dag}}, \code{\link{is.cyclic}}/\code{\link{is.acylic}}, and
 #' \code{\link{as.pattern}}
 #' @references Cormen, Thomas H., et al. Introduction to Algorithms. The MIT
 #'   Press, 2014.
-#' @useDynLib causality cf_topological_sort
+#' @useDynLib causality ccf_sort_wrapper
 #' @export
 sort.causality.graph <- function(graph, decreasing = FALSE) {
   if (!is.cgraph(graph))
     stop("graph must be a causality.graph")
-
-  # creating a "hash table" makes the next operation faster
-  hash <- list()
-  for (i in 1:length(graph$nodes))
-    hash[[graph$nodes[[i]]]] <- i - 1
-  for (i in 1:nrow(graph$edges)) {
-    graph$edges[i, 1] <- hash[[graph$edges[i, 1]]]
-    graph$edges[i, 2] <- hash[[graph$edges[i, 2]]]
-    graph$edges[i, 3] <- 1
+  output <- .Call("ccf_sort_wrapper", graph)
+  if (is.null(output)) {
+    warning("graph contains a cycle, returning NA.")
+    return(NA)
   }
-  nc <- ncol(graph$edges)
-  nr <- nrow(graph$edges)
-  graph$edges <- as.integer(graph$edges)
-  dim(graph$edges) <- c(nr, nc)
-  tmp<-tryCatch(.Call("cf_topological_sort", graph), error = function(e) NA)
-  return(graph$nodes[tmp + 1])
+  if(decreasing == TRUE)
+    return(rev(output))
+  else
+    return(output)
 }

@@ -15,8 +15,8 @@ of}
 }
 \value{
 A charcter vector that contains the nodes of the graph ordered
-  according to their topological order. in the event that \code{graph} is
-  cyclic, a warning is issued and \code{NA} is returning
+  according to their topological order. In the event that \code{graph} is
+  cyclic, a warning is issued and \code{NA} is returned.
 }
 \description{
 \code{sort} calculates the topological ordering of graph, that is sorts it.
@@ -24,10 +24,15 @@ A charcter vector that contains the nodes of the graph ordered
 \details{
 \code{sort.causality.graph} generates a topological ordering of the
   given \code{graph} by using a depth first search as described in CLRS.
-  A topological ordering is DEFINITION NEEDED.
+  A topological sort (or ordering) is a linear ordering of nodes in a PDAG.
+  That is if we have \eqn{x --> y}, then x < y (x comes before y) in the sort.
+  This ordering is not unique; a PDAG may have multiple valid orderings.
 }
 \examples{
-TODO(arix)
+sort(sachs.dag)
+
+# sort also works with pdags/patterns
+sort(as.pattern(sachs.dag))
 }
 \references{
 Cormen, Thomas H., et al. Introduction to Algorithms. The MIT
