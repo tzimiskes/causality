@@ -1,3 +1,12 @@
+/* Author: Alexander Rix
+ * sort.c Impements a function to perform a topological sort on a a graph.
+ * There are two main functions ccf_sort_wrapper, which is acts as an interface
+ * between R and ccf_sort, which is the Causality C Function that actually
+ * performs the sorting. ccf_sort_wrapper returns R;s version of NULL is there
+ * is an error, or a R charecter vector which contain the nodes of the graph
+ * sorted by their topological ordering. ccf_sort returns a NULL pointer, or a
+ * pointer to an interger which contains the C version of the node ordering
+ */
 #include <setjmp.h> /* for error handling */
 
 #include "headers/causality.h"
@@ -5,7 +14,7 @@
 #include "headers/int_linked_list.h"
 #include "headers/edgetypes.h"
 
-// macros used in ccf_sort
+/* macros used in ccf_sort */
 #define UNMARKED 0
 #define MARKED 1
 #define TEMPORARY -1
@@ -28,14 +37,13 @@ static jmp_buf FAIL_STATE;
  * the output of ccf_sort and turns it back into an R object.
  */
 SEXP ccf_sort_wrapper(SEXP Graph) {
-  int * edges_ptr = calculate_edges_ptr(Graph);
-  // grab the R structure that holds the Nodes (Char* vector) of the Graph
+  int * edges_ptr      = calculate_edges_ptr(Graph);
+  /* grab the R structure that holds the Nodes (Char* vector) of the Graph */
   SEXP Nodes           = PROTECT(VECTOR_ELT(Graph, NODES));
   int n_nodes          = length(Nodes);
-
-  // grab the number of the Edges in the Graph from the Edge matrix
+  /* grab the number of the Edges in the Graph from the Edge matrix */
   int n_edges = nrows(VECTOR_ELT(Graph, EDGES));
-  // get the topological sort of the Graph
+  /* get the topological sort of the Graph */
   cmpct_cg_ptr cg    = create_cmpct_cg(n_nodes, n_edges);
   fill_in_cmpct_cg(cg, edges_ptr,ill_insert2, BY_CHILDREN);
   ill_ptr * children = get_cmpct_cg_parents(cg);
@@ -43,21 +51,20 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
   /* ccf_sort returns NULL if graph doesn't have a sort. In that case,
    * we return R_NilValue (aka R's version of NULL) */
   SEXP output;
+  free_cmpct_cg(cg); /* free memory */
   if(sorted_nodes_ptr == NULL) {
-    output = PROTECT(R_NilValue); /* Is this ok? */
+    output = R_NilValue;
+    UNPROTECT(1);
   }
   else {
-    // allocate memory for the output
+    /* allocate memory for the output */
     output = PROTECT(allocVector(STRSXP, n_nodes));
-    // convert C level output to R level output
+    /* convert C level output to R level output */
     for(int i = 0; i < n_nodes; ++i)
       SET_STRING_ELT(output, i, STRING_ELT(Nodes, sorted_nodes_ptr[i]));
+    free(sorted_nodes_ptr);
+    UNPROTECT(2);
   }
-  // free memory
-  free(sorted_nodes_ptr);
-  free_cmpct_cg(cg);
-  // unprotect R memory from the garbage collector
-  UNPROTECT(2);
   return(output);
 }
 
@@ -78,7 +85,7 @@ int* ccf_sort(int n_nodes, const ill_ptr * restrict children) {
   int * sort          = malloc(n_nodes*sizeof(int));
   if(sort == NULL)
     error("Failed to allocate memory for sort in ccf_sort!\n");
-  // this is also pretty much from CLRS
+  /* this is also pretty much from CLRS */
   int n_unmarked      = n_nodes;
   int node            = 0;
   /* setjmp(FAIL_STATE) == 0 the first time this is called.
@@ -104,9 +111,9 @@ int* ccf_sort(int n_nodes, const ill_ptr * restrict children) {
     free(sort);
     sort = NULL;
   }
-  // free malloc'd memory
+  /* free malloc'd memory */
   free(marked);
-  //unprotect order
+  /* unprotect order */
   return(sort);
 }
 
@@ -123,7 +130,7 @@ void visit(const int node,
            int * restrict sort)
   {
   if(marked[node] == TEMPORARY) {
-  /* Cycle exists; perform longjmp to terminate ccf_sort */
+  /* Cycle exists; perform longjmp to ccf_sort so we can terminate the sort */
     longjmp(FAIL_STATE, 1);
   }
   else if(marked[node] == UNMARKED) {
