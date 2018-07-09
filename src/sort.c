@@ -49,6 +49,7 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
   /* ccf_sort returns NULL if graph doesn't have a sort. In that case,
    * we return R_NilValue (aka R's version of NULL) */
   int * sorted_nodes_ptr = ccf_sort(n_nodes, children);
+  free(edges_ptr);   /* free memory */
   free_cmpct_cg(cg); /* free memory */
   SEXP Output;
   if(sorted_nodes_ptr == NULL) {

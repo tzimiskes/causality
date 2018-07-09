@@ -15,13 +15,13 @@ SEXP ccf_meek_rules_wrapper(SEXP Graph) {
   int n_nodes     = length(VECTOR_ELT(Graph, NODES));
   int n_edges     = length(VECTOR_ELT(Graph, EDGES));
 
-   ccf_meek_rules(int * edges_ptr, const int n_nodes, const int n_edges);
+  ccf_meek_rules(edges_ptr, n_nodes, n_edges);
 
-  SEXP output = calculate_edges_from_ptr();
-
+  SEXP Output = PROTECT(duplicate(Graph));
+  SET_VECTOR_ELT(Output, EDGES, calculate_edges_from_ptr(edges_ptr, Graph));
+  UNPROTECT(1);
+  return Output;
 }
-
-
 
 /* these are the four meek rules as described by meek(1995). A better discussion
  *  is found in pearl(2009)

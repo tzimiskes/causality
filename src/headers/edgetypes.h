@@ -12,6 +12,4 @@
 #define NUM_NL_EDGETYPES 2
 #define NUM_LAT_EDGETYPES 7
 #define NUM_EDGES_STORED 11
-
-
 #endif
