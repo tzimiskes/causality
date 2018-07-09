@@ -10,9 +10,10 @@ meek(graph)
 \item{graph}{a "causality.pdag"}
 }
 \value{
-If a "causality.pdag is input, either either a pattern or dag is output.
-In the event that the pdag doesn't have a dag extension, garbage is output If a causality.dag or
-  causality.pattern is input, \code{meek} just returns the input with no changes.
+If a "causality.pdag is input, either either a pattern or dag is
+  output. In the event that the pdag doesn't have a dag extension, garbage
+  is output If a causality.dag or causality.pattern is input, \code{meek}
+  just returns the input with no changes.
 }
 \description{
 \code{meek} will turn a PDAG into a Pattern if the PDAG has a

@@ -95,6 +95,7 @@ Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
   Pearl, Judea. Causality. Cambridge university press, 2009.
 }
 \seealso{
+Other causality classes: \code{\link{dag}}, \code{\link{pattern}}
 coercing non causality graphs to causality.graphs : \code{\link{as.cgraph}}
 }
 \author{

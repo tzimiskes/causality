@@ -67,6 +67,7 @@
 #'
 #'   Pearl, Judea. Causality. Cambridge university press, 2009.
 #' @seealso
+#' Other causality classes: \code{\link{dag}}, \code{\link{pattern}}
 #' coercing non causality graphs to causality.graphs : \code{\link{as.cgraph}}
 #' @export
 cgraph <- function(nodes, edges, validate = TRUE) {
@@ -139,17 +140,6 @@ is_valid_cgraph <- function(graph) {
   return(TRUE)
 }
 
-
-
-# adjs <- .calculate_adjacencies_from_edges(graph$edges, graph$nodes)
-# for(node in names(adjs)) {
-#   calculated_node_adjs <- adjs[[node]]
-#   listed_node_adjs     <- graph$adjacencies[[node]]
-#   intersection         <- intersect(calculated_node_adjs, listed_node_adjs)
-#   if (!isTRUE(all.equal(intersection, listed_node_adjs)))
-#     stop("adjacencies do not not match the nodes and edge!")
-# }
-
 # these hidden (lol) variables are used to assign (sub)classes to craph objects
 .CGRAPH_CLASS  <- c(                     "causality.graph")
 .DAG_CLASS     <- c("causality.dag"    , "causality.graph")
@@ -187,13 +177,7 @@ is.cgraph <- function(graph) {
     return(FALSE)
 }
 
-#' @export
-is.pattern <- function(cgraph) {
-  if (isTRUE(all.equal(.PATTERN_CLASS, class(cgraph))))
-    return(TRUE)
-  else
-    return(FALSE)
-}
+
 #' @export
 is.pdag <-function(cgraph) {
   if (isTRUE(all.equal(.PDAG_CLASS, class(cgraph))))
@@ -210,53 +194,6 @@ is.pag <-function(cgraph) {
 }
 
 # Causality Graph as.dag Functions ---------------------------------------------
-
-
-
-# Causality Graph as.pattern Functions -----------------------------------------
-
-#' @export
-as.pattern <- function(cgraph) {
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
-  if (is.pattern(cgraph))
-    return(cgraph)
-}
-#' @export
-as.pattern.causality.dag <- function(cgraph) {
-  if (!is.dag(cgraph))
-    stop("input is not a dag")
-  return(.dag_to_pattern(cgraph))
-}
-
-as.pattern.causality.pdag <- function(cgraph) {
-  if (!is.pdag(cgraph))
-    stop("input is not a pdag")
-    return(.dag_from_pdag(cgraph))
-
-}
-
-as.pattern.causality.pag <- function(cgraph) {
-  if (!is.pag(cgraph))
-    stop("Input is not a pag")
-  stop("Not Implemented")
-}
-
-as.pattern.causality.graph <- function(cgraph) {
-  if (is.nonlatent(cgraph)) {
-    if (!is.cyclic(cgraph)) {
-      dag <- .dag_from_pdag(cgraph)
-      if (is.null(dag)) {
-        stop("Input cannot be converted to a pattern")
-      }
-      else
-        return(.dag_to_pattern(dag))
-    }
-    else {
-      stop("input contains a cycle, so it cannot be converted to a pattern")
-    }
-  }
-}
 
 # Causality Graph as.pdag Functions --------------------------------------------
 
