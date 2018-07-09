@@ -7,6 +7,21 @@
 #define FLIP 1
 #define UNORIENTABLE 0
 
+void ccf_meek_rules(int * edges_ptr, const int n_nodes, const int n_edges);
+
+SEXP ccf_meek_rules_wrapper(SEXP Graph) {
+
+  int * edges_ptr = calculate_edges_ptr(Graph);
+  int n_nodes     = length(VECTOR_ELT(Graph, NODES));
+  int n_edges     = length(VECTOR_ELT(Graph, EDGES));
+
+   ccf_meek_rules(int * edges_ptr, const int n_nodes, const int n_edges);
+
+  SEXP output = calculate_edges_from_ptr();
+
+}
+
+
 
 /* these are the four meek rules as described by meek(1995). A better discussion
  *  is found in pearl(2009)
@@ -30,12 +45,7 @@ static int apply_rule(int (*meek_rule) (int, int, cmpct_cg_ptr), int* edges_ptr,
  * the four meek rules
  * it currently returns an updated edge matrix
  */
-SEXP cf_meek_rules(SEXP Pdag) {
-
-  int n_nodes    = length(VECTOR_ELT(Pdag, NODES));
-  SEXP Edges     = PROTECT(duplicate(VECTOR_ELT(Pdag, EDGES)));
-  int* edges_ptr = INTEGER(Edges);
-  int n_edges    = nrows(Edges);
+void ccf_meek_rules(int * edges_ptr, const int n_nodes, const int n_edges) {
 
    /*
    * generate underlying causal graph represntation (in this case, a compact
@@ -75,8 +85,6 @@ SEXP cf_meek_rules(SEXP Pdag) {
   } while(rule_applied);
   // free malloc'd memory
   free_cmpct_cg(cg_ptr);
-  UNPROTECT(1);
-  return(Edges);
 }
 
 /*
