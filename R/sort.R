@@ -19,7 +19,7 @@
 #' # sort also works with pdags/patterns
 #' sort(as.pattern(sachs.dag))
 #' @seealso \code{sort} is used in various \code{causality} functions, including
-#' \code{\link{as.dag}}, \code{\link{is.cyclic}}/\code{\link{is.acylic}}, and
+#' \code{\link{as.dag}}, \code{\link{is.cyclic}}/\code{\link{is.acyclic}}, and
 #' \code{\link{as.pattern}}
 #' @references Cormen, Thomas H., et al. Introduction to Algorithms. The MIT
 #'   Press, 2014.

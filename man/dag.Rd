@@ -20,15 +20,15 @@ is.dag(graph)
 
 as.dag(graph)
 
-\method{as.dag}{default}(cgraph)
+\method{as.dag}{default}(graph)
 
-\method{as.dag}{causality.graph}(cgraph)
+\method{as.dag}{causality.graph}(graph)
 
-\method{as.dag}{causality.pdag}(cgraph)
+\method{as.dag}{causality.pdag}(graph)
 
-\method{as.dag}{causality.pattern}(cgraph)
+\method{as.dag}{causality.pattern}(graph)
 
-\method{as.dag}{causality.pag}(cgraph)
+\method{as.dag}{causality.pag}(graph)
 }
 \arguments{
 \item{edges}{A \eqn{m x 3} character matrix. Each row is an edge in the form
@@ -36,7 +36,7 @@ of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid
 edge types are listed below}
 
 \item{validate}{logical value to determine whether or not to check to see
-if the cgraph is valid before returning it. Default is \code{TRUE}}
+if the graph is valid before returning it. Default is \code{TRUE}}
 
 \item{graph}{A graph to coerced or tested}
 }
@@ -46,6 +46,8 @@ if the cgraph is valid before returning it. Default is \code{TRUE}}
 
 \code{is_valid_dag} returns \code{TRUE} or \code{FALSE} depending
   on whether or not the input is a valid "causality.dag".
+
+\code{is.dag} returns \code{TRUE} or \code{FALSE}.
 }
 \description{
 Create, test, or manipulate objects of type "causality.dag"
@@ -56,12 +58,11 @@ A causality DAG is a causality graph that is directed and acylic
   Networks and Structural Equation Models (SEMs).
 
 \code{is_valid_dag} checks to see if the input is a valid
-  "causality.dag". Specifally, it checks that the \code{graph} is directed
+  "causality.dag". Specifically, it checks that the \code{graph} is directed
   and acyclic.
 
 \code{is.dag} tests whether or not an object has the class
   "causality.dag"
-  @return \code{is.dag} returns \code{TRUE} or \code{FALSE}.
 }
 \examples{
 TODO
@@ -76,7 +77,7 @@ Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
   Pearl, Judea. Causality. Cambridge university press, 2009.
 }
 \seealso{
-Other causality classes: \code{\link{cgraph}}
+Other causality classes: \code{\link{cgraph}}, \code{\link{pattern}}
 }
 \author{
 Alexander Rix

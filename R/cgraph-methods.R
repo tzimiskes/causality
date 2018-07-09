@@ -43,7 +43,9 @@ is.cyclic <- function(cgraph) {
 }
 #' @name cgraph-methods
 #' @export
-is.acyclic <- function(graph) return(!is.cyclic(graph))
+is.acyclic <- function(graph) {
+  return(!is.cyclic(graph))
+}
 
 #' @details \code{is.directed} determines if \code{graph} is directed, ie,
 #'   the only edge type is \code{"-->"}

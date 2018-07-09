@@ -1,18 +1,3 @@
-#' Convert a DAG to a Pattern
-#'
-#' \code{dag_to_pattern} converts a causality dag to a pattern
-#' @param dag A cgraph of type dag that is to be converted
-#' @return A `causality` pattern. In the event that \code{dag} is not actually a
-#'   dag, an error is thrown.
-#' @details The algorithm is due to Chickering(1995). See reference for details.
-#'   The first step of the function is to perform a topoligical sort, which is
-#'   only possible if \code{dag} is a dag.
-#' @examples
-#' TODO(arix)
-#' @references David Maxwell Chickering: “A Transformational Characterization of
-#'   Equivalent Bayesian Network Structures”, 1995;
-#'   \href{https://arxiv.org/abs/1302.4938}{arXiv:1302.4938 [cs.AI]} Cormen,
-#'   Thomas H., et al. Introduction to Algorithms. The MIT Press, 2014.
 .dag_to_pattern <- function(dag) {
   # creating a "hash table" makes the next operation faster
   tmp <-.prepare_cgraph_for_call(dag, nodes = F, edges = T, adj = F)

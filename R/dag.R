@@ -1,7 +1,5 @@
-# nonlatent.R  conatins implementations for nonlatent variable model causality
-# graph classes
+# dag.R  conatins the implementation for causality.dags
 # Author: Alexander Rix (arix@umn.edu)
-
 
 #' Causality DAGS
 #'
@@ -10,7 +8,7 @@
 #'   of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid
 #'   edge types are listed below
 #' @param validate logical value to determine whether or not to check to see
-#'   if the cgraph is valid before returning it. Default is \code{TRUE}
+#'   if the graph is valid before returning it. Default is \code{TRUE}
 #' @param graph A graph to coerced or tested
 #' @details A causality DAG is a causality graph that is directed and acylic
 #'   (hence the name DAG). DAGs are typically used to represent Bayesisan
@@ -28,7 +26,7 @@
 #'
 #'   Pearl, Judea. Causality. Cambridge university press, 2009.
 #' @seealso
-#' Other causality classes: \code{\link{cgraph}}
+#' Other causality classes: \code{\link{cgraph}}, \code{\link{pattern}}
 #' @export
 dag <- function(nodes, edges, validate = TRUE) {
   if (!is.logical(validate))
@@ -43,7 +41,7 @@ dag <- function(nodes, edges, validate = TRUE) {
 }
 
 #' @details \code{is_valid_dag} checks to see if the input is a valid
-#'   "causality.dag". Specifally, it checks that the \code{graph} is directed
+#'   "causality.dag". Specifically, it checks that the \code{graph} is directed
 #'   and acyclic.
 #' @usage is_valid_dag(graph)
 #' @rdname dag
@@ -51,7 +49,7 @@ dag <- function(nodes, edges, validate = TRUE) {
 #'   on whether or not the input is a valid "causality.dag".
 #' @export
 is_valid_dag <- function(graph) {
-  if (!is.cgraph(graph))
+  if (!is.graph(graph))
     stop("Input must be a causality graph!")
   if (is.directed(graph) && is.acyclic(graph)) {
     return(TRUE)
@@ -69,7 +67,7 @@ is_valid_dag <- function(graph) {
 #' @usage is.dag(graph)
 #' @details \code{is.dag} tests whether or not an object has the class
 #'   "causality.dag"
-#'   @return \code{is.dag} returns \code{TRUE} or \code{FALSE}.
+#' @return \code{is.dag} returns \code{TRUE} or \code{FALSE}.
 #' @rdname dag
 #' @export
 is.dag <- function(graph) {
@@ -87,38 +85,38 @@ as.dag <- function(graph) {
 
 #' @rdname dag
 #' @export
-as.dag.default <- function(cgraph) {
-  if (is.dag(cgraph))
-    return(cgraph)
+as.dag.default <- function(graph) {
+  if (is.dag(graph))
+    return(graph)
   if (!is.cgraph(cgraph))
     stop("input is not a cgraph")
 }
 
 #' @rdname dag
 #' @export
-as.dag.causality.graph <- function(cgraph) {
-  if (!is.cgraph(cgraph))
+as.dag.causality.graph <- function(graph) {
+  if (!is.cgraph(graph))
     stop("input is not a cgraph")
 
-  if (is.nonlatent(cgraph)) {
-    if (!is.cyclic(cgraph)) {
-      if (is.directed(cgraph)) {
-        class(cgraph) <- .DAG_CLASS
-        return(cgraph)
+  if (is.nonlatent(graph)) {
+    if (!is.cyclic(graph)) {
+      if (is.directed(graph)) {
+        class(graph) <- .DAG_CLASS
+        return(graph)
       }
       else { # we have a a pdag
-        dag <- .dag_from_pdag(cgraph)
+        dag <- .dag_from_pdag(graph)
         if (is.null(dag))
           warning("Unable to coerce input to causality.dag")
         return(dag)
       }
     }
-    else { # cylcic, so we can't coerce it
+    else { # cyclic, so we can't coerce it
       warning("Unable to coerce input to causality.dag")
       return(NULL)
     }
   }
-  else if (is.latent(cgraph)) {
+  else if (is.latent(graph)) {
     stop("Not implemented")
   }
   else {
@@ -128,28 +126,29 @@ as.dag.causality.graph <- function(cgraph) {
 
 #' @rdname dag
 #' @export
-as.dag.causality.pdag <- function(cgraph) {
-  if (!is.pdag(cgraph))
+as.dag.causality.pdag <- function(graph) {
+  if (!is.pdag(graph))
     stop("input is not a causality.graph")
 
-  dag <- .dag_from_pdag(cgraph)
+  dag <- .dag_from_pdag(graph)
   if (is.null(dag)) {
     warning("Unable to coerce input to causality.dag")
   }
   return(dag)
 }
+
 #' @rdname dag
 #' @export
-as.dag.causality.pattern <- function(cgraph) {
-  if (!is.pattern(cgraph))
+as.dag.causality.pattern <- function(graph) {
+  if (!is.pattern(graph))
     stop("input is not a causality.pattern")
-  return(.dag_from_pattern(cgraph))
+  return(.dag_from_pattern(graph))
 }
 
 #' @rdname dag
 #' @export
-as.dag.causality.pag <- function(cgraph) {
-  if (!is.pag(cgraph))
+as.dag.causality.pag <- function(graph) {
+  if (!is.pag(graph))
     stop("input is not a causality.pag")
   stop("Not implemented")
 }
