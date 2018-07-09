@@ -90,13 +90,8 @@ int * ccf_sort(int n_nodes, const ill_ptr * restrict children) {
      * the node is marked, go to the next node and try again */
      int stack_index = n_nodes;
      for(int i = 0; i < n_nodes; ++i) {
-<<<<<<< HEAD
        if(!marked[i])
         visit(i, marked, &stack_index, children, sort);
-=======
-       if(!marked[node])
-        visit(node, marked, &stack_index, children, sort);
->>>>>>> 9fbb80dada17b4da8c7763a5e2716c3cdd4f1a9f
      }
   }
   else {
