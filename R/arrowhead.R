@@ -29,11 +29,10 @@ arrowhead_precision <- function(pdag1, pdag2) {
     stop("pdag1 must be a causality graph")
   if (!is.cgraph(pdag2))
     stop("pdag2 must be a causality graph")
-  if (!(is.pdag(pdag1 | is.dag(pdag1) | is.pattern(pdag1))))
+  if (!(is.pdag(pdag1) || is.dag(pdag1) || is.pattern(pdag1)))
     stop("pdag1 must be either a DAG, PDAG, or pattern!")
-  if (!(is.pdag(pdag2 | is.dag(pdag2) | is.pattern(pdag2))))
+  if (!(is.pdag(pdag2) || is.dag(pdag2) || is.pattern(pdag2)))
     stop("pdag2 must be either a DAG, PDAG, or pattern!")
-
   n_pdag2_arrows <- 0
   for (i in 1:nrow(pdag2$edges)) {
     edges <- pdag2$edges
@@ -44,7 +43,7 @@ arrowhead_precision <- function(pdag1, pdag2) {
     warning("pdag2 contains no oriented edges. Returning NA")
     return(NA)
   }
-  return(.arrow_intersect(pdag1, pdag2)/n_pdag1_arrows)
+  return(.arrow_intersect(pdag1, pdag2)/n_pdag2_arrows)
 }
 #' Determine how many arrows in graph 1 are in graph2.
 #'
@@ -63,9 +62,9 @@ arrowhead_recall <- function(pdag1, pdag2) {
     stop("pdag1 must be a causality graph")
   if (!is.cgraph(pdag2))
     stop("pdag2 must be a causality graph")
-  if (!(is.pdag(pdag1 | is.dag(pdag1) | is.pattern(pdag1))))
+  if (!(is.pdag(pdag1) || is.dag(pdag1) || is.pattern(pdag1)))
     stop("pdag1 must be either a DAG, PDAG, or pattern!")
-  if (!(is.pdag(pdag2 | is.dag(pdag2) | is.pattern(pdag2))))
+  if (!(is.pdag(pdag2) || is.dag(pdag2) || is.pattern(pdag2)))
     stop("pdag2 must be either a DAG, PDAG, or pattern!")
   n_pdag1_arrows <- 0
   edges <- pdag1$edges

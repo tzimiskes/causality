@@ -28,7 +28,7 @@ shd <- function(pattern1, pattern2) {
   if (!is.pattern(pattern1))
     pattern1 <- as.pattern(pattern1)
   if (!is.pattern(pattern2))
-    pattern1 <- as.pattern(pattern2)
+    pattern2 <- as.pattern(pattern2)
 
   # generate the adjacency list of the children of pattern1
   pat1_children <- list()
