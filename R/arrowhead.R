@@ -23,7 +23,7 @@
 #' @seealso Other graph comparison statistics:
 #'   \code{\link{adjacency_precision}}, \code{\link{adjacency_recall}},
 #'   and \code{\link{shd}}
-#'   @export
+#' @export
 arrowhead_precision <- function(pdag1, pdag2) {
   if (!is.cgraph(pdag1))
     stop("pdag1 must be a causality graph")
