@@ -1,3 +1,4 @@
+#' @export
 aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df = NULL)
 {
   if(!is.list(cgraphs))
@@ -47,7 +48,7 @@ aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df 
   class(output) <- c("aggregated-cgraphs")
   return(output)
 }
-
+#' @export
 vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
                   "relative_majority", "square_relative_majority"))
 {
@@ -133,7 +134,7 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
   return(cgraph(nodes, adjacencies, edges))
 }
 
-
+#' @export
 vote2 <- function(agg_pdags) {
   df <- agg_pdags$table
   df$'!' <- 1- rowSums(df[, -(1:2)])
@@ -169,7 +170,7 @@ vote2 <- function(agg_pdags) {
   return(cgraph(nodes, adjacencies, edges))
 }
 
-
+#' @export
 votek<- function(agg_pdags, k) {
   df <- agg_pdags$table
   df$'!' <- 1- rowSums(df[, -(1:2)])/k

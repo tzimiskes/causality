@@ -17,7 +17,7 @@ export_bnlearn_object_to_tetrad <- function(file, model) {
   }
   cat('\n', file = file, append = T)
 }
-
+#' @export
 import_from_tetrad_file <- function(file, type = "cgraph", sort = F) {
   if (!file.exists(file))
     stop(sprintf("file does not exist!\n"))
