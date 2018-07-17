@@ -21,7 +21,7 @@
 
 SEXP cf_topological_sort(SEXP dag);
 
-void visit(const int i,
+void visit2(const int i,
            int* const restrict marked,
            int* const restrict n_marked,
            const ill_ptr* const restrict children,
@@ -52,7 +52,7 @@ void visit2(const int i,
     ill_ptr parent = children[i];
     while(parent != NULL) {
       if(ill_value(parent) == DIRECTED)
-        visit(ill_key(parent), marked, n_marked, children, stack_ptr);
+        visit2(ill_key(parent), marked, n_marked, children, stack_ptr);
       parent = ill_next(parent);
     }
     marked[i] = MARKED;
