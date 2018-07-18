@@ -53,7 +53,7 @@ adjacency_precision <- function(cgraph1, cgraph2) {
   }
   # calcluate the intersection of adjacencies over n_cgraph2_adjs and return the
   # ratio
-  return(adjacency_intersect(cgraph1, cgraph2)/n_cgraph2_adjs)
+  return(adjacency_intersect(cgraph1, cgraph2) / n_cgraph2_adjs)
 }
 
 #' @rdname adjacency
@@ -68,14 +68,14 @@ adjacency_recall <- function(cgraph1, cgraph2) {
   # calculate the number adjacents in cgraph1
   # return NA if there are none
   n_cgraph1_adjs <- sum(lengths(cgraph1$adjacencies))
-  if(n_cgraph1_adjs == 0) {
+  if (n_cgraph1_adjs == 0) {
     warning("cgraph1 has no adjacencies. Returning NA")
     return(NA)
   }
 
   # calcluate the intersection of adjacencies over n_cgraph1_adjs and return the
   # ratio
-  return(adjacency_intersect(cgraph1, cgraph2)/n_cgraph1_adjs)
+  return(adjacency_intersect(cgraph1, cgraph2) / n_cgraph1_adjs)
 }
 
 # internal function that is used to cacluate the intersection of the adjacencies

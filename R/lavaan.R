@@ -29,4 +29,3 @@ as.lavaan.formula <- function(cgraph) {
   }
   return(paste(formulas, collapse = " ; "))
 }
-

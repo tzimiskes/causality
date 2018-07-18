@@ -33,13 +33,13 @@ shd <- function(pattern1, pattern2) {
   # generate the adjacency list of the children of pattern1
   pat1_children <- list()
   for (i in 1:nrow(pattern1$edges)) {
-    pat1_edge <- pattern1$edges[i,]
+    pat1_edge <- pattern1$edges[i, ]
     pat1_children[[pat1_edge[1]]][[pat1_edge[2]]] <- pat1_edge[3]
   }
   # now, do the same for pattern2
   pat2_children <- list()
   for (j in 1:nrow(pattern2$edges)) {
-    pat2_edge <- pattern2$edges[j,]
+    pat2_edge <- pattern2$edges[j, ]
     pat2_children[[pat2_edge[1]]][[pat2_edge[2]]] <- pat2_edge[3]
   }
   distance <- 0
@@ -55,9 +55,9 @@ shd <- function(pattern1, pattern2) {
       if (edge == .DIRECTED) {
         distance <- distance + 1
       }
-      # if pattern1_edge is not of type -->, it is --- since (true_src, true_dst,
-      # ---) is not in true graph, we ned to check to see if (true_dst,
-      # true_src, ---) is
+      # if pattern1_edge is not of type -->, it is --- since
+      # (true_src, true_dst, ---) is not in true graph, we ned to check to see
+      # if (true_dst, true_src, ---) is
       else {
         pat2_edge <- as.list(pat2_children[[node2]])[[node1]]
         # it isn't

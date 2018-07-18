@@ -33,7 +33,7 @@ sort.causality.graph <- function(graph, decreasing = FALSE) {
     warning("graph contains a cycle, returning NA.")
     return(NA)
   }
-  if(decreasing == TRUE)
+  if (decreasing == TRUE)
     return(rev(output))
   else
     return(output)

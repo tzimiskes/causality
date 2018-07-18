@@ -9,6 +9,6 @@ Description: More about what it does (maybe more than one line)
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Depends: R (>= 3.1.0), readr
+Depends: R (>= 3.1.0), readr, MASS
 Suggests: testthat, lavaan
 RoxygenNote: 6.0.1

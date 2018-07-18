@@ -39,11 +39,11 @@ arrowhead_precision <- function(pdag1, pdag2) {
     if (edges[i, 3] == .DIRECTED)
       n_pdag2_arrows <- n_pdag2_arrows + 1
   }
-  if(n_pdag2_arrows == 0) {
+  if (n_pdag2_arrows == 0) {
     warning("pdag2 contains no oriented edges. Returning NA")
     return(NA)
   }
-  return(.arrow_intersect(pdag1, pdag2)/n_pdag2_arrows)
+  return(arrow_intersect(pdag1, pdag2) / n_pdag2_arrows)
 }
 #' Determine how many arrows in graph 1 are in graph2.
 #'
@@ -72,16 +72,14 @@ arrowhead_recall <- function(pdag1, pdag2) {
     if (edges[i, 3] == .DIRECTED)
       n_pdag1_arrows <- n_pdag1_arrows + 1
   }
-  if(n_pdag1_arrows == 0) {
+  if (n_pdag1_arrows == 0) {
     warning("pdag1 contains no oriented edges. Returning NA")
     return(NA)
   }
-  return(.arrow_intersect(pdag1, pdag2)/n_pdag1_arrows)
+  return(arrow_intersect(pdag1, pdag2) / n_pdag1_arrows)
 }
 
-
-
-.arrow_intersect <- function(pdag1, pdag2) {
+arrow_intersect <- function(pdag1, pdag2) {
   n_same <- 0
   # index over the edges in the pdag1 graph and estimated graph. Recall that an
   # edge is a vector that consists of (origin, destination, edge_type) eg

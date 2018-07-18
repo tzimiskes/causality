@@ -139,7 +139,7 @@ as.pattern.causality.graph <- function(graph) {
     class(graph) <- .PATTERN_CLASS
     return(graph)
   }
-  else if(is.acyclic(graph)) {
+  else if (is.acyclic(graph)) {
     if (is.directed(graph)) {
       return(.dag_to_pattern(graph))
     }
