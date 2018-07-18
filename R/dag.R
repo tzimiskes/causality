@@ -49,7 +49,7 @@ dag <- function(nodes, edges, validate = TRUE) {
 #'   on whether or not the input is a valid "causality.dag".
 #' @export
 is_valid_dag <- function(graph) {
-  if (!is.graph(graph))
+  if (!is.cgraph(graph))
     stop("Input must be a causality graph!")
   if (is.directed(graph) && is.acyclic(graph)) {
     return(TRUE)

@@ -4,14 +4,16 @@
 \alias{sort.causality.graph}
 \title{Sort the nodes of a acylcic graph}
 \usage{
-\method{sort}{causality.graph}(graph, decreasing = FALSE)
+\method{sort}{causality.graph}(x, decreasing = FALSE, ...)
 }
 \arguments{
+\item{x}{causality graph that you wish to calculate the topological
+ordering of}
+
 \item{decreasing}{logical value to determine whether or the not sort should
 be in decreasing order. default is \code{FALSE}}
 
-\item{dag}{causality dag that you wish to calculate the topological ordering
-of}
+\item{...}{additional parameters that can be sent through sort generic}
 }
 \value{
 A charcter vector that contains the nodes of the graph ordered
@@ -25,7 +27,7 @@ A charcter vector that contains the nodes of the graph ordered
 \code{sort.causality.graph} generates a topological ordering of the
   given \code{graph} by using a depth first search as described in CLRS.
   A topological sort (or ordering) is a linear ordering of nodes in a PDAG.
-  That is if we have \eqn{x --> y}, then x < y (x comes before y) in the sort.
+  That is if we have \eqn{x --> y}, then x < y in the sort.
   This ordering is not unique; a PDAG may have multiple valid orderings.
 }
 \examples{

@@ -2,8 +2,10 @@ Package: causality
 Type: Package
 Title: Discover the Underlying Causal Structure of Data
 Version: 0.0.0.9009
-Authors@R: person("Alexander", "Rix", email = "arix@umn.edu",
+Authors@R: person("Alexander", "Rix", email = "alexanderjrix@gmail.com",
   role = c("aut", "cre"))
+Author: Alexander Rix [aut, cre]
+Maintainer: Alexander Rix <alexanderjrix@gmail.com>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: GPL-3
