@@ -22,7 +22,11 @@
 SEXP cf_topological_sort(SEXP dag);
 
 void visit2(const int i,
+<<<<<<< HEAD
             int* restrict marked,
+=======
+           int* const restrict marked,
+>>>>>>> e4e15321f005873841021e28e61ad585006b62f7
            int* const restrict n_marked,
            const ill_ptr* const restrict children,
            int_a_stack_ptr restrict stack_ptr
