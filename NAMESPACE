@@ -53,11 +53,8 @@ export(meek)
 export(pattern)
 export(score_graph)
 export(shd)
-<<<<<<< HEAD
 useDynLib(causality,ccf_meek_rules_wrapper)
-=======
 export(vote)
 export(vote2)
 export(votek)
->>>>>>> e4e15321f005873841021e28e61ad585006b62f7
 useDynLib(causality,ccf_sort_wrapper)
