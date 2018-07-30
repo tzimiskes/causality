@@ -88,3 +88,8 @@ inline int match_edge(const char* edge_str) {
     return BIDIRECTED;
   error("Unrecognized edge type!"); /* This will probably never happen */
 }
+
+int is_directed(int edge) {
+ return (edge == DIRECTED || edge == CIRCLEARROW ||
+    edge == SQUIGGLEARROW || edge == PLUSPLUSARROW);
+}

@@ -2,13 +2,11 @@
 #include "headers/cmpct_cg.h"
 #include "headers/int_linked_list.h"
 #include "headers/edgetypes.h"
-#include "headers/int_a_stack.h"
 
 // macros for dag_to_pattern
 #define UNKNOWN -1
 #define COMPELLED 1
 #define REVERSABLE 2
-
 
 // These two functions implement the topological sort as described in CLRS
 // topological sort returns a SEXP because there's an R fuction which
@@ -27,7 +25,7 @@ ill_ptr * ccf_chickering(ill_ptr * parents, const int n_nodes) {
   // generate a sort
 
   // order the edges
-
+  order_edges(cgraph cg, int * sort)
   // core chickering algorithm,
   free(sort_ptr);
   // return pointer
@@ -35,9 +33,7 @@ ill_ptr * ccf_chickering(ill_ptr * parents, const int n_nodes) {
 }
 
 
-
-
-ill_ptr cf_dag_to_pattern(ill_ptr * parents, const int n_nodes, const int* sort_ptr) {
+void poo(cgraph cg, const int* sort_ptr) {
 
   // order edges sets the value parameter for each edge, so we need to
   // change the value for everything to UNKNOWN

@@ -19,8 +19,8 @@
 int * calculate_edges_ptr(SEXP Graph);
 SEXP calculate_edges_from_ptr(int * edges_ptr, SEXP Graph);
 int * ccf_topological_sort(SEXP Graph);
-
-int* calculate_edges_ptr(SEXP Graph);
+int is_directed(int edge);
+int * calculate_edges_ptr(SEXP Graph);
 SEXP cf_topological_sort(SEXP dag);
 
 #endif
