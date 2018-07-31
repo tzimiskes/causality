@@ -22,7 +22,7 @@ void ill_insert_by_value(ill_ptr* root, int key, int value, int i, ill_ptr nodes
 ill_ptr ill_search(ill_ptr root, const int key);
 void ill_set_next(ill_ptr root, ill_ptr next);
 ill_ptr ill_next(ill_ptr root);
-
+void       ill_set_key(ill_ptr root, int new_key);
 int        ill_key(ill_ptr root);
 void       ill_set_value(ill_ptr root, int value);
 int        ill_value(ill_ptr root);

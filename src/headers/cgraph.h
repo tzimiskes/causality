@@ -22,15 +22,13 @@ void free_cgraph(cgraph cg);
 
 void print_cgraph(cgraph cg);
 
-
 ill_ptr * get_cgraph_parents(cgraph cg);
 ill_ptr * get_cgraph_children(cgraph cg);
 int get_cgraph_n_nodes(cgraph cg);
 int get_cgraph_n_edges(cgraph cg);
 
-int edge_undirected_in_cg(cgraph cg, const int node1, const int node2);
-int adjacent_in_cg(cgraph cg, const int node1, const int node2);
-int edge_directed_in_cg(cgraph cg, const int parent, const int child);
-void orient_cmpct_cg_edge(cgraph cg, int node1, int node2,
-                          void (*insert_fp)(ill_ptr*, int, int, int, ill_ptr));
+int edge_undirected_in_cgraph(cgraph cg, int node1, int node2);
+int adjacent_in_cgraph(cgraph cg, int node1, int node2);
+int edge_directed_in_cgraph(cgraph cg, int parent, int child);
+
 #endif

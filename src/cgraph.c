@@ -56,10 +56,56 @@ void free_cgraph(cgraph cg) {
   free(cg.children);
 }
 
+int adjacent_in_cgraph(cgraph cg, int node1, int node2) {
+  /* look through the parents of node1 to see if node2 is a parent */
+  ill_ptr node1_parents = cg.parents[node1];
+  while(node1_parents != NULL) {
+    if(ill_key(node1_parents) == node2)
+      return 1;
+    node1_parents = ill_next(node1_parents);
+  }
+  /* look through the parents of node2 to see if node1 is a parent */
+  ill_ptr node2_parents = cg.parents[node2];
+  while(node2_parents != NULL) {
+    if(ill_key(node2_parents) == node1)
+      return 1;
+    node2_parents = ill_next(node2_parents);
+  }
+  return 0;
+}
+
+int edge_undirected_in_cgraph(cgraph cg, int node1, int node2) {
+  ill_ptr node1_parents = cg.parents[node1];
+  while(node1_parents != NULL) {
+    if(ill_key(node1_parents) == node2)
+    return ill_value(node1_parents) == UNDIRECTED;
+    node1_parents = ill_next(node1_parents);
+  }
+  ill_ptr node2_parents = cg.parents[node2];
+  while(node2_parents != NULL) {
+    if(ill_key(node2_parents) == node1)
+    return ill_value(node2_parents) == UNDIRECTED;
+    node2_parents = ill_next(node2_parents);
+  }
+  return 0;
+}
+
+int edge_directed_in_cgraph(cgraph cg, int parent, int child) {
+  ill_ptr children = cg.children[parent];
+  while(children != NULL) {
+    if(ill_key(children) == parent)
+      return ill_value(children) == DIRECTED;
+    children = ill_next(children);
+  }
+  return 0;
+}
+
 void print_cgraph(cgraph cg) {
   for (int i = 0; i < cg.n_nodes; ++i) {
-    Rprintf("Parent %i: ", i);
+    Rprintf("Parents of %i: ", i);
     ill_print(cg.parents[i]);
+    Rprintf("Children of  %i: ", i);
+    ill_print(cg.children[i]);
   }
 }
 
