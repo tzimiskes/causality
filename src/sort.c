@@ -40,9 +40,8 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
   /* grab the R structure that holds the Nodes (Char* vector) of the Graph */
   SEXP Nodes             = PROTECT(VECTOR_ELT(Graph, NODES));
   int n_nodes            = length(Nodes);
-  /* grab the number of the Edges in the Graph from the Edge matrix */
+  /* grab the number of the Edges in the Graph */
   int n_edges            = nrows(VECTOR_ELT(Graph, EDGES));
-  /* get the topological sort of the Graph */
   cgraph cg              = create_cgraph(n_nodes);
   fill_in_cgraph(cg, n_edges, edges_ptr);
   /* ccf_sort returns NULL if graph doesn't have a sort. In that case,
@@ -72,7 +71,7 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
  * (currently an integer linked list) of the edge list of an causality.graph,
  * and returns a pointer to the sorted (C level representation) of the nodes */
 int * ccf_sort(cgraph cg) {
-  int n_nodes        = cg.n_edges;
+  int n_nodes        = get_cgraph_n_nodes(cg);
   /* create an array to signify whether or not a node has been marked,
    * in accordance with the algorithm in CLRS.
    * 0 means UNMARKED, so calloc is called */
@@ -93,7 +92,7 @@ int * ccf_sort(cgraph cg) {
      int stack_index = n_nodes;
      for(int i = 0; i < n_nodes; ++i) {
        if(!marked[i])
-        visit(i, marked, &stack_index, children, sort);
+         visit(i, marked, &stack_index, children, sort);
      }
   }
   else {
@@ -106,8 +105,7 @@ int * ccf_sort(cgraph cg) {
   }
   /* free malloc'd memory */
   free(marked);
-  /* unprotect order */
-  return(sort);
+  return sort;
 }
 
 /* visit: recursively look through the children of the node, looking for cycles
