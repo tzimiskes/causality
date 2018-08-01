@@ -1,25 +1,25 @@
-#include "headers/causality.h"
-#include "headers/cmpct_cg.h"
-#include "headers/int_linked_list.h"
-#include "headers/edgetypes.h"
+#include <causality.h>
+#include <cmpct_cg.h>
+#include <int_linked_list.h>
+#include <edgetypes.h>
 
-typedef struct foo* foo_ptr;
+typedef struct cll * cll_ptr;
 
-typedef struct foo {
+typedef struct cll {
   ill_ptr children;
   ill_ptr parents;
-  foo_ptr next_node;
-  foo_ptr prev_node;
-} foo;
+  cll_ptr next;
+  cll_ptr prev;
+} cll;
 
-int adjacent(foo foo, int node) {
-  ill_ptr parents  = foo.parents;
+int adjacent(cll current_node, int node) {
+  ill_ptr parents  = current_node.parents;
   while(parents != NULL) {
     if(ill_key(parents) == node)
       return 1;
     parents = ill_next(parents);
   }
-  ill_ptr children = foo.children;
+  ill_ptr children = current_node.children;
   while(children != NULL) {
     if(ill_key(children) == node)
       return 1;
@@ -28,14 +28,14 @@ int adjacent(foo foo, int node) {
   return 0;
 }
 
-inline int is_sink(foo_ptr foop) {
-  return foop->children == NULL;
+inline int is_sink(cll current_node) {
+  return current_node.children == NULL;
 }
 
 /* check to see if all undirected parents are adj to all other parents */
-int check_condition(foo_ptr foo, foo_ptr nodes) {
-  ill_ptr parents = foo->parents;
-  ill_ptr tmp = parents;
+int check_condition(cll current_node, cll_ptr nodes) {
+  ill_ptr parents = current_node.parents;
+  ill_ptr tmp     = parents;
   /* look for undirect parents of the node */
   while(tmp != NULL) {
     if(ill_value(tmp) == UNDIRECTED) {
@@ -53,31 +53,14 @@ int check_condition(foo_ptr foo, foo_ptr nodes) {
   }
   return 1;
 }
-/*
- * orient_in_dag takes in a node, and points all undirected parents towards it
- * in the edge list
- */
-void orient_in_dag(foo_ptr nodes, foo_ptr current_node,
-                   int* dag_edges_ptr, int n_edges, int* index)
-  {
-  ill_ptr parents = current_node->parents;
-  int i           = *index;
-  int node        = current_node - nodes; /* ptr arithmetic */
-  while(parents != NULL) {
-    dag_edges_ptr[i          ]   = ill_key(parents);
-    dag_edges_ptr[i + n_edges]   = node;
-    dag_edges_ptr[i + 2*n_edges] = DIRECTED;
-    i++;
-    parents = ill_next(parents);
-  }
-  *index = i;
-}
 
-void remove_node(foo_ptr nodes, foo_ptr current_node) {
-  int node = current_node - nodes; /* ptr arithmetic */
+
+
+void remove_node(cll current_node, cll_ptr nodes) {
+  int node = &current_node - nodes; /* ptr arithmetic */
 
 /* we need to current node in all of its adjacents */
-  ill_ptr parents = current_node->parents;
+  ill_ptr parents = current_node.parents;
   while(parents != NULL) {
     int parent = ill_key(parents);
       if(ill_value(parents) == DIRECTED) {
@@ -93,78 +76,52 @@ void remove_node(foo_ptr nodes, foo_ptr current_node) {
 
   // unlink the node from the circular linked list
 
-  current_node->prev_node->next_node = current_node->next_node;
-  current_node->next_node->prev_node = current_node->prev_node;
+  current_node.prev->next = current_node.next;
+  current_node.next->prev = current_node.prev;
+}
+
+SEXP ccf_pdx_wrapper(SEXP Pdag) {
+  /* TODO */
+  return Pdag;
 }
 
 
-SEXP cf_extend_pdag(SEXP Pdag) {
-  int n_nodes       = length(VECTOR_ELT(Pdag, NODES));
-  int n_edges       = nrows(VECTOR_ELT(Pdag, EDGES));
-  int* edges_ptr    = INTEGER(VECTOR_ELT(Pdag, EDGES));
-  int* parents_ptr  = edges_ptr;
-  int* children_ptr = edges_ptr + n_edges;
-  int* edgetype_ptr = edges_ptr + 2*n_edges;
+void ccf_pdx(cgraph_ptr cg_ptr) {
+  int n_nodes = get_cgraph_n_nodes(cg_ptr);
+  cgraph_ptr cg_copy_ptr = copy_cgraph(cg_ptr);
 
-  foo_ptr nodes = calloc(n_nodes, sizeof(foo));
+  cll_ptr nodes = calloc(n_nodes, sizeof(cll));
   if(nodes == NULL)
     error("Failed to allocate memory for nodes in cf_extend_pdag\n");
 
-  // fill in nodes parents and children
-  for(int i = 0; i < n_edges; ++i) {
-    int parent   = parents_ptr[i];
-    int child    = children_ptr[i];
-    int edgetype = edgetype_ptr[i];
-    if(edgetype == DIRECTED) {
-      nodes[parent].children = ill_insert(nodes[parent].children, child, DIRECTED);
-      nodes[child].parents   = ill_insert(nodes[child].parents, parent, DIRECTED);
+    // set up circular linked list
+    ill_ptr * parents_copy  = get_cgraph_parents(cg_copy_ptr);
+    ill_ptr * children_copy = get_cgraph_children(cg_copy_ptr);
+    for(int i = 0; i < n_nodes; ++i) {
+      nodes[i].parents   = parents_copy[i];
+      nodes[i].children  = children_copy[i];
+      nodes[i].next      = nodes + (i + 1) % n_nodes;
+      nodes[i].prev      = nodes + (i + n_nodes - 1) % n_nodes;
     }
-    else {
-      nodes[child].parents = ill_insert(nodes[child].parents, parent, UNDIRECTED);
-      nodes[parent].parents = ill_insert(nodes[parent].parents, child, UNDIRECTED);
+    cll current_node = nodes[0];
+    int n_nodes_checked  = 0;
+    int ll_size          = n_nodes;
+    /* Comment needed */
+    while(ll_size > 0 && n_nodes_checked < ll_size) {
+      if(is_sink(current_node) && check_condition(current_node, nodes)) {
+        orient_in_cgraph(cg_ptr, &current_node - nodes);
+        remove_node(current_node, nodes);
+        ll_size--;
+        n_nodes_checked = 0;
+      }
+      else {
+        n_nodes_checked++;
+      }
+      current_node = *(current_node.next);
     }
-  }
+    // check to see if the algorithm failed to generate an extension
+    int failure = ll_size  > 0 ? 1 : 0;
 
-  // set up circular linked list
-  for(int i = 0; i < n_nodes; ++i) {
-    nodes[i].next_node = nodes + (i + 1) % n_nodes;
-    nodes[i].prev_node = nodes + (i + n_nodes - 1) % n_nodes;
-  }
-
-  // create output Dag by duplicating the  Pdag and reseting the edge list
-  SEXP Dag = PROTECT(duplicate(Pdag));
-  int* dag_edges_ptr = INTEGER(VECTOR_ELT(Dag, EDGES));
-  memset(dag_edges_ptr, 0, 3*n_edges*sizeof(int));
-
-  foo_ptr current_node = nodes;
-  int n_nodes_checked  = 0;
-  int ll_size          = n_nodes;
-  /* Comment needed */
-  int index = 0;
-  while(ll_size > 0 && n_nodes_checked < ll_size) {
-    if(is_sink(current_node) && check_condition(current_node, nodes)) {
-      orient_in_dag(nodes, current_node, dag_edges_ptr, n_edges, &index);
-      remove_node(nodes, current_node);
-      ll_size--;
-      n_nodes_checked = 0;
-    }
-    else {
-      n_nodes_checked++;
-    }
-    current_node = current_node->next_node;
-  }
-  // check to see if the algorithm failed to generate an extension
-  int failure = ll_size  > 0 ? 1 : 0;
-
-  // free malloc'd memory
-  for(int i = 0; i < n_nodes; ++i) {
-    ill_free(nodes[i].parents);
-    ill_free(nodes[i].children);
-  }
-  free(nodes);
-  UNPROTECT(1);
-  if(failure)
-    return R_NilValue;
-  else
-    return Dag;
+    free(nodes);
+    free_cgraph(cg_copy_ptr);
 }

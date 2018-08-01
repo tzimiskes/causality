@@ -1,8 +1,7 @@
-#include "headers/causality.h"
-#include "headers/int_linked_list.h"
-#include "headers/edgetypes.h"
-#include "headers/cgraph.h"
-
+#include <causality.h>
+#include <int_linked_list.h>
+#include <edgetypes.h>
+#include <cgraph.h>
 
 cgraph_ptr create_cgraph(int n_nodes) {
   cgraph_ptr cg_ptr = malloc(sizeof(cgraph));

@@ -31,38 +31,6 @@ void ill_insert2(ill_ptr* root, int key, int value, int i, ill_ptr nodes) {
     *root          = &nodes[i];
 }
 
-/*
- * TODO
- */
-void ill_insert_by_value(ill_ptr* root, int key, int value,
-                          int i, ill_ptr nodes)
-{
-  nodes[i].key   = key;
-  nodes[i].value = value;
-  // if root is null, instantiate
-  if(*root == NULL) {
-    *root          = &nodes[i];
-    return;
-  }
-  if((*root)->value < value) {
-    nodes[i].next = *root;
-    *root          = &nodes[i];
-    return;
-  }
-  // else loop through the nodes
-  ill_ptr tmp = *root;
-  while(tmp->next != NULL) {
-    if(tmp->next->value < value) {
-      nodes[i].next = tmp->next;
-      tmp->next     = &nodes[i];
-      return;
-    }
-    tmp = tmp->next;
-  }
-  // if next is NULL instantiate it
-  tmp->next = &nodes[i];
-}
-
 void ill_set_next(ill_ptr root, ill_ptr next) {
   root->next = next;
 }
