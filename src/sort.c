@@ -9,10 +9,10 @@
  */
 #include <setjmp.h> /* for error handling */
 
-#include "headers/causality.h"
-#include "headers/cgraph.h"
-#include "headers/int_linked_list.h"
-#include "headers/edgetypes.h"
+#include <causality.h>
+#include <cgraph.h>
+#include <int_linked_list.h>
+#include <edgetypes.h>
 
 /* macros used in ccf_sort */
 #define UNMARKED 0
