@@ -115,9 +115,11 @@ void print_cgraph(cgraph_ptr cg_ptr) {
   cgraph cg = *cg_ptr;
   for (int i = 0; i < cg.n_nodes; ++i) {
     Rprintf("Parents of %i: ", i);
+    Rprintf("\n");
     ill_print(cg.parents[i]);
     Rprintf("Children of  %i: ", i);
     ill_print(cg_ptr->children[i]);
+    Rprintf("\n");
   }
 }
 

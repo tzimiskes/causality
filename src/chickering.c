@@ -10,15 +10,14 @@
 static inline void order_edges(cgraph_ptr cg_ptr, int * sort);
 static inline void insertion_sort(ill_ptr list);
 static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr);
+
 SEXP ccf_chickering_wrapper(SEXP Graph) {
     int * edges_ptr        = calculate_edges_ptr(Graph);
     int n_nodes            = length(VECTOR_ELT(Graph,NODES));
     int n_edges            = nrows(VECTOR_ELT(Graph, EDGES));
     cgraph_ptr cg_ptr      = create_cgraph(n_nodes);
-    Rprintf("create cgraph\n");
     fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
     ccf_chickering(cg_ptr);
-    Rprintf("Successfully ccf_chickering\n");
     SEXP Pattern = PROTECT(duplicate(Graph));
     recalculate_edges_from_cgraph(cg_ptr, Pattern);
     free_cgraph(cg_ptr);
@@ -28,13 +27,12 @@ SEXP ccf_chickering_wrapper(SEXP Graph) {
 
 void ccf_chickering(cgraph_ptr cg_ptr) {
   int * sort_ptr = ccf_sort(cg_ptr);
-  Rprintf("Successfully sort cgraph\n");
   order_edges(cg_ptr, sort_ptr);
-  Rprintf("Successfully order cgraph\n");
   chickering_core(cg_ptr, sort_ptr);
-  Rprintf("Successfully chickering cgraph\n");
   free(sort_ptr);
-  /* recalculate children */
+  /* we need to recalculate the children after turning it into a pattern. This
+   * is because the children in a cgraph currently only contain the true
+   * children of the graph (ie no undirected edges) */
   ill_ptr * children = get_cgraph_children(cg_ptr);
   ill_ptr * parents  = get_cgraph_parents(cg_ptr);
   int n_nodes = get_cgraph_n_nodes(cg_ptr);
