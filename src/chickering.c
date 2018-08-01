@@ -7,35 +7,40 @@
 #define COMPELLED  1 /* This means directed */
 #define REVERSABLE 2 /* This means undirected */
 
-static inline void order_edges(cgraph cg, int * sort);
+static inline void order_edges(cgraph_ptr cg_ptr, int * sort);
 static inline void insertion_sort(ill_ptr list);
-static inline void chickering_core(cgraph cg, int * sort_ptr);
+static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr);
 SEXP ccf_chickering_wrapper(SEXP Graph) {
     int * edges_ptr        = calculate_edges_ptr(Graph);
-    SEXP Nodes             = PROTECT(VECTOR_ELT(Graph, NODES));
-    int n_nodes            = length(Nodes);
+    int n_nodes            = length(VECTOR_ELT(Graph,NODES));
     int n_edges            = nrows(VECTOR_ELT(Graph, EDGES));
-    cgraph cg              = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges_ptr);
-    ccf_chickering(cg);\
-
-    /* convert cg to SEXP */
-    free_cgraph(cg);
+    cgraph_ptr cg_ptr      = create_cgraph(n_nodes);
+    Rprintf("create cgraph\n");
+    fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
+    ccf_chickering(cg_ptr);
+    Rprintf("Successfully ccf_chickering\n");
+    SEXP Pattern = PROTECT(duplicate(Graph));
+    recalculate_edges_from_cgraph(cg_ptr, Pattern);
+    free_cgraph(cg_ptr);
     UNPROTECT(1);
-    return Graph;
+    return Pattern;
 }
 
-void ccf_chickering(cgraph cg) {
-  int * sort_ptr = ccf_sort(cg);
-  order_edges(cg, sort_ptr);
-  chickering_core(cg, sort_ptr);
+void ccf_chickering(cgraph_ptr cg_ptr) {
+  int * sort_ptr = ccf_sort(cg_ptr);
+  Rprintf("Successfully sort cgraph\n");
+  order_edges(cg_ptr, sort_ptr);
+  Rprintf("Successfully order cgraph\n");
+  chickering_core(cg_ptr, sort_ptr);
+  Rprintf("Successfully chickering cgraph\n");
   free(sort_ptr);
   /* recalculate children */
-  ill_ptr * children = get_cgraph_children(cg);
-  ill_ptr * parents  = get_cgraph_parents(cg);
-  int n_nodes = get_cgraph_n_nodes(cg);
+  ill_ptr * children = get_cgraph_children(cg_ptr);
+  ill_ptr * parents  = get_cgraph_parents(cg_ptr);
+  int n_nodes = get_cgraph_n_nodes(cg_ptr);
   for(int i = 0; i < n_nodes; ++i) {
     ill_free(children[i]);
+    children[i] = NULL;
   }
   for(int i = 0; i < n_nodes; ++i) {
     ill_ptr tmp = parents[i];
@@ -44,15 +49,16 @@ void ccf_chickering(cgraph cg) {
         int node = ill_key(tmp);
         children[node] = ill_insert(children[node], i, DIRECTED);
       }
+      tmp = ill_next(tmp);
     }
   }
 }
 
 /* order_edges orders the parents of cg such that the nodes are in descending
  * order according to the sort. */
-static inline void order_edges(cgraph cg, int * sort) {
-  ill_ptr * parents = get_cgraph_parents(cg);
-  int n_nodes       = get_cgraph_n_nodes(cg);
+static inline void order_edges(cgraph_ptr cg_ptr, int * sort) {
+  ill_ptr * parents = get_cgraph_parents(cg_ptr);
+  int n_nodes       = get_cgraph_n_nodes(cg_ptr);
   /* can be parallelized */
   for(int i = 0; i < n_nodes; ++i) {
     ill_ptr tmp = parents[i];
@@ -77,19 +83,19 @@ static inline void insertion_sort(ill_ptr list) {
         max = top;
       top = ill_next(top);
     }
-    int top_key = ill_key(top);
+    int list_key = ill_key(list);
     ill_set_key(list, ill_key(max));
-    ill_set_value(max, ill_value(top));
-    ill_set_key(max, top_key);
+    ill_set_value(max, ill_value(list));
+    ill_set_key(max, list_key);
     list = ill_next(list);
   }
 }
 
 /* This is the core part (i.e, Find-compelled) of Chickering's algorithm
  * to convert DAGs to patterns. */
-static inline void chickering_core(cgraph cg, int * sort_ptr) {
-  ill_ptr * parents = get_cgraph_parents(cg);
-  int n_nodes       = get_cgraph_n_nodes(cg);
+static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr) {
+  ill_ptr * parents = get_cgraph_parents(cg_ptr);
+  int n_nodes       = get_cgraph_n_nodes(cg_ptr);
   /* order edges sets the value parameter for each edge, so we need to
    * change the value for everything to UNKNOWN */
   for(int i = 0; i < n_nodes; ++i) {
@@ -155,7 +161,7 @@ static inline void chickering_core(cgraph cg, int * sort_ptr) {
       while(tmp != NULL) {
         if(ill_key(tmp) != x) {
           int z = ill_key(tmp);
-          if(!adjacent_in_cgraph(cg, x, z)) {
+          if(!adjacent_in_cgraph(cg_ptr, x, z)) {
             unshielded_collider = 1;
             goto STEP_89;
           }

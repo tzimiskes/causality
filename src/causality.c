@@ -44,6 +44,29 @@ SEXP calculate_edges_from_ptr(int * edges_ptr, SEXP Graph) {
   return(Output);
 }
 
+void recalculate_edges_from_cgraph(cgraph_ptr cg_ptr, SEXP Graph) {
+  SEXP Edges        = PROTECT(VECTOR_ELT(Graph, EDGES));
+  SEXP Nodes        = PROTECT(VECTOR_ELT(Graph, NODES));
+  int n_nodes       = get_cgraph_n_nodes(cg_ptr);
+  int n_edges       = get_cgraph_n_edges(cg_ptr);
+  ill_ptr * parents = get_cgraph_parents(cg_ptr);
+  int i         = 0;
+  for(int j = 0; j < n_nodes; ++j) {
+    ill_ptr tmp     = parents[j];
+    while(tmp != NULL) {
+      int parent = ill_key(tmp);
+      int child  = j;
+      int edge   = ill_value(tmp);
+      SET_STRING_ELT(Edges, i,             STRING_ELT(Nodes, parent));
+      SET_STRING_ELT(Edges, i + n_edges,   STRING_ELT(Nodes, child));
+      SET_STRING_ELT(Edges, i + 2*n_edges, mkChar(char_edge_from_int(edge)));
+      i++;
+      tmp        = ill_next(tmp);
+    }
+  }
+  UNPROTECT(2);
+}
+
 int match_node(const char* node, const char** nodes, int n_nodes) {
   for(int i = 0 ; i < n_nodes; ++i) {
     if(!strcmp(nodes[i], node))

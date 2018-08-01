@@ -1,11 +1,9 @@
 #ifndef _CGRAPH_H_
 #define _CGRAPH_H_
 
-#include "int_linked_list.h"
+#include <int_linked_list.h>
 
-#define COMPACT 1
-#define NONCOMPACT 0
-#define UNDEFINED 0
+#define UNDEFINED  0
 
 typedef struct cgraph * cgraph_ptr;
 typedef struct cgraph {
@@ -15,20 +13,20 @@ typedef struct cgraph {
   int       n_edges;
 } cgraph;
 
-cgraph create_cgraph(int n_nodes);
-void fill_in_cgraph(cgraph cg, int n_edges, int * edges_ptr);
-void add_node_to_cgraph(cgraph cg, int node1, int node2, int edge_type);
-void free_cgraph(cgraph cg);
+cgraph_ptr create_cgraph(int n_nodes);
+void fill_in_cgraph(cgraph_ptr cg_ptr, int n_edges, int * edges_ptr);
+void add_node_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge_type);
+void free_cgraph(cgraph_ptr cg_ptr);
 
-void print_cgraph(cgraph cg);
+void print_cgraph(cgraph_ptr cg_ptr);
 
-ill_ptr * get_cgraph_parents(cgraph cg);
-ill_ptr * get_cgraph_children(cgraph cg);
-int get_cgraph_n_nodes(cgraph cg);
-int get_cgraph_n_edges(cgraph cg);
+ill_ptr * get_cgraph_parents(cgraph_ptr cg_ptr);
+ill_ptr * get_cgraph_children(cgraph_ptr cg_ptr);
+int get_cgraph_n_nodes(cgraph_ptr cg_ptr);
+int get_cgraph_n_edges(cgraph_ptr cg_ptr);
 
-int edge_undirected_in_cgraph(cgraph cg, int node1, int node2);
-int adjacent_in_cgraph(cgraph cg, int node1, int node2);
-int edge_directed_in_cgraph(cgraph cg, int parent, int child);
+int edge_undirected_in_cgraph(cgraph_ptr cg_ptr, int node1, int node2);
+int adjacent_in_cgraph(cgraph_ptr cg_ptr, int node1, int node2);
+int edge_directed_in_cgraph(cgraph_ptr cg_ptr, int parent, int child);
 
 #endif

@@ -19,8 +19,6 @@
 #define MARKED 1
 #define TEMPORARY -1
 
-int * ccf_sort(cgraph cg);
-
 static void visit(const int node,
                   int * restrict marked,
                   int * restrict n_unmarked,
@@ -42,13 +40,13 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
   int n_nodes            = length(Nodes);
   /* grab the number of the Edges in the Graph */
   int n_edges            = nrows(VECTOR_ELT(Graph, EDGES));
-  cgraph cg              = create_cgraph(n_nodes);
-  fill_in_cgraph(cg, n_edges, edges_ptr);
+  cgraph_ptr cg_ptr              = create_cgraph(n_nodes);
+  fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
   /* ccf_sort returns NULL if graph doesn't have a sort. In that case,
    * we return R_NilValue (aka R's version of NULL) */
-  int * sorted_nodes_ptr = ccf_sort(cg);
+  int * sorted_nodes_ptr = ccf_sort(cg_ptr);
   free(edges_ptr);   /* free memory */
-  free_cgraph(cg); /* free memory */
+  free_cgraph(cg_ptr); /* free memory */
   SEXP Output;
   if(sorted_nodes_ptr == NULL) {
     Output = R_NilValue;
@@ -70,8 +68,8 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
  * described in CLRS. This function takes in a C level representation
  * (currently an integer linked list) of the edge list of an causality.graph,
  * and returns a pointer to the sorted (C level representation) of the nodes */
-int * ccf_sort(cgraph cg) {
-  int n_nodes        = get_cgraph_n_nodes(cg);
+int * ccf_sort(cgraph_ptr cg_ptr) {
+  int n_nodes        = get_cgraph_n_nodes(cg_ptr);
   /* create an array to signify whether or not a node has been marked,
    * in accordance with the algorithm in CLRS.
    * 0 means UNMARKED, so calloc is called */
@@ -88,7 +86,7 @@ int * ccf_sort(cgraph cg) {
   if(!setjmp(FAIL_STATE)) {
     /* Pick an unmarked node and do a breadth first search on it. If
      * the node is marked, go to the next node and try again */
-     ill_ptr * children = get_cgraph_children(cg);
+     ill_ptr * children = get_cgraph_children(cg_ptr);
      int stack_index = n_nodes;
      for(int i = 0; i < n_nodes; ++i) {
        if(!marked[i])

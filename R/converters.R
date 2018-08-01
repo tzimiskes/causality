@@ -1,10 +1,6 @@
+#' @useDynLib causality ccf_chickering_wrapper
 .dag_to_pattern <- function(dag) {
-  # creating a "hash table" makes the next operation faster
-  tmp <-.prepare_cgraph_for_call(dag, nodes = F, edges = T, adj = F)
-  tmp <-.Call("cf_dag_to_pattern", tmp)
-  dag$edges[, 1] <- dag$nodes[tmp[, 1] + 1]
-  dag$edges[, 2] <- dag$nodes[tmp[, 2] + 1]
-  dag$edges[, 3] <- c(.DIRECTED,.UNDIRECTED)[tmp[, 3]]
+  dag <-.Call("ccf_chickering_wrapper", dag)
   class(dag) <- .PATTERN_CLASS
   return(dag)
 }
