@@ -87,6 +87,14 @@ void ill_free(ill_ptr root) {
   }
 }
 
+void ill_set_key(ill_ptr root, int new_key) {
+  if(root != NULL)
+    root->key = new_key;
+  else
+    error("Cannot assign key to a NULL pointer!\n");
+
+}
+
 void ill_set_value(ill_ptr root, int new_value) {
   if(root != NULL)
     root->value = new_value;
@@ -148,4 +156,3 @@ void ill_delete(ill_ptr* root, int key) {
   }
   error("Failed to find key in ill_delete!\n");
 }
-

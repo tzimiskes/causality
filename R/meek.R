@@ -20,7 +20,7 @@
 #'
 #' Pearl, Judea. Causality. Cambridge university press, 2009.
 #' @export
-#' @useDynLib causality cf_meek_rules
+#' @useDynLib causality ccf_meek_rules_wrapper
 meek <- function(graph) {
   if (!is.cgraph(graph))
     stop("Input is not a cgraph")

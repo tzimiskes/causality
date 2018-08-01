@@ -9,17 +9,17 @@
  */
 #include <setjmp.h> /* for error handling */
 
-#include "headers/causality.h"
-#include "headers/cmpct_cg.h"
-#include "headers/int_linked_list.h"
-#include "headers/edgetypes.h"
+#include <causality.h>
+#include <cgraph.h>
+#include <int_linked_list.h>
+#include <edgetypes.h>
 
 /* macros used in ccf_sort */
 #define UNMARKED 0
 #define MARKED 1
 #define TEMPORARY -1
 
-int * ccf_sort(int n_nodes, const ill_ptr * restrict children);
+int * ccf_sort(cgraph cg);
 
 static void visit(const int node,
                   int * restrict marked,
@@ -40,16 +40,15 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
   /* grab the R structure that holds the Nodes (Char* vector) of the Graph */
   SEXP Nodes             = PROTECT(VECTOR_ELT(Graph, NODES));
   int n_nodes            = length(Nodes);
-  /* grab the number of the Edges in the Graph from the Edge matrix */
+  /* grab the number of the Edges in the Graph */
   int n_edges            = nrows(VECTOR_ELT(Graph, EDGES));
-  /* get the topological sort of the Graph */
-  cmpct_cg_ptr cg        = create_cmpct_cg(n_nodes, n_edges);
-  fill_in_cmpct_cg(cg, edges_ptr, ill_insert2, BY_CHILDREN);
-  ill_ptr * children     = get_cmpct_cg_parents(cg);
+  cgraph cg              = create_cgraph(n_nodes);
+  fill_in_cgraph(cg, n_edges, edges_ptr);
   /* ccf_sort returns NULL if graph doesn't have a sort. In that case,
    * we return R_NilValue (aka R's version of NULL) */
-  int * sorted_nodes_ptr = ccf_sort(n_nodes, children);
-  free_cmpct_cg(cg); /* free memory */
+  int * sorted_nodes_ptr = ccf_sort(cg);
+  free(edges_ptr);   /* free memory */
+  free_cgraph(cg); /* free memory */
   SEXP Output;
   if(sorted_nodes_ptr == NULL) {
     Output = R_NilValue;
@@ -71,7 +70,8 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
  * described in CLRS. This function takes in a C level representation
  * (currently an integer linked list) of the edge list of an causality.graph,
  * and returns a pointer to the sorted (C level representation) of the nodes */
-int * ccf_sort(int n_nodes, const ill_ptr * restrict children) {
+int * ccf_sort(cgraph cg) {
+  int n_nodes        = get_cgraph_n_nodes(cg);
   /* create an array to signify whether or not a node has been marked,
    * in accordance with the algorithm in CLRS.
    * 0 means UNMARKED, so calloc is called */
@@ -79,7 +79,7 @@ int * ccf_sort(int n_nodes, const ill_ptr * restrict children) {
   if(marked == NULL)
     error("Failed to allocate memory for marked in ccf_sort!\n");
   /* sort contains the topological order of the graph */
-  int * sort          = malloc(n_nodes*sizeof(int));
+  int * sort          = malloc(n_nodes * sizeof(int));
   if(sort == NULL)
     error("Failed to allocate memory for sort in ccf_sort!\n");
   /* this is also pretty much from CLRS */
@@ -88,10 +88,11 @@ int * ccf_sort(int n_nodes, const ill_ptr * restrict children) {
   if(!setjmp(FAIL_STATE)) {
     /* Pick an unmarked node and do a breadth first search on it. If
      * the node is marked, go to the next node and try again */
+     ill_ptr * children = get_cgraph_children(cg);
      int stack_index = n_nodes;
      for(int i = 0; i < n_nodes; ++i) {
        if(!marked[i])
-        visit(i, marked, &stack_index, children, sort);
+         visit(i, marked, &stack_index, children, sort);
      }
   }
   else {
@@ -104,8 +105,7 @@ int * ccf_sort(int n_nodes, const ill_ptr * restrict children) {
   }
   /* free malloc'd memory */
   free(marked);
-  /* unprotect order */
-  return(sort);
+  return sort;
 }
 
 /* visit: recursively look through the children of the node, looking for cycles
@@ -127,11 +127,7 @@ static void visit(const int node,
     marked[node]  = TEMPORARY;
     ill_ptr child = children[node];
     while(child != NULL) {
-      int edge_type = ill_value(child);
-      if(edge_type == DIRECTED || edge_type == CIRCLEARROW ||
-         edge_type == PLUSPLUSARROW || edge_type == SQUIGGLEARROW
-      )
-        visit(ill_key(child), marked, stack_index, children, sort);
+      visit(ill_key(child), marked, stack_index, children, sort);
       child = ill_next(child);
     }
     marked[node]       = MARKED;

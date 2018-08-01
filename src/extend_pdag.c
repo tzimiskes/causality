@@ -1,7 +1,7 @@
-#include"headers/causality.h"
-#include"headers/cmpct_cg.h"
-#include"headers/int_linked_list.h"
-#include"headers/edgetypes.h"
+#include "headers/causality.h"
+#include "headers/cmpct_cg.h"
+#include "headers/int_linked_list.h"
+#include "headers/edgetypes.h"
 
 typedef struct foo* foo_ptr;
 

@@ -1,6 +1,6 @@
-#include"headers/causality.h"
-#include"headers/int_redblacktree.h"
-#include"headers/edgetypes.h"
+#include "headers/causality.h"
+#include "headers/int_redblacktree.h"
+#include "headers/edgetypes.h"
 
 /* 1   2   3   4   5   6   7   8   9   10  11
  * <-- --- --> <~~ ~~> <++ ++> <-o o-> <-> o-o
@@ -22,7 +22,6 @@ static float ARR_BACKCIRCLE   [11] = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0};
 static float ARR_CIRCLE       [11] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
 static float ARR_BIDIRECTED   [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
 static float ARR_CIRCLECIRCLE [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-
 /*
  * converts irbt to matrix
  */
