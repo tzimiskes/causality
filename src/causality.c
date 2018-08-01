@@ -1,17 +1,17 @@
 #include "headers/causality.h"
 #include "headers/edgetypes.h"
 
-const char* DIRECTED_STR      = "-->";
-const char* UNDIRECTED_STR    = "---";
-const char* PLUSPLUSARROW_STR = "++>";
-const char* SQUIGGLEARROW_STR = "~~>";
-const char* CIRCLEARROW_STR   = "o->";
-const char* CIRCLECIRCLE_STR  = "o-o";
-const char* BIDIRECTED_STR    = "<->";
+const char * DIRECTED_STR      = "-->";
+const char * UNDIRECTED_STR    = "---";
+const char * PLUSPLUSARROW_STR = "++>";
+const char * SQUIGGLEARROW_STR = "~~>";
+const char * CIRCLEARROW_STR   = "o->";
+const char * CIRCLECIRCLE_STR  = "o-o";
+const char * BIDIRECTED_STR    = "<->";
 
 inline int match_edge(const char * edge_str);
 inline const char * char_edge_from_int(const int edge_type);
-inline int match_node(const char* node, const char** nodes, int n_nodes);
+inline int match_node(const char * node, const char ** nodes, int n_nodes);
 
 int * calculate_edges_ptr(SEXP Graph) {
   SEXP Edges          = PROTECT(VECTOR_ELT(Graph, EDGES));

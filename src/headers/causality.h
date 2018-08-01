@@ -19,6 +19,7 @@
 #define EDGES_NCOL 3
 
 int * ccf_sort(cgraph cg);
+void ccf_chickering(cgraph cg);
 int * calculate_edges_ptr(SEXP Graph);
 SEXP calculate_edges_from_ptr(int * edges_ptr, SEXP Graph);
 int * ccf_topological_sort(SEXP Graph);

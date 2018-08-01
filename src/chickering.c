@@ -1,42 +1,97 @@
-#include "headers/causality.h"
-#include "headers/cmpct_cg.h"
-#include "headers/int_linked_list.h"
-#include "headers/edgetypes.h"
+#include <causality.h>
+#include <cgraph.h>
+#include <int_linked_list.h>
+#include <edgetypes.h>
 
-// macros for dag_to_pattern
-#define UNKNOWN -1
-#define COMPELLED 1
-#define REVERSABLE 2
+#define UNKNOWN   -1
+#define COMPELLED  1 /* This means directed */
+#define REVERSABLE 2 /* This means undirected */
 
-// These two functions implement the topological sort as described in CLRS
-// topological sort returns a SEXP because there's an R fuction which
-// the user can call to get the topoligical sort
-int * ccf_sort(int n_nodes, const ill_ptr * restrict children);
-void order_edges(const int * sort_ptr, const int n_nodes, ill_ptr * parents);
+static inline void order_edges(cgraph cg, int * sort);
+static inline void insertion_sort(ill_ptr list);
+static inline void chickering_core(cgraph cg, int * sort_ptr);
+SEXP ccf_chickering_wrapper(SEXP Graph) {
+    int * edges_ptr        = calculate_edges_ptr(Graph);
+    SEXP Nodes             = PROTECT(VECTOR_ELT(Graph, NODES));
+    int n_nodes            = length(Nodes);
+    int n_edges            = nrows(VECTOR_ELT(Graph, EDGES));
+    cgraph cg              = create_cgraph(n_nodes);
+    fill_in_cgraph(cg, n_edges, edges_ptr);
+    ccf_chickering(cg);\
 
-SEXP ccf_chickering_wrapper(SEXP Graph);
-
-ill_ptr * ccf_chickering(ill_ptr * parents, const int n_nodes) {
-
-  // probably some kind of memory manipulation ?
-
-
-  int * sort_ptr = ccf_sort(n_nodes, parents);
-  // generate a sort
-
-  // order the edges
-  order_edges(cgraph cg, int * sort)
-  // core chickering algorithm,
-  free(sort_ptr);
-  // return pointer
-  return parents;
+    /* convert cg to SEXP */
+    free_cgraph(cg);
+    UNPROTECT(1);
+    return Graph;
 }
 
+void ccf_chickering(cgraph cg) {
+  int * sort_ptr = ccf_sort(cg);
+  order_edges(cg, sort_ptr);
+  chickering_core(cg, sort_ptr);
+  free(sort_ptr);
+  /* recalculate children */
+  ill_ptr * children = get_cgraph_children(cg);
+  ill_ptr * parents  = get_cgraph_parents(cg);
+  int n_nodes = get_cgraph_n_nodes(cg);
+  for(int i = 0; i < n_nodes; ++i) {
+    ill_free(children[i]);
+  }
+  for(int i = 0; i < n_nodes; ++i) {
+    ill_ptr tmp = parents[i];
+    while (tmp != NULL) {
+      if(ill_value(tmp) == DIRECTED) {
+        int node = ill_key(tmp);
+        children[node] = ill_insert(children[node], i, DIRECTED);
+      }
+    }
+  }
+}
 
-void poo(cgraph cg, const int* sort_ptr) {
+/* order_edges orders the parents of cg such that the nodes are in descending
+ * order according to the sort. */
+static inline void order_edges(cgraph cg, int * sort) {
+  ill_ptr * parents = get_cgraph_parents(cg);
+  int n_nodes       = get_cgraph_n_nodes(cg);
+  /* can be parallelized */
+  for(int i = 0; i < n_nodes; ++i) {
+    ill_ptr tmp = parents[i];
+    while(tmp != NULL) {
+      ill_set_value(tmp, sort[ill_key(tmp)]);
+      tmp = ill_next(tmp);
+    }
+    insertion_sort(parents[i]);
+  }
+}
 
-  // order edges sets the value parameter for each edge, so we need to
-  // change the value for everything to UNKNOWN
+/* We need a sorting routine so we can order the edges. Typically, we would use
+ * a mergesort routine for linked lists, but I suspect insertion sort will be
+ * faster because the average degree of causal graphs is 2-5, and insertion sort
+ * is faster than merge sort until we hit 10-50 elements. */
+static inline void insertion_sort(ill_ptr list) {
+  while(list != NULL) {
+    ill_ptr top = list;
+    ill_ptr max = list;
+    while(top != NULL) {
+      if(ill_value(top) > ill_value(max))
+        max = top;
+      top = ill_next(top);
+    }
+    int top_key = ill_key(top);
+    ill_set_key(list, ill_key(max));
+    ill_set_value(max, ill_value(top));
+    ill_set_key(max, top_key);
+    list = ill_next(list);
+  }
+}
+
+/* This is the core part (i.e, Find-compelled) of Chickering's algorithm
+ * to convert DAGs to patterns. */
+static inline void chickering_core(cgraph cg, int * sort_ptr) {
+  ill_ptr * parents = get_cgraph_parents(cg);
+  int n_nodes       = get_cgraph_n_nodes(cg);
+  /* order edges sets the value parameter for each edge, so we need to
+   * change the value for everything to UNKNOWN */
   for(int i = 0; i < n_nodes; ++i) {
     ill_ptr tmp_ptr = parents[i];
     while(tmp_ptr != NULL) {
@@ -44,102 +99,87 @@ void poo(cgraph cg, const int* sort_ptr) {
       tmp_ptr = ill_next(tmp_ptr);
     }
   }
-
+/* we iterate through the sort to satisfy the max min condition necessary to
+ * run this part of the algorithm */
   for(int i = 0; i < n_nodes; ++i) {
-    // by lemma 5 in Chickering, all the incident edges on y are unknown
-    // so we don't need to check to see its unordered
-    // look at the edges that go into y
-
-    const int y     = sort_ptr[i];
-    // parents of y
-    ill_ptr poy_ptr = parents[y];
-
-    // if there are incident edges into y, run steps 5-8 of the algorithm.
-    // if y has no incident edges, go to the next node in the
-    // topological order
-    if(poy_ptr != NULL) {
-
-      const int x        = ill_key(poy_ptr);
-      ill_ptr pox_ptr    =  parents[x];
-
-      // for each parent of x, w, where w -> x is compelled
-      // check to see if w forms the chain w -> x -> y
-      // or shielded collider w -> x -> y,
-      // and w -> x
-      while(pox_ptr != NULL) {
-
-        if (ill_value(pox_ptr) == COMPELLED) {
-          const int w = ill_key(pox_ptr);
-          // parents of y duplicate
-          ill_ptr poy_dup_ptr = poy_ptr;
-
-          int chain = 1;
-          while(poy_dup_ptr != NULL) {
-            if(ill_key(poy_dup_ptr) == w) {
-              // the triple forms a shielded collider so execute step 7
-              // set w -> y compelled
-              ill_set_value(poy_dup_ptr, COMPELLED);
+    /* by lemma 5 in Chickering, all the incident edges on y are unknown
+     * so we don't need to check to see its unordered */
+    int y             = sort_ptr[i];
+    ill_ptr y_parents = parents[y];
+    /* if there are incident edges into y, run steps 5-8 of the algorithm.
+     * if y has no incident edges, go to the next node in the order */
+    if(y_parents != NULL) {
+      int x             = ill_key(y_parents);
+      ill_ptr x_parents =  parents[x];
+      /* for each parent of x, w, where w -> x is compelled
+       * check to see if w forms a chain (w -> x -> y)
+       * or shielded collider (w -> x -> y and w -> x) */
+      while(x_parents != NULL) {
+        if(ill_value(x_parents) == COMPELLED) {
+          int w       = ill_key(x_parents);
+          ill_ptr tmp = y_parents;
+          int chain   = 1;
+          while(tmp != NULL) {
+            /* STEP 7 */
+            if(ill_key(tmp) == w) {
+              /* the triple forms a shielded collider, so set w -> y compelled
+              * and then break out of the loop so we can repeat this for the
+              * next parent of x */
+              ill_set_value(tmp, COMPELLED);
               chain = 0;
               break;
             }
-            else
-              poy_dup_ptr = ill_next(poy_dup_ptr);
+            tmp = ill_next(tmp);
           }
-
-          // if the triple forms a chain so execute step 6
+          /* STEP 6 */
           if(chain) {
-            // reset poy_dup
-            poy_dup_ptr = poy_ptr;
-            while(poy_dup_ptr != NULL) {
-              ill_set_value(poy_dup_ptr, COMPELLED);
-              poy_dup_ptr = ill_next(poy_dup_ptr);
+            /* reset tmp so we can reiterate through y's parents */
+            tmp = y_parents;
+            while(tmp != NULL) {
+              ill_set_value(tmp, COMPELLED);
+              tmp = ill_next(tmp);
             }
-            // jump to the end of the for loop
-            goto JMP_TO_EOFL;
+            goto EOFL; /* goto end of for loop */
           }
         }
-        // if step 7 is executed, goto the next grandparent
-        pox_ptr = ill_next(pox_ptr);
+        /* if step 7 is executed, goto the next parent of x */
+        x_parents = ill_next(x_parents);
       }
-      // now, we need to search for z, where z -> y, x != z,
-      // and z is not a parent of x. That is, an unshielded collider
-
-      // by starting at the second parent (might not exist),
-      // we avoid the need to check to see if z = x
-      // STEP 7.5: look for an unshielded collider
+      /* now, we need to search for z, where z -> y, x != z,
+       * and z is not a parent of x. That is, an unshielded collider
+       * by starting at the second parent (might not exist),
+       * we avoid the need to check to see if z = x
+       * STEP 7.5: look for an unshielded collider */
       int unshielded_collider = 0;
-      ill_ptr poy_dup_ptr = parents[y];
-      while(poy_dup_ptr != NULL) {
-        if(ill_key(poy_dup_ptr) != x) {
-          const int z = ill_key(poy_dup_ptr);
-          // reset parents of x
-          if(!adjacent_in_cg(cg, x, z)) {
+      ill_ptr tmp = parents[y];
+      while(tmp != NULL) {
+        if(ill_key(tmp) != x) {
+          int z = ill_key(tmp);
+          if(!adjacent_in_cgraph(cg, x, z)) {
             unshielded_collider = 1;
             goto STEP_89;
           }
         }
-        poy_dup_ptr = ill_next(poy_dup_ptr);
+        tmp = ill_next(tmp);
       }
-
       STEP_89: {};
-      // STEP 8, if there is one, label all incident edges compelled
+      /* STEP 8: if there is an unshielder collider,
+       * label all incident edges compelled */
       if(unshielded_collider) {
-        while(poy_ptr != NULL) {
-          ill_set_value(poy_ptr, COMPELLED);
-          poy_ptr = ill_next(poy_ptr);
+        while(y_parents != NULL) {
+          ill_set_value(y_parents, COMPELLED);
+          y_parents = ill_next(y_parents);
         }
       }
-      // STEP 9, label all unknown edges reversable
+      /* STEP 9, label all unknown edges reversable */
       else {
-        while(poy_ptr != NULL) {
-          if(ill_value(poy_ptr) == UNKNOWN)
-            ill_set_value(poy_ptr, REVERSABLE);
-          poy_ptr = ill_next(poy_ptr);
+        while(y_parents != NULL) {
+          if(ill_value(y_parents) == UNKNOWN)
+            ill_set_value(y_parents, REVERSABLE);
+          y_parents = ill_next(y_parents);
         }
       }
     }
-    // JUMP TO END OF FOR LOOP
-    JMP_TO_EOFL:{};
+    EOFL:{}; /* End Of For Loop */
   }
-  return parents;
 }
