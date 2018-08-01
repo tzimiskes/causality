@@ -203,5 +203,5 @@ votek<- function(agg_pdags, k) {
   nodes <- agg_pdags$nodes
   edges <- matrix(edges, ncol = 3, byrow = T)
   adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
-  return(cgraph(nodes, adjacencies, edges))
+  return(cgraph(nodes, edges))
 }
