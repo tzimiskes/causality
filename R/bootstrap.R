@@ -130,8 +130,7 @@ vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
   for (i in 1:n_edges) {
     edges[i,] <- calculate_edge(df[i,1], df[i,2], voting_method(df[i, -c(1:2)]))
   }
-  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
-  return(cgraph(nodes, adjacencies, edges))
+  return(cgraph(nodes, edges))
 }
 
 #' @export
@@ -166,8 +165,7 @@ vote2 <- function(agg_pdags) {
   }
   nodes <- agg_pdags$nodes
   edges <- matrix(edges, ncol = 3, byrow = T)
-  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
-  return(cgraph(nodes, adjacencies, edges))
+  return(cgraph(nodes, edges))
 }
 
 #' @export
@@ -202,6 +200,5 @@ votek<- function(agg_pdags, k) {
   }
   nodes <- agg_pdags$nodes
   edges <- matrix(edges, ncol = 3, byrow = T)
-  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
-  return(cgraph(nodes, adjacencies, edges))
+  return(cgraph(nodes, edges))
 }
