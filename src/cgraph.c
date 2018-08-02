@@ -7,7 +7,6 @@ cgraph_ptr create_cgraph(int n_nodes) {
   cgraph_ptr cg_ptr = malloc(sizeof(cgraph));
   if(cg_ptr == NULL)
     error("Failed to allocate memory for cgraph!\n");
-
   cg_ptr->n_nodes  = n_nodes;
   cg_ptr->n_edges  = UNDEFINED; /* 0 */
   cg_ptr->parents  = create_ptr_to_ill_ptr(n_nodes);
@@ -30,15 +29,25 @@ void fill_in_cgraph(cgraph_ptr cg_ptr, int n_edges, int * edges_ptr) {
     int node1         = node1_ptr[i];
     int node2         = node2_ptr[i];
     int edge_type     = edge_type_ptr[i];
-    if(is_directed(edge_type)) {
-      children[node1] = ill_insert(children[node1], node2, edge_type);
-      parents[node2]  = ill_insert(parents[node2],  node1, edge_type);
-    }
-    else {
-      parents[node1]  = ill_insert(parents[node1], node2, edge_type);
-    }
+    children[node1]   = ill_insert(children[node1], node2, edge_type);
+    parents[node2]    = ill_insert(parents[node2],  node1, edge_type);
   }
 }
+
+cgraph_ptr copy_cgraph(cgraph_ptr cg_ptr) {
+  cgraph_ptr cg_copy_ptr  = create_cgraph(cg_ptr->n_nodes);
+  cg_copy_ptr->n_edges    = cg_ptr->n_edges;
+  ill_ptr * parents       = cg_ptr->parents;
+  ill_ptr * children      = cg_ptr->children;
+  ill_ptr * copy_parents  = cg_copy_ptr->parents;
+  ill_ptr * copy_children = cg_copy_ptr->children;
+  for(int i = 0; i < cg_ptr->n_nodes; ++i) {
+    copy_parents[i]  = copy_ill(parents[i]);
+    copy_children[i] = copy_ill(children[i]);
+  }
+  return cg_copy_ptr;
+}
+
 
 void add_node_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge) {
   ill_ptr * parents   = cg_ptr->parents;

@@ -125,7 +125,8 @@ static void visit(const int node,
     marked[node]  = TEMPORARY;
     ill_ptr child = children[node];
     while(child != NULL) {
-      visit(ill_key(child), marked, stack_index, children, sort);
+      if(ill_value(child) == DIRECTED)
+        visit(ill_key(child), marked, stack_index, children, sort);
       child = ill_next(child);
     }
     marked[node]       = MARKED;

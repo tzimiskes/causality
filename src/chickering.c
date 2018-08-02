@@ -26,30 +26,29 @@ SEXP ccf_chickering_wrapper(SEXP Graph) {
 }
 
 void ccf_chickering(cgraph_ptr cg_ptr) {
-  int * sort_ptr = ccf_sort(cg_ptr);
-  order_edges(cg_ptr, sort_ptr);
+  int * sort_ptr     = ccf_sort(cg_ptr);
+  order_edges(cg_ptr,     sort_ptr);
   chickering_core(cg_ptr, sort_ptr);
   free(sort_ptr);
-  /* we need to recalculate the children after turning it into a pattern. This
-   * is because the children in a cgraph currently only contain the true
-   * children of the graph (ie no undirected edges) */
-  ill_ptr * children = get_cgraph_children(cg_ptr);
-  ill_ptr * parents  = get_cgraph_parents(cg_ptr);
-  int n_nodes = get_cgraph_n_nodes(cg_ptr);
-  for(int i = 0; i < n_nodes; ++i) {
-    ill_free(children[i]);
-    children[i] = NULL;
-  }
-  for(int i = 0; i < n_nodes; ++i) {
-    ill_ptr tmp = parents[i];
-    while (tmp != NULL) {
-      if(ill_value(tmp) == DIRECTED) {
-        int node = ill_key(tmp);
-        children[node] = ill_insert(children[node], i, DIRECTED);
-      }
-      tmp = ill_next(tmp);
-    }
-  }
+  /* we need to recalculate the children after turning it into a pattern.
+   * This is because the children in a cgraph currently only contain the
+   * true children of the graph (ie no undirected edges) */
+   ill_ptr * children = get_cgraph_children(cg_ptr);
+   ill_ptr * parents  = get_cgraph_parents(cg_ptr);
+   int n_nodes = get_cgraph_n_nodes(cg_ptr);
+   for(int i = 0; i < n_nodes; ++i) {
+     ill_free(children[i]);
+     children[i] = NULL;
+   }
+   for(int i = 0; i < n_nodes; ++i) {
+     ill_ptr tmp = parents[i];
+     while (tmp != NULL) {
+       int node = ill_key(tmp);
+       int edge = ill_value(tmp);
+       children[node] = ill_insert(children[node], i, edge);
+       tmp = ill_next(tmp);
+     }
+   }
 }
 
 /* order_edges orders the parents of cg such that the nodes are in descending

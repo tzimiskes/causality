@@ -17,6 +17,7 @@ cgraph_ptr create_cgraph(int n_nodes);
 void fill_in_cgraph(cgraph_ptr cg_ptr, int n_edges, int * edges_ptr);
 void add_node_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge_type);
 void free_cgraph(cgraph_ptr cg_ptr);
+cgraph_ptr copy_cgraph(cgraph_ptr cg_ptr);
 
 void print_cgraph(cgraph_ptr cg_ptr);
 

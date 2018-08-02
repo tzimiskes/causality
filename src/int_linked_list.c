@@ -1,5 +1,5 @@
-#include"headers/causality.h"
-#include"headers/int_linked_list.h"
+#include <causality.h>
+#include <int_linked_list.h>
 
 
 static inline ill_ptr ill_instantiate(int key, int value) {
@@ -22,6 +22,15 @@ ill_ptr ill_insert(ill_ptr root, int key, int value) {
     tmp->next = ill_instantiate(key, value);
     return(root);
   }
+}
+
+ill_ptr copy_ill(ill_ptr root) {
+  ill_ptr copy = NULL;
+  while(root != NULL) {
+    copy = ill_insert(copy, root->key, root->value);
+    root = root->next;
+  }
+  return copy;
 }
 
 void ill_insert2(ill_ptr* root, int key, int value, int i, ill_ptr nodes) {
@@ -102,7 +111,7 @@ void ill_print(ill_ptr root) {
     root = root->next;
   }
 }
-/* DO NOT USE THIS IN CONJUCTION WITH CMPCT_CG !!!!!! */
+
 void ill_delete(ill_ptr* root, int key) {
   ill_ptr tmp = *root; /* should probably check to see if this is not null */
   if(tmp != NULL) {
