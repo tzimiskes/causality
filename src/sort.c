@@ -34,34 +34,32 @@ static jmp_buf FAIL_STATE;
  * and then runs C level sort on this lower level representation. In then takes
  * the output of ccf_sort and turns it back into an R object. */
 SEXP ccf_sort_wrapper(SEXP Graph) {
-  int * edges_ptr        = calculate_edges_ptr(Graph);
-  /* grab the R structure that holds the Nodes (Char* vector) of the Graph */
-  SEXP Nodes             = PROTECT(VECTOR_ELT(Graph, NODES));
-  int n_nodes            = length(Nodes);
+  int * edges       = calculate_edges_ptr(Graph);
+  int n_nodes       = length(VECTOR_ELT(Graph,NODES));
   /* grab the number of the Edges in the Graph */
-  int n_edges            = nrows(VECTOR_ELT(Graph, EDGES));
-  cgraph_ptr cg_ptr              = create_cgraph(n_nodes);
-  fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
+  int n_edges       = nrows(VECTOR_ELT(Graph, EDGES));
+  cgraph_ptr cg_ptr = create_cgraph(n_nodes);
+  fill_in_cgraph(cg_ptr, n_edges, edges);
+  free(edges);
   /* ccf_sort returns NULL if graph doesn't have a sort. In that case,
    * we return R_NilValue (aka R's version of NULL) */
-  int * sorted_nodes_ptr = ccf_sort(cg_ptr);
-  free(edges_ptr);   /* free memory */
-  free_cgraph(cg_ptr); /* free memory */
-  SEXP Output;
-  if(sorted_nodes_ptr == NULL) {
-    Output = R_NilValue;
-    UNPROTECT(1);
+  int * sorted_nodes = ccf_sort(cg_ptr);
+  free_cgraph(cg_ptr);
+  if(sorted_nodes == NULL) {
+    return R_NilValue;
   }
   else {
+    /* grab the R structure that holds the Nodes (Char* vector) of the Graph */
+    SEXP Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
     /* allocate memory for the output */
-    Output = PROTECT(allocVector(STRSXP, n_nodes));
+    SEXP Output = PROTECT(allocVector(STRSXP, n_nodes));
     /* convert C level output to R level output */
     for(int i = 0; i < n_nodes; ++i)
-      SET_STRING_ELT(Output, i, STRING_ELT(Nodes, sorted_nodes_ptr[i]));
-    free(sorted_nodes_ptr);
+      SET_STRING_ELT(Output, i, STRING_ELT(Nodes, sorted_nodes[i]));
+    free(sorted_nodes);
     UNPROTECT(2);
+    return(Output);
   }
-  return(Output);
 }
 
 /* ccf_sort implements a topological sort by using a breadth first search as
@@ -69,7 +67,7 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
  * (currently an integer linked list) of the edge list of an causality.graph,
  * and returns a pointer to the sorted (C level representation) of the nodes */
 int * ccf_sort(cgraph_ptr cg_ptr) {
-  int n_nodes        = get_cgraph_n_nodes(cg_ptr);
+  int n_nodes        = cg_ptr->n_nodes;
   /* create an array to signify whether or not a node has been marked,
    * in accordance with the algorithm in CLRS.
    * 0 means UNMARKED, so calloc is called */
@@ -86,8 +84,8 @@ int * ccf_sort(cgraph_ptr cg_ptr) {
   if(!setjmp(FAIL_STATE)) {
     /* Pick an unmarked node and do a breadth first search on it. If
      * the node is marked, go to the next node and try again */
-     ill_ptr * children = get_cgraph_children(cg_ptr);
-     int stack_index = n_nodes;
+     ill_ptr * children = cg_ptr->children;
+     int stack_index    = n_nodes;
      for(int i = 0; i < n_nodes; ++i) {
        if(!marked[i])
          visit(i, marked, &stack_index, children, sort);
@@ -101,7 +99,6 @@ int * ccf_sort(cgraph_ptr cg_ptr) {
     free(sort);
     sort = NULL;
   }
-  /* free malloc'd memory */
   free(marked);
   return sort;
 }
@@ -125,8 +122,7 @@ static void visit(const int node,
     marked[node]  = TEMPORARY;
     ill_ptr child = children[node];
     while(child != NULL) {
-      if(ill_value(child) == DIRECTED)
-        visit(ill_key(child), marked, stack_index, children, sort);
+      visit(ill_key(child), marked, stack_index, children, sort);
       child = ill_next(child);
     }
     marked[node]       = MARKED;
