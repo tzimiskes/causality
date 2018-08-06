@@ -17,17 +17,17 @@ int * calculate_edges_ptr(SEXP Graph) {
   SEXP Edges          = PROTECT(VECTOR_ELT(Graph, EDGES));
   SEXP Nodes          = PROTECT(VECTOR_ELT(Graph, NODES));
   int n_nodes         = length(Nodes);
-  const char ** nodes = malloc(n_nodes*sizeof(char*));
+  const char ** nodes = CALLOC(n_nodes, const char*);
   // make a table so we can easily refer to the nodes
   for(int i = 0; i < n_nodes; ++i)
     nodes[i] = CHAR(STRING_ELT(Nodes, i));
   int n_edges = nrows(Edges);
-  int* edges_ptr    = malloc(n_edges*EDGES_NCOL*sizeof(int));
+  int* edges_ptr    = malloc(n_edges*NCOL_EDGES*sizeof(int));
   for(int i = 0; i < 2*n_edges; ++i)
     edges_ptr[i] = match_node(CHAR(STRING_ELT(Edges, i)), nodes, n_nodes);
   for(int i = 2*n_edges; i < 3*n_edges; ++i)
     edges_ptr[i] = match_edge(CHAR(STRING_ELT(Edges, i)));
-  free(nodes);
+  FREE(nodes);
   UNPROTECT(2);
   return(edges_ptr);
 }
@@ -35,7 +35,7 @@ int * calculate_edges_ptr(SEXP Graph) {
 SEXP calculate_edges_from_ptr(int * edges_ptr, SEXP Graph) {
   SEXP Nodes          = PROTECT(VECTOR_ELT(Graph, NODES));
   int n_edges         = nrows(VECTOR_ELT(Graph, EDGES));
-  SEXP Output         = PROTECT(allocMatrix(CHARSXP, n_edges, EDGES_NCOL));
+  SEXP Output         = PROTECT(allocMatrix(CHARSXP, n_edges, NCOL_EDGES));
   for(int i = 0; i < n_edges*2; ++i)
     SET_STRING_ELT(Output, i, STRING_ELT(Nodes, edges_ptr[i]));
   for(int i = 2*n_edges; i < n_edges*3; ++i)
@@ -47,9 +47,9 @@ SEXP calculate_edges_from_ptr(int * edges_ptr, SEXP Graph) {
 void recalculate_edges_from_cgraph(cgraph_ptr cg_ptr, SEXP Graph) {
   SEXP Edges        = PROTECT(VECTOR_ELT(Graph, EDGES));
   SEXP Nodes        = PROTECT(VECTOR_ELT(Graph, NODES));
-  int n_nodes       = get_cgraph_n_nodes(cg_ptr);
-  int n_edges       = get_cgraph_n_edges(cg_ptr);
-  ill_ptr * parents = get_cgraph_parents(cg_ptr);
+  int n_nodes       = cg_ptr->n_nodes;
+  int n_edges       = cg_ptr->n_edges;
+  ill_ptr * parents = cg_ptr->parents;
   int i         = 0;
   for(int j = 0; j < n_nodes; ++j) {
     ill_ptr tmp     = parents[j];
