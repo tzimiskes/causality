@@ -7,6 +7,7 @@
  * sorted by their topological ordering. ccf_sort returns a NULL pointer, or a
  * pointer to an interger which contains the C version of the node ordering
  */
+
 #include <setjmp.h> /* for error handling */
 
 #include <causality.h>
@@ -48,18 +49,16 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
   if(sorted_nodes == NULL) {
     return R_NilValue;
   }
-  else {
-    /* grab the R structure that holds the Nodes (Char* vector) of the Graph */
-    SEXP Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
-    /* allocate memory for the output */
-    SEXP Output = PROTECT(allocVector(STRSXP, n_nodes));
-    /* convert C level output to R level output */
-    for(int i = 0; i < n_nodes; ++i)
-      SET_STRING_ELT(Output, i, STRING_ELT(Nodes, sorted_nodes[i]));
-    free(sorted_nodes);
-    UNPROTECT(2);
-    return(Output);
-  }
+  /* grab the R structure that holds the Nodes (Char* vector) of the Graph */
+  SEXP Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
+  /* allocate memory for the output */
+  SEXP Output = PROTECT(allocVector(STRSXP, n_nodes));
+  /* convert C level output to R level output */
+  for(int i = 0; i < n_nodes; ++i)
+    SET_STRING_ELT(Output, i, STRING_ELT(Nodes, sorted_nodes[i]));
+  free(sorted_nodes);
+  UNPROTECT(2);
+  return(Output);
 }
 
 /* ccf_sort implements a topological sort by using a breadth first search as

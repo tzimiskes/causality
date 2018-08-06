@@ -5,7 +5,6 @@
 #include <R.h>
 #include <Rinternals.h>
 
-
 /* Define some memory allocation macros so to increase portability between the
  * R version of this library and the potential Python version */
 #ifdef R_R_H
@@ -15,8 +14,6 @@
 #define CALLOC(n_elem, size) calloc(n_elem, sizeof(type))
 #define FREE(ptr) free(ptr)
 #endif
-
-
 
 // C LIBS
 #include <stdlib.h>
