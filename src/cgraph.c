@@ -15,6 +15,9 @@ cgraph_ptr create_cgraph(int n_nodes) {
   cg_ptr->children = create_ptr_to_ill_ptr(n_nodes);
   if(cg_ptr->children == NULL)
     error("Failed to allocate memory for children in cgraph!\n");
+  cg_ptr->spouses = create_ptr_to_ill_ptr(n_nodes);
+  if(cg_ptr->spouses == NULL)
+    error("Failed to allocate memory for spouses in cgraph!\n");
   return cg_ptr;
 }
 
@@ -25,96 +28,114 @@ void fill_in_cgraph(cgraph_ptr cg_ptr, int n_edges, int * edges_ptr) {
   int * edge_type_ptr = edges_ptr + 2 * n_edges;
   ill_ptr * parents   = cg_ptr->parents;
   ill_ptr * children  = cg_ptr->children;
+  ill_ptr * spouses   = cg_ptr->spouses;
   for(int i = 0; i < n_edges; ++i) {
-    int node1         = node1_ptr[i];
-    int node2         = node2_ptr[i];
-    int edge_type     = edge_type_ptr[i];
-    children[node1]   = ill_insert(children[node1], node2, edge_type);
-    parents[node2]    = ill_insert(parents[node2],  node1, edge_type);
+    int node1 = node1_ptr[i];
+    int node2 = node2_ptr[i];
+    int edge  = edge_type_ptr[i];
+    if(is_directed(edge)) {
+      children[node1] = ill_insert(children[node1], node2, edge);
+      parents[node2]  = ill_insert(parents[node2],  node1, edge);
+    }
+    else {
+      spouses[node1]  = ill_insert(spouses[node1],  node2, edge);
+      spouses[node2]  = ill_insert(spouses[node2],  node1, edge);
+    }
   }
 }
 
 cgraph_ptr copy_cgraph(cgraph_ptr cg_ptr) {
-  cgraph_ptr cg_copy_ptr  = create_cgraph(cg_ptr->n_nodes);
-  cg_copy_ptr->n_edges    = cg_ptr->n_edges;
+  cgraph_ptr copy_ptr     = create_cgraph(cg_ptr->n_nodes);
+  copy_ptr->n_edges       = cg_ptr->n_edges;
   ill_ptr * parents       = cg_ptr->parents;
+  ill_ptr * spouses       = cg_ptr->spouses;
   ill_ptr * children      = cg_ptr->children;
-  ill_ptr * copy_parents  = cg_copy_ptr->parents;
-  ill_ptr * copy_children = cg_copy_ptr->children;
+  ill_ptr * copy_parents  = copy_ptr->parents;
+  ill_ptr * copy_children = copy_ptr->children;
+  ill_ptr * copy_spouses  = copy_ptr->spouses;
   for(int i = 0; i < cg_ptr->n_nodes; ++i) {
     copy_parents[i]  = copy_ill(parents[i]);
     copy_children[i] = copy_ill(children[i]);
+    copy_spouses[i]  = copy_ill(spouses[i]);
   }
-  return cg_copy_ptr;
+  return copy_ptr;
 }
-
 
 void add_node_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge) {
   ill_ptr * parents   = cg_ptr->parents;
   ill_ptr * children  = cg_ptr->children;
+  ill_ptr * spouses   = cg_ptr->spouses;
   if(is_directed(edge)) {
     children[node1] = ill_insert(children[node1], node2, edge);
     parents[node2]  = ill_insert(parents[node2],  node1, edge);
   }
   else {
-    parents[node1]  = ill_insert(parents[node1], node2, edge);
+    spouses[node1] = ill_insert(spouses[node1], node2, edge);
+    spouses[node2] = ill_insert(spouses[node2], node1, edge);
   }
   cg_ptr->n_edges++;
 }
 
 void free_cgraph(cgraph_ptr cg_ptr) {
+  cgraph cg          = *cg_ptr;
+  ill_ptr * parents  = cg.parents;
+  ill_ptr * children = cg.children;
+  ill_ptr * spouses  = cg.spouses;
   for(int i = 0; i < cg_ptr->n_nodes; ++i) {
-    ill_free(cg_ptr->parents[i]);
-    ill_free(cg_ptr->children[i]);
+    ill_free(parents[i]);
+    ill_free(children[i]);
+    ill_free(spouses[i]);
   }
-  free(cg_ptr->parents);
-  free(cg_ptr->children);
+  free(parents);
+  free(children);
+  free(spouses);
   free(cg_ptr);
 }
 
 int adjacent_in_cgraph(cgraph_ptr cg_ptr, int node1, int node2) {
-  cgraph cg = *cg_ptr;
-  /* look through the parents of node1 to see if node2 is a parent */
-  ill_ptr node1_parents = cg.parents[node1];
-  while(node1_parents != NULL) {
-    if(ill_key(node1_parents) == node2)
+  cgraph cg   = *cg_ptr;
+  ill_ptr tmp = cg.parents[node1];
+  while(tmp) {
+    ill node = *tmp;
+    if(node.key == node2)
       return 1;
-    node1_parents = ill_next(node1_parents);
+    tmp = node.next;
   }
-  /* look through the parents of node2 to see if node1 is a parent */
-  ill_ptr node2_parents = cg.parents[node2];
-  while(node2_parents != NULL) {
-    if(ill_key(node2_parents) == node1)
+  tmp = cg.children[node1];
+  while(tmp) {
+    ill node = *tmp;
+    if(node.key == node2)
       return 1;
-    node2_parents = ill_next(node2_parents);
+    tmp = node.next;
+  }
+  tmp = cg.spouses[node1];
+  while(tmp) {
+    ill node = *tmp;
+    if(node.key == node2)
+      return 1;
+    tmp = node.next;
   }
   return 0;
 }
 
 int edge_undirected_in_cgraph(cgraph_ptr cg_ptr, int node1, int node2) {
-  cgraph cg = *cg_ptr;
-  ill_ptr node1_parents = cg.parents[node1];
-  while(node1_parents != NULL) {
-    if(ill_key(node1_parents) == node2)
-    return ill_value(node1_parents) == UNDIRECTED;
-    node1_parents = ill_next(node1_parents);
-  }
-  ill_ptr node2_parents = cg_ptr->parents[node2];
-  while(node2_parents != NULL) {
-    if(ill_key(node2_parents) == node1)
-    return ill_value(node2_parents) == UNDIRECTED;
-    node2_parents = ill_next(node2_parents);
+  ill_ptr spouses = cg_ptr->spouses[node1];
+  while(spouses) {
+    ill spouse = *spouses;
+    if(spouse.key == node2)
+      return spouse.value == UNDIRECTED;
+    spouses = spouse.next;
   }
   return 0;
 }
 
 int edge_directed_in_cgraph(cgraph_ptr cg_ptr, int parent, int child) {
-  cgraph cg = *cg_ptr;
-  ill_ptr children = cg.children[parent];
-  while(children != NULL) {
-    if(ill_key(children) == parent)
-      return ill_value(children) == DIRECTED;
-    children = ill_next(children);
+  ill_ptr children = cg_ptr->children[parent];
+  while(children) {
+    ill node = *children;
+    if(node.key == child)
+      return node.value == DIRECTED;
+    children = node.next;
   }
   return 0;
 }
@@ -129,19 +150,4 @@ void print_cgraph(cgraph_ptr cg_ptr) {
     ill_print(cg_ptr->children[i]);
     Rprintf("\n");
   }
-}
-
-ill_ptr * get_cgraph_parents(cgraph_ptr cg_ptr) {
-  return cg_ptr->parents;
-}
-ill_ptr * get_cgraph_children(cgraph_ptr cg_ptr) {
-  return cg_ptr->children;
-}
-
-int get_cgraph_n_nodes(cgraph_ptr cg_ptr) {
-  return cg_ptr->n_nodes;
-}
-
-int get_cgraph_n_edges(cgraph_ptr cg_ptr) {
-  return cg_ptr->n_edges;
 }
