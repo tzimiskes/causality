@@ -10,13 +10,15 @@
 static inline void order_edges(cgraph_ptr cg_ptr, int * sort);
 static inline void insertion_sort(ill_ptr list);
 static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr);
+static inline void recalculate_children_and_spouses(cgraph_ptr cg_ptr);
 
 SEXP ccf_chickering_wrapper(SEXP Graph) {
-    int * edges_ptr        = calculate_edges_ptr(Graph);
-    int n_nodes            = length(VECTOR_ELT(Graph,NODES));
-    int n_edges            = nrows(VECTOR_ELT(Graph, EDGES));
-    cgraph_ptr cg_ptr      = create_cgraph(n_nodes);
-    fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
+    int * edges       = calculate_edges_ptr(Graph);
+    int n_nodes       = length(VECTOR_ELT(Graph, NODES));
+    int n_edges       = nrows(VECTOR_ELT(Graph, EDGES));
+    cgraph_ptr cg_ptr = create_cgraph(n_nodes);
+    fill_in_cgraph(cg_ptr, n_edges, edges);
+    free(edges);
     ccf_chickering(cg_ptr);
     SEXP Pattern = PROTECT(duplicate(Graph));
     recalculate_edges_from_cgraph(cg_ptr, Pattern);
@@ -36,7 +38,6 @@ void ccf_chickering(cgraph_ptr cg_ptr) {
 
    recalculate_children_and_spouses(cg_ptr);
 }
-
 
 void recalculate_children_and_spouses(cgraph_ptr cg_ptr) {
   ill_ptr * children = cg_ptr->children;

@@ -9,9 +9,9 @@ const char * CIRCLEARROW_STR   = "o->";
 const char * CIRCLECIRCLE_STR  = "o-o";
 const char * BIDIRECTED_STR    = "<->";
 
-inline int match_edge(const char * edge_str);
-inline const char * char_edge_from_int(const int edge_type);
-inline int match_node(const char * node, const char ** nodes, int n_nodes);
+static inline int match_edge(const char * edge_str);
+static inline const char * char_edge_from_int(const int edge_type);
+static inline int match_node(const char * node, const char ** nodes, int n_nodes);
 
 int * calculate_edges_ptr(SEXP Graph) {
   SEXP Edges          = PROTECT(VECTOR_ELT(Graph, EDGES));
@@ -50,6 +50,7 @@ void recalculate_edges_from_cgraph(cgraph_ptr cg_ptr, SEXP Graph) {
   int n_nodes       = cg_ptr->n_nodes;
   int n_edges       = cg_ptr->n_edges;
   ill_ptr * parents = cg_ptr->parents;
+  ill_ptr * spouses = cg_ptr->parents;
   int i         = 0;
   for(int j = 0; j < n_nodes; ++j) {
     ill_ptr tmp     = parents[j];
@@ -62,6 +63,20 @@ void recalculate_edges_from_cgraph(cgraph_ptr cg_ptr, SEXP Graph) {
       SET_STRING_ELT(Edges, i + 2*n_edges, mkChar(char_edge_from_int(edge)));
       i++;
       tmp        = ill_next(tmp);
+    }
+    tmp = spouses[j];
+    while(tmp != NULL) {
+      int parent = ill_key(tmp);
+      int child  = j;
+      int edge   = ill_value(tmp);
+      /* this is to prevent an undirected edge from appearing twice. */
+      if(child < parent) {
+        SET_STRING_ELT(Edges, i,             STRING_ELT(Nodes, parent));
+        SET_STRING_ELT(Edges, i + n_edges,   STRING_ELT(Nodes, child));
+        SET_STRING_ELT(Edges, i + 2*n_edges, mkChar(char_edge_from_int(edge)));
+        i++;
+      }
+      tmp = ill_next(tmp);
     }
   }
   UNPROTECT(2);

@@ -25,5 +25,5 @@ void print_cgraph(cgraph_ptr cg_ptr);
 int edge_undirected_in_cgraph(cgraph_ptr cg_ptr, int node1, int node2);
 int adjacent_in_cgraph(cgraph_ptr cg_ptr, int node1, int node2);
 int edge_directed_in_cgraph(cgraph_ptr cg_ptr, int parent, int child);
-
+void orient_undirected_edge(cgraph_ptr cg_ptr, int parent, int child) ;
 #endif

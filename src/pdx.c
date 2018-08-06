@@ -47,6 +47,14 @@ static int forms_clique(cll node, cgraph_ptr cg_ptr) {
   return CLIQUE;
 }
 
+static inline void orient_in_cgraph(cgraph_ptr cg_ptr, int node) {
+  ill_ptr spouse = cg_ptr->spouses[node];
+  while(spouse) {
+    orient_undirected_edge(cg_ptr, spouse->key, node);
+    spouse = spouse->next;
+  }
+}
+
 void remove_node(cll current_node, cll prev_node, cll_ptr nodes) {
   /* TODO */
   prev_node.next = current_node.next;
@@ -59,7 +67,7 @@ SEXP ccf_pdx_wrapper(SEXP Pdag) {
     cgraph_ptr cg_ptr      = create_cgraph(n_nodes);
     fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
     free(edges_ptr);
-    cg_ptr   = ccf_pdx(cg_ptr);
+    cg_ptr = ccf_pdx(cg_ptr);
     if(cg_ptr == NULL) {
         return R_NilValue;
     }
@@ -93,7 +101,7 @@ cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
     /* Comment needed */
     while(ll_size > 0 && n_nodes_checked < ll_size) {
       if(is_sink(current_node) && forms_clique(current_node, cg_ptr)) {
-        orient_in_cgraph(copy_ptr, &current_node - nodes); /* BROKEN */
+        orient_in_cgraph(copy_ptr, &current_node - nodes);
         remove_node(current_node, prev_node, nodes);
         ll_size--;
         n_nodes_checked = 0;
@@ -106,8 +114,6 @@ cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
     }
     free(nodes);
     free_cgraph(cg_ptr);
-
-
     /* check to see if pdx failed to generate an extension. If there is a
      * failure, free the copy_ptr and set it to NULL .*/
     int failure = ll_size  > 0 ? 1 : 0;

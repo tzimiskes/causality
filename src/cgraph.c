@@ -140,6 +140,42 @@ int edge_directed_in_cgraph(cgraph_ptr cg_ptr, int parent, int child) {
   return 0;
 }
 
+void orient_undirected_edge(cgraph_ptr cg_ptr, int parent, int child) {
+  ill_ptr * spouses  = cg_ptr->spouses;
+  ill_ptr * parents  = cg_ptr->parents;
+  ill_ptr * children = cg_ptr->children;
+
+  ill_ptr spouse = spouses[parent];
+  ill_ptr node   = spouse;
+  if(spouse->key != child) {
+    while(spouse->next) {
+      if(spouse->next->key == child) {
+          node = spouse->next;
+          spouse->next = spouse->next->next;
+          break;
+      }
+      spouse = spouse->next;
+    }
+  }
+  node->next       = children[parent];
+  children[parent] = node;
+  /* now we need to do the same to fill the new child */
+  spouse = spouses[child];
+  node   = spouse;
+  if(spouse->key != parent) {
+    while(spouse->next) {
+      if(spouse->next->key == parent) {
+          node = spouse->next;
+          spouse->next = spouse->next->next;
+          break;
+      }
+      spouse = spouse->next;
+    }
+  }
+  node->next     = parents[child];
+  parents[child] = node;
+}
+
 void print_cgraph(cgraph_ptr cg_ptr) {
   cgraph cg = *cg_ptr;
   for (int i = 0; i < cg.n_nodes; ++i) {
