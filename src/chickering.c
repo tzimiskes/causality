@@ -26,36 +26,42 @@ SEXP ccf_chickering_wrapper(SEXP Graph) {
 }
 
 void ccf_chickering(cgraph_ptr cg_ptr) {
-  int * sort_ptr     = ccf_sort(cg_ptr);
+  int * sort_ptr = ccf_sort(cg_ptr);
   order_edges(cg_ptr,     sort_ptr);
   chickering_core(cg_ptr, sort_ptr);
   free(sort_ptr);
   /* we need to recalculate the children after turning it into a pattern.
    * This is because the children in a cgraph currently only contain the
    * true children of the graph (ie no undirected edges) */
-   ill_ptr * children = get_cgraph_children(cg_ptr);
-   ill_ptr * parents  = get_cgraph_parents(cg_ptr);
-   int n_nodes = get_cgraph_n_nodes(cg_ptr);
-   for(int i = 0; i < n_nodes; ++i) {
-     ill_free(children[i]);
-     children[i] = NULL;
-   }
-   for(int i = 0; i < n_nodes; ++i) {
-     ill_ptr tmp = parents[i];
-     while (tmp != NULL) {
-       int node = ill_key(tmp);
-       int edge = ill_value(tmp);
-       children[node] = ill_insert(children[node], i, edge);
-       tmp = ill_next(tmp);
-     }
-   }
+
+   recalculate_children_and_spouses(cg_ptr);
+}
+
+
+void recalculate_children_and_spouses(cgraph_ptr cg_ptr) {
+  ill_ptr * children = cg_ptr->children;
+  ill_ptr * parents  = cg_ptr->parents;
+  int n_nodes        = cg_ptr->n_nodes;
+  for(int i = 0; i < n_nodes; ++i) {
+    ill_free(children[i]);
+    children[i] = NULL;
+  }
+  for(int i = 0; i < n_nodes; ++i) {
+    ill_ptr tmp = parents[i];
+    while (tmp != NULL) {
+      int node = ill_key(tmp);
+      int edge = ill_value(tmp);
+      children[node] = ill_insert(children[node], i, edge);
+      tmp = ill_next(tmp);
+    }
+  }
 }
 
 /* order_edges orders the parents of cg such that the nodes are in descending
  * order according to the sort. */
 static inline void order_edges(cgraph_ptr cg_ptr, int * sort) {
-  ill_ptr * parents = get_cgraph_parents(cg_ptr);
-  int n_nodes       = get_cgraph_n_nodes(cg_ptr);
+  ill_ptr * parents = cg_ptr->parents;
+  int n_nodes       = cg_ptr->n_nodes;
   /* can be parallelized */
   for(int i = 0; i < n_nodes; ++i) {
     ill_ptr tmp = parents[i];
@@ -91,8 +97,8 @@ static inline void insertion_sort(ill_ptr list) {
 /* This is the core part (i.e, Find-compelled) of Chickering's algorithm
  * to convert DAGs to patterns. */
 static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr) {
-  ill_ptr * parents = get_cgraph_parents(cg_ptr);
-  int n_nodes       = get_cgraph_n_nodes(cg_ptr);
+  ill_ptr * parents = cg_ptr->parents;
+  int n_nodes       = cg_ptr->n_nodes;
   /* order edges sets the value parameter for each edge, so we need to
    * change the value for everything to UNKNOWN */
   for(int i = 0; i < n_nodes; ++i) {

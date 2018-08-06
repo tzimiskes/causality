@@ -3,52 +3,53 @@
 #include <int_linked_list.h>
 #include <edgetypes.h>
 
-typedef struct cll * cll_ptr;
+#define CLIQUE 1
+#define NOCLIQUE 2
 
+typedef struct cll * cll_ptr;
 typedef struct cll {
   ill_ptr children;
   ill_ptr parents;
+  ill_ptr spouses;
   cll_ptr next;
-  cll_ptr prev;
 } cll;
 
 inline int is_sink(cll node) {
-  ill_ptr children = node.children;
-  while (children != NULL) {
-    if(ill_value(children) == DIRECTED)
-      return 0;
-    children = ill_next(children);
-  }
-  return 1;
+  return node.children == NULL;
 }
 
 /* clique checks each undirected parent of current_node if that undirected
  * parent forms a clique with all the other parents of current_node */
-static int clique(cll current_node, cgraph_ptr cg_ptr) {
-  ill_ptr parents = current_node.parents;
-  ill_ptr tmp     = parents;
-  /* look for undirect parents of the node */
-  while(tmp != NULL) {
-    if(ill_value(tmp) == UNDIRECTED) {
-      int node     = ill_key(tmp);
-      ill_ptr tmp2 = parents;
-      while(tmp2 != NULL) {
-        if(ill_key(tmp2) != node) {
-          if(!adjacent_in_cgraph(cg_ptr, node , ill_key(tmp2)))
-            return 0;
-        }
-        tmp2 = ill_next(tmp2);
+static int forms_clique(cll node, cgraph_ptr cg_ptr) {
+  ill_ptr spouses = node.spouses;
+  /* grab a spouse (undirected adjacent) */
+  while(spouses != NULL) {
+    if(ill_value(spouses) == UNDIRECTED) {
+      int spouse      = ill_key(spouses);
+      ill_ptr parents = node.parents;
+      /* make sure spouse is adjacent to the parents of node */
+      while(parents != NULL) {
+        if(!adjacent_in_cgraph(cg_ptr, spouse, ill_key(parents)))
+          return NOCLIQUE;
+        parents = ill_next(parents);
+      }
+      /* make sure spouse is adjacent to the other spouses of node */
+      ill_ptr tmp = node.spouses;
+      while(tmp != NULL) {
+        int spouse2 = ill_key(tmp);
+        if(spouse2 != spouse && !adjacent_in_cgraph(cg_ptr, spouse, spouse2))
+          return NOCLIQUE;
+        tmp = ill_next(tmp);
       }
     }
-    tmp = ill_next(tmp);
+    spouses = ill_next(spouses);
   }
-  return 1;
+  return CLIQUE;
 }
 
-void remove_node(cll current_node, cll_ptr nodes) {
+void remove_node(cll current_node, cll prev_node, cll_ptr nodes) {
   /* TODO */
-  current_node.prev->next = current_node.next;
-  current_node.next->prev = current_node.prev;
+  prev_node.next = current_node.next;
 }
 
 SEXP ccf_pdx_wrapper(SEXP Pdag) {
@@ -57,7 +58,11 @@ SEXP ccf_pdx_wrapper(SEXP Pdag) {
     int n_edges            = nrows(VECTOR_ELT(Pdag, EDGES));
     cgraph_ptr cg_ptr      = create_cgraph(n_nodes);
     fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
-    ccf_pdx(cg_ptr);
+    free(edges_ptr);
+    cg_ptr   = ccf_pdx(cg_ptr);
+    if(cg_ptr == NULL) {
+        return R_NilValue;
+    }
     SEXP Dag = PROTECT(duplicate(Pdag));
     recalculate_edges_from_cgraph(cg_ptr, Dag);
     free_cgraph(cg_ptr);
@@ -66,44 +71,49 @@ SEXP ccf_pdx_wrapper(SEXP Pdag) {
 }
 
 cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
-  int n_nodes            = get_cgraph_n_nodes(cg_ptr);
+  int n_nodes            = cg_ptr->n_nodes;
   cgraph_ptr copy_ptr    = copy_cgraph(cg_ptr);
   cll_ptr nodes          = calloc(n_nodes, sizeof(cll));
   if(nodes == NULL)
     error("Failed to allocate memory for nodes in cf_extend_pdag\n");
     // set up circular linked list
-    ill_ptr * parents  = get_cgraph_parents(cg_ptr);
-    ill_ptr * children = get_cgraph_children(cg_ptr);
+    ill_ptr * parents  = cg_ptr->parents;
+    ill_ptr * spouses  = cg_ptr->children;
+    ill_ptr * children = cg_ptr->children;
     for(int i = 0; i < n_nodes; ++i) {
       nodes[i].parents   = parents[i];
       nodes[i].children  = children[i];
+      nodes[i].spouses  = spouses[i];
       nodes[i].next      = nodes + (i + 1) % n_nodes;
-      nodes[i].prev      = nodes + (i + n_nodes - 1) % n_nodes;
     }
     cll current_node     = nodes[0];
+    cll prev_node        = nodes[n_nodes];
     int n_nodes_checked  = 0;
     int ll_size          = n_nodes;
     /* Comment needed */
     while(ll_size > 0 && n_nodes_checked < ll_size) {
-      if(is_sink(current_node) && clique(current_node, cg_ptr)) {
-        orient_in_cgraph(copy_ptr, &current_node - nodes);
-        remove_node(current_node, nodes);
+      if(is_sink(current_node) && forms_clique(current_node, cg_ptr)) {
+        orient_in_cgraph(copy_ptr, &current_node - nodes); /* BROKEN */
+        remove_node(current_node, prev_node, nodes);
         ll_size--;
         n_nodes_checked = 0;
       }
       else {
         n_nodes_checked++;
       }
+      prev_node    = current_node;
       current_node = *(current_node.next);
     }
-    // check to see if the algorithm failed to generate an extension
-    int failure = ll_size  > 0 ? 1 : 0;
-
     free(nodes);
+    free_cgraph(cg_ptr);
+
+
+    /* check to see if pdx failed to generate an extension. If there is a
+     * failure, free the copy_ptr and set it to NULL .*/
+    int failure = ll_size  > 0 ? 1 : 0;
     if(failure) {
       free_cgraph(copy_ptr);
       copy_ptr = NULL;
     }
-    free_cgraph(cg_ptr);
     return copy_ptr;
 }
