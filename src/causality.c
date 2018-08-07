@@ -50,7 +50,7 @@ void recalculate_edges_from_cgraph(cgraph_ptr cg_ptr, SEXP Graph) {
   int n_nodes       = cg_ptr->n_nodes;
   int n_edges       = cg_ptr->n_edges;
   ill_ptr * parents = cg_ptr->parents;
-  ill_ptr * spouses = cg_ptr->parents;
+  ill_ptr * spouses = cg_ptr->spouses;
   int i         = 0;
   for(int j = 0; j < n_nodes; ++j) {
     ill_ptr tmp     = parents[j];

@@ -10,7 +10,7 @@
 static inline void order_edges(cgraph_ptr cg_ptr, int * sort);
 static inline void insertion_sort(ill_ptr list);
 static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr);
-static inline void recalculate_children_and_spouses(cgraph_ptr cg_ptr);
+
 
 SEXP ccf_chickering_wrapper(SEXP Graph) {
     int * edges       = calculate_edges_ptr(Graph);
@@ -35,28 +35,9 @@ void ccf_chickering(cgraph_ptr cg_ptr) {
   /* we need to recalculate the children after turning it into a pattern.
    * This is because the children in a cgraph currently only contain the
    * true children of the graph (ie no undirected edges) */
-
-   recalculate_children_and_spouses(cg_ptr);
 }
 
-void recalculate_children_and_spouses(cgraph_ptr cg_ptr) {
-  ill_ptr * children = cg_ptr->children;
-  ill_ptr * parents  = cg_ptr->parents;
-  int n_nodes        = cg_ptr->n_nodes;
-  for(int i = 0; i < n_nodes; ++i) {
-    ill_free(children[i]);
-    children[i] = NULL;
-  }
-  for(int i = 0; i < n_nodes; ++i) {
-    ill_ptr tmp = parents[i];
-    while (tmp != NULL) {
-      int node = ill_key(tmp);
-      int edge = ill_value(tmp);
-      children[node] = ill_insert(children[node], i, edge);
-      tmp = ill_next(tmp);
-    }
-  }
-}
+
 
 /* order_edges orders the parents of cg such that the nodes are in descending
  * order according to the sort. */
@@ -87,10 +68,12 @@ static inline void insertion_sort(ill_ptr list) {
         max = top;
       top = ill_next(top);
     }
-    int list_key = ill_key(list);
-    ill_set_key(list, ill_key(max));
-    ill_set_value(max, ill_value(list));
+    int list_key   = ill_key(list);
+    int list_value = ill_value(list);
+    ill_set_key(list,   ill_key(max));
+    ill_set_value(list, ill_value(max));
     ill_set_key(max, list_key);
+    ill_set_value(max, list_value);
     list = ill_next(list);
   }
 }
@@ -109,12 +92,17 @@ static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr) {
       tmp_ptr = ill_next(tmp_ptr);
     }
   }
-/* we iterate through the sort to satisfy the max min condition necessary to
- * run this part of the algorithm */
+
+  int * inv_sort_ptr = malloc(n_nodes*sizeof(int));
+  for(int i = 0; i < n_nodes; ++i)
+    inv_sort_ptr[sort_ptr[i]] = i;
+
+  /* we iterate through the sort to satisfy the max min condition necessary to
+   * run this part of the algorithm */
   for(int i = 0; i < n_nodes; ++i) {
     /* by lemma 5 in Chickering, all the incident edges on y are unknown
      * so we don't need to check to see its unordered */
-    int y             = sort_ptr[i];
+    int y             = inv_sort_ptr[i];
     ill_ptr y_parents = parents[y];
     /* if there are incident edges into y, run steps 5-8 of the algorithm.
      * if y has no incident edges, go to the next node in the order */
@@ -124,7 +112,7 @@ static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr) {
       /* for each parent of x, w, where w -> x is compelled
        * check to see if w forms a chain (w -> x -> y)
        * or shielded collider (w -> x -> y and w -> x) */
-      while(x_parents != NULL) {
+      while(x_parents != NULL) { /* STEP 5 */
         if(ill_value(x_parents) == COMPELLED) {
           int w       = ill_key(x_parents);
           ill_ptr tmp = y_parents;
@@ -173,20 +161,24 @@ static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr) {
         tmp = ill_next(tmp);
       }
       STEP_89: {};
-      /* STEP 8: if there is an unshielder collider,
+      /* STEP 8: if there is an unshielded collider,
        * label all incident edges compelled */
+       tmp = parents[y];
       if(unshielded_collider) {
-        while(y_parents != NULL) {
-          ill_set_value(y_parents, COMPELLED);
-          y_parents = ill_next(y_parents);
+        while(tmp != NULL) {
+          ill_set_value(tmp, COMPELLED);
+          tmp = ill_next(tmp);
         }
       }
       /* STEP 9, label all unknown edges reversable */
       else {
-        while(y_parents != NULL) {
-          if(ill_value(y_parents) == UNKNOWN)
-            ill_set_value(y_parents, REVERSABLE);
-          y_parents = ill_next(y_parents);
+        while(tmp != NULL) {
+          if(ill_value(tmp) == UNKNOWN) {
+            unorient_directed_edge(cg_ptr, ill_key(tmp), y);
+            tmp = parents[y];
+          }
+          else
+            tmp = ill_next(tmp);
         }
       }
     }

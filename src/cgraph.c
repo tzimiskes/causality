@@ -158,6 +158,7 @@ void orient_undirected_edge(cgraph_ptr cg_ptr, int parent, int child) {
     }
   }
   node->next       = children[parent];
+  node->value      = DIRECTED;
   children[parent] = node;
   /* now we need to do the same to fill the new child */
   spouse = spouses[child];
@@ -173,16 +174,59 @@ void orient_undirected_edge(cgraph_ptr cg_ptr, int parent, int child) {
     }
   }
   node->next     = parents[child];
+  node->value    = DIRECTED;
   parents[child] = node;
+}
+
+void unorient_directed_edge(cgraph_ptr cg_ptr, int parent, int child) {
+  ill_ptr node = NULL;
+  if(cg_ptr->parents[child]->key == parent) {
+    node = cg_ptr->parents[child];
+    cg_ptr->parents[child] = cg_ptr->parents[child]->next;
+  }
+  else {
+    ill_ptr parents = cg_ptr->parents[child];
+    while(parents->next) {
+      if(parents->next->key == parent) {
+        node = parents->next;
+        parents->next = parents->next->next;
+        break;
+      }
+      parents = parents->next;
+    }
+  }
+  node->next             = cg_ptr->spouses[child];
+  node->value            = UNDIRECTED;
+  cg_ptr->spouses[child] = node;
+  /* now we need to do the oher */
+  if(cg_ptr->children[parent]->key == child) {
+    node = cg_ptr->children[parent];
+    cg_ptr->children[parent] = cg_ptr->children[parent]->next;
+  }
+  else {
+    ill_ptr children = cg_ptr->children[parent];
+    while(children->next) {
+      if(children->next->key == child) {
+        node = children->next;
+        children->next = children->next->next;
+        break;
+      }
+      children = children->next;
+    }
+  }
+  node->next              = cg_ptr->spouses[parent];
+  node->value             = UNDIRECTED;
+  cg_ptr->spouses[parent] = node;
 }
 
 void print_cgraph(cgraph_ptr cg_ptr) {
   cgraph cg = *cg_ptr;
   for (int i = 0; i < cg.n_nodes; ++i) {
-    Rprintf("Parents of %i: ", i);
-    Rprintf("\n");
+    Rprintf("Parents of %i:\n", i);
     ill_print(cg.parents[i]);
-    Rprintf("Children of  %i: ", i);
+    Rprintf("Spouses of  %i:\n", i);
+    ill_print(cg.spouses[i]);
+    Rprintf("Children of  %i:\n", i);
     ill_print(cg_ptr->children[i]);
     Rprintf("\n");
   }
