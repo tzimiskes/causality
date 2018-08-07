@@ -141,41 +141,44 @@ int edge_directed_in_cgraph(cgraph_ptr cg_ptr, int parent, int child) {
 }
 
 void orient_undirected_edge(cgraph_ptr cg_ptr, int parent, int child) {
-  ill_ptr * spouses  = cg_ptr->spouses;
-  ill_ptr * parents  = cg_ptr->parents;
-  ill_ptr * children = cg_ptr->children;
-
-  ill_ptr spouse = spouses[parent];
-  ill_ptr node   = spouse;
-  if(spouse->key != child) {
-    while(spouse->next) {
-      if(spouse->next->key == child) {
-          node = spouse->next;
-          spouse->next = spouse->next->next;
-          break;
+  ill_ptr node = NULL;
+  if(cg_ptr->spouses[child]->key == parent) {
+    node = cg_ptr->spouses[child];
+    cg_ptr->spouses[child] = cg_ptr->spouses[child]->next;
+  }
+  else {
+    ill_ptr spouses = cg_ptr->spouses[child];
+    while(spouses->next) {
+      if(spouses->next->key == parent) {
+        node = spouses->next;
+        spouses->next = spouses->next->next;
+        break;
       }
-      spouse = spouse->next;
+      spouses = spouses->next;
     }
   }
-  node->next       = children[parent];
-  node->value      = DIRECTED;
-  children[parent] = node;
-  /* now we need to do the same to fill the new child */
-  spouse = spouses[child];
-  node   = spouse;
-  if(spouse->key != parent) {
-    while(spouse->next) {
-      if(spouse->next->key == parent) {
-          node = spouse->next;
-          spouse->next = spouse->next->next;
-          break;
+  node->next             = cg_ptr->parents[child];
+  node->value            = DIRECTED;
+  cg_ptr->parents[child] = node;
+  /* now we need to do the oher */
+  if(cg_ptr->spouses[parent]->key == child) {
+    node = cg_ptr->spouses[parent];
+    cg_ptr->spouses[parent] = cg_ptr->spouses[parent]->next;
+  }
+  else {
+    ill_ptr spouses = cg_ptr->spouses[parent];
+    while(spouses->next) {
+      if(spouses->next->key == child) {
+        node = spouses->next;
+        spouses->next = spouses->next->next;
+        break;
       }
-      spouse = spouse->next;
+      spouses = spouses->next;
     }
   }
-  node->next     = parents[child];
-  node->value    = DIRECTED;
-  parents[child] = node;
+  node->next               = cg_ptr->children[parent];
+  node->value              = DIRECTED;
+  cg_ptr->children[parent] = node;
 }
 
 void unorient_directed_edge(cgraph_ptr cg_ptr, int parent, int child) {

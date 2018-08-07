@@ -14,19 +14,19 @@ typedef struct cll {
   cll_ptr next;
 } cll;
 
-inline int is_sink(cll node) {
-  return node.children == NULL;
+inline int is_sink(cll_ptr node) {
+  return node->children == NULL;
 }
 
 /* clique checks each undirected parent of current if that undirected
  * parent forms a clique with all the other parents of current */
-static int forms_clique(cll node, cgraph_ptr cg_ptr) {
-  ill_ptr spouses = node.spouses;
+static int forms_clique(cll_ptr node, cgraph_ptr cg_ptr) {
+  ill_ptr spouses = node->spouses;
   /* grab a spouse (undirected adjacent) */
   while(spouses != NULL) {
     if(ill_value(spouses) == UNDIRECTED) {
       int spouse      = ill_key(spouses);
-      ill_ptr parents = node.parents;
+      ill_ptr parents = node->parents;
       /* make sure spouse is adjacent to the parents of node */
       while(parents != NULL) {
         if(!adjacent_in_cgraph(cg_ptr, spouse, ill_key(parents)))
@@ -34,7 +34,7 @@ static int forms_clique(cll node, cgraph_ptr cg_ptr) {
         parents = ill_next(parents);
       }
       /* make sure spouse is adjacent to the other spouses of node */
-      ill_ptr tmp = node.spouses;
+      ill_ptr tmp = node->spouses;
       while(tmp != NULL) {
         int spouse2 = ill_key(tmp);
         if(spouse2 != spouse && !adjacent_in_cgraph(cg_ptr, spouse, spouse2))
@@ -51,19 +51,19 @@ static inline void orient_in_cgraph(cgraph_ptr cg_ptr, int node) {
   ill_ptr spouse = cg_ptr->spouses[node];
   while(spouse) {
     orient_undirected_edge(cg_ptr, spouse->key, node);
-    spouse = spouse->next;
+    spouse = cg_ptr->spouses[node];
   }
 }
 
-void remove_node(cll current, cll_ptr nodes) {
-  int node = &current - nodes; /* ptr arithemtic */
+void remove_node(cll_ptr current, cll_ptr nodes) {
+  int node = current - nodes; /* ptr arithemtic */
   /* delete all listings of node in its parents and spouses */
-  ill_ptr parents = current.parents;
+  ill_ptr parents = current->parents;
   while(parents) {
     ill_delete(&nodes[parents->key].children, node);
     parents = parents->next;
   }
-  ill_ptr spouses = current.spouses;
+  ill_ptr spouses = current->spouses;
   while(spouses) {
     ill_delete(&nodes[spouses->key].spouses, node);
     spouses = spouses->next;
@@ -104,21 +104,16 @@ cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
       nodes[i].spouses  = spouses[i];
       nodes[i].next     = nodes + (i + 1) % n_nodes;
   }
-  cll current   = nodes[0];
-  cll prev      = nodes[n_nodes];
-  /* This snippet of code exists only to prevent gcc from complaining how how
-   * prev is only ever assigned and not used. This is not to say it has no side
-   * effects. It is "used" when we remove a node in the circular linked list. */
-  if(prev.next != &current)
-    error("This will never trigger\n");
-  int n_checked = 0;
-  int ll_size   = n_nodes;
+  cll_ptr current   = nodes;
+  cll_ptr prev      = nodes + (n_nodes - 1);
+  int n_checked     = 0;
+  int ll_size       = n_nodes;
   /* Comment needed */
   while(ll_size > 0 && n_checked < ll_size) {
     if(is_sink(current) && forms_clique(current, cg_ptr)) {
-      orient_in_cgraph(copy_ptr, &current - nodes);
+      orient_in_cgraph(copy_ptr, current - nodes);
       remove_node(current, nodes);
-      prev.next = current.next;
+      prev->next = current->next;
       ll_size--;
       n_checked = 0;
     }
@@ -126,7 +121,7 @@ cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
       n_checked++;
     }
     prev    = current;
-    current = *(current.next);
+    current = current->next;
   }
   free(nodes);
   free_cgraph(cg_ptr);
