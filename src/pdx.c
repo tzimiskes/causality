@@ -18,8 +18,8 @@ inline int is_sink(cll node) {
   return node.children == NULL;
 }
 
-/* clique checks each undirected parent of current_node if that undirected
- * parent forms a clique with all the other parents of current_node */
+/* clique checks each undirected parent of current if that undirected
+ * parent forms a clique with all the other parents of current */
 static int forms_clique(cll node, cgraph_ptr cg_ptr) {
   ill_ptr spouses = node.spouses;
   /* grab a spouse (undirected adjacent) */
@@ -55,9 +55,19 @@ static inline void orient_in_cgraph(cgraph_ptr cg_ptr, int node) {
   }
 }
 
-void remove_node(cll current_node, cll prev_node, cll_ptr nodes) {
-  /* TODO */
-  prev_node.next = current_node.next;
+void remove_node(cll current, cll_ptr nodes) {
+  int node = &current - nodes; /* ptr arithemtic */
+  /* delete all listings of node in its parents and spouses */
+  ill_ptr parents = current.parents;
+  while(parents) {
+    ill_delete(&nodes[parents->key].children, node);
+    parents = parents->next;
+  }
+  ill_ptr spouses = current.spouses;
+  while(spouses) {
+    ill_delete(&nodes[spouses->key].spouses, node);
+    spouses = spouses->next;
+  }
 }
 
 SEXP ccf_pdx_wrapper(SEXP Pdag) {
@@ -89,37 +99,43 @@ cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
     ill_ptr * spouses  = cg_ptr->children;
     ill_ptr * children = cg_ptr->children;
     for(int i = 0; i < n_nodes; ++i) {
-      nodes[i].parents   = parents[i];
-      nodes[i].children  = children[i];
+      nodes[i].parents  = parents[i];
+      nodes[i].children = children[i];
       nodes[i].spouses  = spouses[i];
-      nodes[i].next      = nodes + (i + 1) % n_nodes;
+      nodes[i].next     = nodes + (i + 1) % n_nodes;
+  }
+  cll current   = nodes[0];
+  cll prev      = nodes[n_nodes];
+  /* This snippet of code exists only to prevent gcc from complaining how how
+   * prev is only ever assigned and not used. This is not to say it has no side
+   * effects. It is "used" when we remove a node in the circular linked list. */
+  if(prev.next != &current)
+    error("This will never trigger\n");
+  int n_checked = 0;
+  int ll_size   = n_nodes;
+  /* Comment needed */
+  while(ll_size > 0 && n_checked < ll_size) {
+    if(is_sink(current) && forms_clique(current, cg_ptr)) {
+      orient_in_cgraph(copy_ptr, &current - nodes);
+      remove_node(current, nodes);
+      prev.next = current.next;
+      ll_size--;
+      n_checked = 0;
     }
-    cll current_node     = nodes[0];
-    cll prev_node        = nodes[n_nodes];
-    int n_nodes_checked  = 0;
-    int ll_size          = n_nodes;
-    /* Comment needed */
-    while(ll_size > 0 && n_nodes_checked < ll_size) {
-      if(is_sink(current_node) && forms_clique(current_node, cg_ptr)) {
-        orient_in_cgraph(copy_ptr, &current_node - nodes);
-        remove_node(current_node, prev_node, nodes);
-        ll_size--;
-        n_nodes_checked = 0;
-      }
-      else {
-        n_nodes_checked++;
-      }
-      prev_node    = current_node;
-      current_node = *(current_node.next);
+    else {
+      n_checked++;
     }
-    free(nodes);
-    free_cgraph(cg_ptr);
-    /* check to see if pdx failed to generate an extension. If there is a
-     * failure, free the copy_ptr and set it to NULL .*/
-    int failure = ll_size  > 0 ? 1 : 0;
-    if(failure) {
-      free_cgraph(copy_ptr);
-      copy_ptr = NULL;
-    }
-    return copy_ptr;
+    prev    = current;
+    current = *(current.next);
+  }
+  free(nodes);
+  free_cgraph(cg_ptr);
+  /* check to see if pdx failed to generate an extension. If there is a
+   * failure, free the copy_ptr and set it to NULL. */
+  int failure = ll_size  > 0 ? 1 : 0;
+  if(failure) {
+    free_cgraph(copy_ptr);
+    copy_ptr = NULL;
+  }
+  return copy_ptr;
 }
