@@ -2,6 +2,10 @@
 # include <continuous_bic.h>
 # include <R_ext/Lapack.h>
 
+# ifdef _OPENMP
+# include <omp.h>
+# endif
+
 # define LOOP_UNROLL_SIZE 4
 # define ERROR_THRESH 1e-5
 
@@ -135,6 +139,7 @@ void fcov_yy(double * restrict cov_yy, double ** parents, int n_parents,
       cov_yy[3] = fddot(parents[1], parents[1], n_obs);
       return;
     }
+    #pragma omp parallel
     for(int j = 0; j < n_parents; ++j) {
       double * nodej = parents[j];
       int jnp        = j*n_parents;

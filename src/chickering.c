@@ -37,8 +37,6 @@ void ccf_chickering(cgraph_ptr cg_ptr) {
    * true children of the graph (ie no undirected edges) */
 }
 
-
-
 /* order_edges orders the parents of cg such that the nodes are in descending
  * order according to the sort. */
 static inline void order_edges(cgraph_ptr cg_ptr, int * sort) {
