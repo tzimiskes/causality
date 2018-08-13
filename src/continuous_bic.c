@@ -6,26 +6,34 @@
 # include <omp.h>
 # endif
 
+# define OMP_N_THRESH     100
 # define LOOP_UNROLL_SIZE 4
-# define ERROR_THRESH 1e-5
+# define ERROR_THRESH     1e-5
 
 static inline double fddot(double * x, double * y, int n) {
-  double sum[LOOP_UNROLL_SIZE] = {0.0f};
-  int q                        = n/LOOP_UNROLL_SIZE;
-  int r                        = n % LOOP_UNROLL_SIZE;
-  for(int i = 0; i < q; i += LOOP_UNROLL_SIZE) {
-      sum[0] =+ x[i + 0] * y[i + 0];
-      sum[1] =+ x[i + 1] * y[i + 1];
-      sum[2] =+ x[i + 2] * y[i + 2];
-      sum[3] =+ x[i + 2] * y[i + 3];
+  double sum = 0.0f;
+  #pragma omp parallel if(n > OMP_N_THRESH)
+  {
+    double psum[LOOP_UNROLL_SIZE] = {0.0f};
+    int q                         = n / LOOP_UNROLL_SIZE;
+    int r                         = n % LOOP_UNROLL_SIZE;
+    #pragma omp for
+    for(int i = 0; i < n; i += LOOP_UNROLL_SIZE) {
+      psum[0] += x[i + 0] * y[i + 0];
+      psum[1] += x[i + 1] * y[i + 1];
+      psum[2] += x[i + 2] * y[i + 2];
+      psum[3] += x[i + 3] * y[i + 3];
+    }
+    switch(r) {
+      case 3: psum[3] += x[q + 3] * y[q + 3];
+      case 2: psum[2] += x[q + 2] * y[q + 2];
+      case 1: psum[1] += x[q + 1] * y[q + 1];
+      case 0:                          ;
+    }
+    #pragma omp critical
+    sum += (psum[0] + psum[1] + psum[2] + psum[3]);
   }
-  switch(r) {
-    case 3: sum[3] += x[q + 3] * y[q + 3];
-    case 2: sum[2] += x[q + 2] * y[q + 2];
-    case 1: sum[1] += x[q + 1] * y[q + 1];
-    case 0:                              ;
-  }
-  return sum[0] + sum[1] + sum[2] + sum[3];
+  return sum;
 }
 /* This assumes the data is normalized. This is done during preprocessing
 during the algorithm */
@@ -110,9 +118,7 @@ double continuous_bic(
     warning("covariance matrix not positive definite\n");
     return NA_REAL;
   }
-  for(int i = 0; i < n_obs ; ++i)
-    result += node[i]*node[i];
-
+  result += fddot(node, node, n_obs);
   result = log(result) +  log(n_obs) * (n_parents + 1);
   return result;
 }
@@ -128,43 +134,37 @@ double continuous_bic(
 void fcov_yy(double * restrict cov_yy, double ** parents, int n_parents,
              int n_obs)
 {
-    if(n_parents == 1) {
-      cov_yy[0] = fddot(parents[0], parents[0], n_obs);
-      return;
-    }
-    if(n_parents == 2) {
+  if(n_parents == 1) {
+    cov_yy[0] = fddot(parents[0], parents[0], n_obs);
+    return;
+  }
+  if(n_parents == 2) {
+    {
       cov_yy[0] = fddot(parents[0], parents[0], n_obs);
       cov_yy[2] = /* assigned to coy_yy[1] below */
       cov_yy[1] = fddot(parents[0], parents[1], n_obs);
       cov_yy[3] = fddot(parents[1], parents[1], n_obs);
-      return;
     }
-    #pragma omp parallel
-    for(int j = 0; j < n_parents; ++j) {
-      double * nodej = parents[j];
-      int jnp        = j*n_parents;
-      double * cov_yy_j_off = cov_yy + j;
-      for(int i = 0; i <= j; ++i) {
-        /* I don't think there is a speed up if I check i == j here, so just
-         *  rewrite if i == j because then there is no branch */
-        cov_yy_j_off[i*n_parents] =
-        cov_yy[i + jnp]           = fddot(nodej, parents[i], n_obs);
-      }
+    return;
+  }
+
+  for(int j = 0; j < n_parents; ++j) {
+    double * nodej = parents[j];
+    int jnp        = j*n_parents;
+    double * cov_yy_j_off = cov_yy + j;
+    for(int i = 0; i <= j; ++i) {
+      /* I don't think there is a speed up if I check i == j here, so just
+       *  rewrite if i == j because then there is no branch */
+      cov_yy_j_off[i*n_parents] =
+      cov_yy[i + jnp]           = fddot(nodej, parents[i], n_obs);
     }
   }
+}
 
 void fcov_xy(double * restrict cov_xy, double * restrict node,
              double ** parents, int n_parents, int n_obs)
 {
-  if(n_parents == 1) {
-    cov_xy[0] = fddot(node, parents[0], n_obs);
-    return;
-  }
-  if(n_parents == 2) {
-    cov_xy[0] = fddot(node, parents[0], n_obs);
-    cov_xy[1] = fddot(node, parents[1], n_obs);
-    return;
-  }
+  #pragma omp parallel
   for(int i = 0 ; i < n_parents; ++i)
     cov_xy[i] = fddot(node, parents[i], n_obs);
 }
