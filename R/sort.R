@@ -8,7 +8,7 @@
 #' @param ... additional parameters that can be sent through sort generic
 #' @return A charcter vector that contains the nodes of the graph ordered
 #'   according to their topological order. In the event that \code{graph} is
-#'   cyclic, a warning is issued and \code{NA} is returned.
+#'   cyclic, a warning is issued and \code{NULL} is returned.
 #' @details \code{sort.causality.graph} generates a topological ordering of the
 #'   given \code{graph} by using a depth first search as described in CLRS.
 #'   A topological sort (or ordering) is a linear ordering of nodes in a PDAG.
@@ -28,11 +28,11 @@
 #' @export
 sort.causality.graph <- function(x, decreasing = FALSE, ...) {
   if (!is.cgraph(x))
-    stop("graph must be a causality.graph")
+    stop("x must be a causality.graph")
   output <- .Call("ccf_sort_wrapper", x)
   if (is.null(output)) {
-    warning("graph contains a cycle, returning NA.")
-    return(NA)
+    warning("x contains a cycle, returning NA.")
+    return(NULL)
   }
   if (decreasing == TRUE)
     return(rev(output))

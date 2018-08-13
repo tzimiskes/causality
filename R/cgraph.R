@@ -338,6 +338,6 @@ as.cgraph.bn <- function(graph) {
 
   names <- names(graph$nodes)
   # get the edges
-  edges <- cbind(unname(graph$arcs), .DIRECTED)
+  edges <- cbind(unname(graph$arcs), rep(.DIRECTED, nrow(graph$arcs)))
   return(cgraph(names, edges))
 }

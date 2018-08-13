@@ -99,7 +99,7 @@ as.dag.causality.graph <- function(graph) {
     stop("input is not a cgraph")
 
   if (is.nonlatent(graph)) {
-    if (!is.cyclic(graph)) {
+    if (is.acyclic(graph)) {
       if (is.directed(graph)) {
         class(graph) <- .DAG_CLASS
         return(graph)

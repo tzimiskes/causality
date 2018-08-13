@@ -36,7 +36,7 @@ is.cyclic <- function(cgraph) {
   # all these types cannot have cycles
   if (is.dag(cgraph) | is.pdag(cgraph) | is.pattern(cgraph) | is.pag(cgraph))
     return(FALSE)
-  if (is.null(.topological_sort(cgraph)))
+  if (is.null(sort.causality.graph(cgraph)))
     return(TRUE)
   else
     return(FALSE)
