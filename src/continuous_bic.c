@@ -12,7 +12,6 @@
 
 static inline double fddot(double * x, double * y, int n) {
   double sum = 0.0f;
-  #pragma omp parallel if(n > OMP_N_THRESH)
   {
     double psum[LOOP_UNROLL_SIZE] = {0.0f};
     int q                         = n / LOOP_UNROLL_SIZE;
@@ -43,12 +42,18 @@ double continuous_bic(
   int n_parents,
   int n_obs)
 {
+  /* we use this for error checking. if there is a problem with the covariance
+   * matrix. it is probably not postive definite */
   int not_positive_definite = 0;
+  /* allocate enough memory so we have enough space for cov_yy, cov_xy, and
+   * cov_xy_cpy. Using only one malloc and one free should be faster than
+   * allocating memory for each separately. */
+  double * aug_matrix = CALLOC(n_parents*(n_parents + 2), double);
+  double * cov_yy = aug_matrix;
   /* Calculate the covariance matrix of the data matrix of the variables y */
-  double * cov_yy = CALLOC(n_parents*n_parents, double);
   fcov_yy(cov_yy, parents, n_parents, n_obs);
   /* calculate the covariance vector between a single variable x, and y */
-  double * cov_xy = CALLOC(n_parents, double);
+  double * cov_xy = aug_matrix + n_parents*n_parents;
   fcov_xy(cov_xy, node, parents, n_parents, n_obs);
   /* Now, we shall calcluate the BIC score of this configuration by computing
    * log(cov_xx - cov_xy**T cov_yy^-1 * cov_xy) + log(n) * (n_parents + 1). The
@@ -89,7 +94,7 @@ double continuous_bic(
       not_positive_definite = 1;
     else {
       /* We need to create a copy of cov_xy to perform the next subroutine */
-      double * cov_xy_cpy = CALLOC(n_parents, double);
+      double * cov_xy_cpy = aug_matrix + n_parents * (n_parents+1);
       memcpy(cov_xy_cpy, cov_xy, n_parents * sizeof(double));
       /* Now, we use the LAPACK routine dpotrs to solve the aforemention system
        * cov_yy * X = cov_xy. cov_xy_cpy is modified in place to be transformed
@@ -103,17 +108,13 @@ double continuous_bic(
                        cov_xy_cpy,
                        &n_parents,
                        &err);
-    if(err) {
+    if(err)
       not_positive_definite = 1;
-    }
-    else {
+    else
       result = -fddot(cov_xy, cov_xy_cpy, n_parents);
-    }
-    FREE(cov_xy_cpy);
   }
 }
-  FREE(cov_yy);
-  FREE(cov_xy);
+  FREE(aug_matrix);
   if(not_positive_definite) {
     warning("covariance matrix not positive definite\n");
     return NA_REAL;
@@ -134,6 +135,7 @@ double continuous_bic(
 void fcov_yy(double * restrict cov_yy, double ** parents, int n_parents,
              int n_obs)
 {
+  /* I am unsure if these if statements are faster 8*/
   if(n_parents == 1) {
     cov_yy[0] = fddot(parents[0], parents[0], n_obs);
     return;
@@ -147,7 +149,6 @@ void fcov_yy(double * restrict cov_yy, double ** parents, int n_parents,
     }
     return;
   }
-
   for(int j = 0; j < n_parents; ++j) {
     double * nodej = parents[j];
     int jnp        = j*n_parents;
@@ -160,11 +161,11 @@ void fcov_yy(double * restrict cov_yy, double ** parents, int n_parents,
     }
   }
 }
-
+/* fcov_xy caclulates the covariance vector between the ranodom variable x
+ * and the random variable vector, y. */
 void fcov_xy(double * restrict cov_xy, double * restrict node,
              double ** parents, int n_parents, int n_obs)
 {
-  #pragma omp parallel
   for(int i = 0 ; i < n_parents; ++i)
     cov_xy[i] = fddot(node, parents[i], n_obs);
 }
