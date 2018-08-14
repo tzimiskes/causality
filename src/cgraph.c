@@ -93,7 +93,6 @@ void free_cgraph(cgraph_ptr cg_ptr) {
 }
 
 int adjacent_in_cgraph(cgraph_ptr cg_ptr, int node1, int node2) {
-  Rprintf("adj\n");
   cgraph cg   = *cg_ptr;
   ill_ptr tmp = cg.parents[node1];
   while(tmp) {
@@ -124,7 +123,7 @@ int edge_undirected_in_cgraph(cgraph_ptr cg_ptr, int node1, int node2) {
   while(spouses) {
     ill spouse = *spouses;
     if(spouse.key == node2)
-      return spouse.value == UNDIRECTED;
+      return 1;
     spouses = spouse.next;
   }
   return 0;
@@ -135,7 +134,7 @@ int edge_directed_in_cgraph(cgraph_ptr cg_ptr, int parent, int child) {
   while(children) {
     ill node = *children;
     if(node.key == child)
-      return node.value == DIRECTED;
+      return 1;
     children = node.next;
   }
   return 0;

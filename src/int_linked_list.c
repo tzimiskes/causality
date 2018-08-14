@@ -114,22 +114,20 @@ void ill_print(ill_ptr root) {
 
 void ill_delete(ill_ptr* root, int key) {
   ill_ptr tmp = *root; /* should probably check to see if this is not null */
-  if(tmp != NULL) {
-    if(tmp->key == key) {
-      *root = (*root)->next;
-      free(tmp);
+  if(tmp == NULL)
+    error("*root is NULL\n");
+  if(tmp->key == key) {
+    *root = (*root)->next;
+    free(tmp);
+    return;
+  }
+  while(tmp->next != NULL) {
+    if(tmp->next->key == key) {
+      ill_ptr tmp2 = tmp->next;
+      tmp->next    = tmp->next->next;
+      free(tmp2);
       return;
     }
-    while (tmp->next != NULL) {
-      if(tmp->next->key == key) {
-        ill_ptr tmp2 = tmp->next;
-        tmp->next = tmp2->next;
-        free(tmp2);
-        return;
-      }
-      else
-        tmp = tmp->next;
-    }
+    tmp = tmp->next;
   }
-  error("Failed to find key in ill_delete!\n");
 }

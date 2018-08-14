@@ -8,26 +8,24 @@
 
 typedef struct cll * cll_ptr;
 typedef struct cll {
-  ill_ptr children;
-  ill_ptr parents;
-  ill_ptr spouses;
+  ill_ptr * children;
+  ill_ptr * parents;
+  ill_ptr * spouses;
   cll_ptr next;
 } cll;
 
 inline int is_sink(cll_ptr node) {
-  return node->children == NULL;
+  return *(node->children) == NULL;
 }
 
 /* clique checks each undirected parent of current if that undirected
  * parent forms a clique with all the other parents of current */
 static int forms_clique(cll_ptr node, cgraph_ptr cg_ptr) {
-  Rprintf("Clique\n");
-  ill_ptr spouses = node->spouses;
+  ill_ptr spouses = *(node->spouses);
   /* grab a spouse (undirected adjacent) */
   while(spouses != NULL) {
-    Rprintf("Check Spouses\n");
     int spouse      = ill_key(spouses);
-    ill_ptr parents = node->parents;
+    ill_ptr parents = *(node->parents);
     /* make sure spouse is adjacent to the parents of node */
     while(parents != NULL) {
       if(!adjacent_in_cgraph(cg_ptr, spouse, ill_key(parents)))
@@ -35,9 +33,8 @@ static int forms_clique(cll_ptr node, cgraph_ptr cg_ptr) {
       parents = parents->next;
     }
     /* make sure spouse is adjacent to the other spouses of node */
-    ill_ptr tmp = node->spouses;
+    ill_ptr tmp = *(node->spouses);
     while(tmp != NULL) {
-      Rprintf("Check Spouses\n");
       int spouse2 = ill_key(tmp);
       if(spouse2 != spouse && !adjacent_in_cgraph(cg_ptr, spouse, spouse2))
         return NOCLIQUE;
@@ -45,12 +42,10 @@ static int forms_clique(cll_ptr node, cgraph_ptr cg_ptr) {
     }
     spouses = spouses->next;
   }
-  Rprintf("Clique Found\n");
   return CLIQUE;
 }
 
 static inline void orient_in_cgraph(cgraph_ptr cg_ptr, int node) {
-  Rprintf("Orient\n");
   ill_ptr spouse = cg_ptr->spouses[node];
   while(spouse) {
     orient_undirected_edge(cg_ptr, spouse->key, node);
@@ -60,22 +55,17 @@ static inline void orient_in_cgraph(cgraph_ptr cg_ptr, int node) {
 
 void remove_node(cll_ptr current, cll_ptr nodes) {
   int node = current - nodes; /* ptr arithemtic */
-  Rprintf("Remove %i\n", node);
   /* delete all listings of node in its parents and spouses */
-  ill_ptr parents = current->parents;
+  ill_ptr parents = *(current->parents);
   while(parents) {
-    Rprintf("remove %i --> %i\n", parents->key, node);
-    ill_delete(&(nodes[parents->key].children), node);
+    ill_delete(nodes[parents->key].children, node);
     parents = parents->next;
   }
-  ill_ptr spouses = current->spouses;
-  Rprintf("Node %i spouses %p\n", node, spouses);
+  ill_ptr spouses = *(current->spouses);
   while(spouses != NULL) {
-    Rprintf("remove %i --- %i\n", spouses->key, node);
-    ill_delete(&(nodes[spouses->key].spouses), node);
+    ill_delete(nodes[spouses->key].spouses, node);
     spouses = spouses->next;
   }
-  Rprintf("Done\n");
 }
 
 SEXP ccf_pdx_wrapper(SEXP Pdag) {
@@ -84,6 +74,7 @@ SEXP ccf_pdx_wrapper(SEXP Pdag) {
     int n_edges            = nrows(VECTOR_ELT(Pdag, EDGES));
     cgraph_ptr cg_ptr      = create_cgraph(n_nodes);
     fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
+
     free(edges_ptr);
     cg_ptr = ccf_pdx(cg_ptr);
     if(cg_ptr == NULL) {
@@ -107,9 +98,9 @@ cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
     ill_ptr * spouses  = cg_ptr->spouses;
     ill_ptr * children = cg_ptr->children;
     for(int i = 0; i < n_nodes; ++i) {
-      nodes[i].parents  = parents[i];
-      nodes[i].children = children[i];
-      nodes[i].spouses  = spouses[i];
+      nodes[i].parents  = parents  + i;
+      nodes[i].children = children + i;
+      nodes[i].spouses  = spouses  + i;
       nodes[i].next     = nodes + (i + 1) % n_nodes;
   }
   cll_ptr current   = nodes;
@@ -117,7 +108,6 @@ cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
   int n_checked     = 0;
   int ll_size       = n_nodes;
   /* Comment needed */
-  print_cgraph(cg_ptr);
   while(ll_size > 0 && n_checked < ll_size) {
     if(is_sink(current) && forms_clique(current, cg_ptr)) {
       orient_in_cgraph(copy_ptr, current - nodes);
@@ -132,12 +122,8 @@ cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr) {
     }
     current = current->next;
   }
-  print_cgraph(cg_ptr);
-  Rprintf("here\n");
   free(nodes);
-    Rprintf("here\n");
   free_cgraph(cg_ptr);
-      Rprintf("here\n");
   /* check to see if pdx failed to generate an extension. If there is a
    * failure, free the copy_ptr and set it to NULL. */
   int failure = ll_size  > 0 ? 1 : 0;
