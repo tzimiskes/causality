@@ -36,7 +36,7 @@ static jmp_buf FAIL_STATE;
  * the output of ccf_sort and turns it back into an R object. */
 SEXP ccf_sort_wrapper(SEXP Graph) {
   int * edges       = calculate_edges_ptr(Graph);
-  int n_nodes       = length(VECTOR_ELT(Graph,NODES));
+  int n_nodes       = length(VECTOR_ELT(Graph, NODES));
   /* grab the number of the Edges in the Graph */
   int n_edges       = nrows(VECTOR_ELT(Graph, EDGES));
   cgraph_ptr cg_ptr = create_cgraph(n_nodes);
@@ -46,10 +46,9 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
    * we return R_NilValue (aka R's version of NULL) */
   int * sorted_nodes = ccf_sort(cg_ptr);
   free_cgraph(cg_ptr);
-  if(sorted_nodes == NULL) {
+  if(sorted_nodes == NULL)
     return R_NilValue;
-  }
-  /* grab the R structure that holds the Nodes (Char* vector) of the Graph */
+  /* grab the R structure that holds the Nodes (Char * vector) of the Graph */
   SEXP Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
   /* allocate memory for the output */
   SEXP Output = PROTECT(allocVector(STRSXP, n_nodes));
@@ -58,7 +57,7 @@ SEXP ccf_sort_wrapper(SEXP Graph) {
     SET_STRING_ELT(Output, i, STRING_ELT(Nodes, sorted_nodes[i]));
   free(sorted_nodes);
   UNPROTECT(2);
-  return(Output);
+  return Output;
 }
 
 /* ccf_sort implements a topological sort by using a breadth first search as
@@ -121,13 +120,13 @@ static void visit(const int node,
     marked[node]  = TEMPORARY;
     ill_ptr child = children[node];
     while(child != NULL) {
-      visit(ill_key(child), marked, stack_index, children, sort);
-      child = ill_next(child);
+      visit(child->key, marked, stack_index, children, sort);
+      child = child->next;
     }
     marked[node]       = MARKED;
     /* n_unmarked lets us know how many nodes are unmarked, and we can also
      * use it to fill in the sort quickly by using it for the array index */
-    (*stack_index)    -= 1;
+    *stack_index      -= 1;
     sort[*stack_index] = node;
   }
 }

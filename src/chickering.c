@@ -9,8 +9,7 @@
 
 static inline void order_edges(cgraph_ptr cg_ptr, int * sort);
 static inline void insertion_sort(ill_ptr list);
-static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr);
-
+static inline void chickering_core(cgraph_ptr cg_ptr, int * sort);
 
 SEXP ccf_chickering_wrapper(SEXP Graph) {
     int * edges       = calculate_edges_ptr(Graph);
@@ -46,8 +45,8 @@ static inline void order_edges(cgraph_ptr cg_ptr, int * sort) {
   for(int i = 0; i < n_nodes; ++i) {
     ill_ptr tmp = parents[i];
     while(tmp != NULL) {
-      ill_set_value(tmp, sort[ill_key(tmp)]);
-      tmp = ill_next(tmp);
+      tmp->value = sort[tmp->key];
+      tmp        = tmp->next;
     }
     insertion_sort(parents[i]);
   }
@@ -62,23 +61,23 @@ static inline void insertion_sort(ill_ptr list) {
     ill_ptr top = list;
     ill_ptr max = list;
     while(top != NULL) {
-      if(ill_value(top) > ill_value(max))
+      if(top->value > max->value)
         max = top;
-      top = ill_next(top);
+      top = top->next;
     }
-    int list_key   = ill_key(list);
-    int list_value = ill_value(list);
-    ill_set_key(list,   ill_key(max));
-    ill_set_value(list, ill_value(max));
-    ill_set_key(max, list_key);
-    ill_set_value(max, list_value);
-    list = ill_next(list);
+    int list_key   = list->key;
+    int list_value = list->value;
+    list->key      = max->key;
+    list->value    = max->value;
+    max->key       = list_key;
+    max->value     = list_value;
+    list           = list->next;
   }
 }
 
 /* This is the core part (i.e, Find-compelled) of Chickering's algorithm
  * to convert DAGs to patterns. */
-static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr) {
+static inline void chickering_core(cgraph_ptr cg_ptr, int * sort) {
   ill_ptr * parents = cg_ptr->parents;
   int n_nodes       = cg_ptr->n_nodes;
   /* order edges sets the value parameter for each edge, so we need to
@@ -90,17 +89,15 @@ static inline void chickering_core(cgraph_ptr cg_ptr, int * sort_ptr) {
       tmp_ptr = ill_next(tmp_ptr);
     }
   }
-
-  int * inv_sort_ptr = malloc(n_nodes*sizeof(int));
+  int * inv_sort = malloc(n_nodes*sizeof(int));
   for(int i = 0; i < n_nodes; ++i)
-    inv_sort_ptr[sort_ptr[i]] = i;
-
-  /* we iterate through the sort to satisfy the max min condition necessary to
-   * run this part of the algorithm */
+    inv_sort[sort[i]] = i;
+  /* we iterate through the sort to satisfy the max min condition
+   * necessary to run this part of the algorithm */
   for(int i = 0; i < n_nodes; ++i) {
     /* by lemma 5 in Chickering, all the incident edges on y are unknown
      * so we don't need to check to see its unordered */
-    int y             = inv_sort_ptr[i];
+    int y             = inv_sort[i];
     ill_ptr y_parents = parents[y];
     /* if there are incident edges into y, run steps 5-8 of the algorithm.
      * if y has no incident edges, go to the next node in the order */
