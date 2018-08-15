@@ -31,7 +31,7 @@ sort.causality.graph <- function(x, decreasing = FALSE, ...) {
     stop("x must be a causality.graph")
   output <- .Call("ccf_sort_wrapper", x)
   if (is.null(output)) {
-    warning("x contains a cycle, returning NA.")
+    warning("x contains a cycle, returning NULL.")
     return(NULL)
   }
   if (decreasing == TRUE)
