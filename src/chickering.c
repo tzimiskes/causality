@@ -89,15 +89,12 @@ static inline void chickering_core(cgraph_ptr cg_ptr, int * sort) {
       tmp_ptr = ill_next(tmp_ptr);
     }
   }
-  int * inv_sort = malloc(n_nodes*sizeof(int));
-  for(int i = 0; i < n_nodes; ++i)
-    inv_sort[sort[i]] = i;
   /* we iterate through the sort to satisfy the max min condition
    * necessary to run this part of the algorithm */
   for(int i = 0; i < n_nodes; ++i) {
     /* by lemma 5 in Chickering, all the incident edges on y are unknown
      * so we don't need to check to see its unordered */
-    int y             = inv_sort[i];
+    int y             = sort[i];
     ill_ptr y_parents = parents[y];
     /* if there are incident edges into y, run steps 5-8 of the algorithm.
      * if y has no incident edges, go to the next node in the order */
