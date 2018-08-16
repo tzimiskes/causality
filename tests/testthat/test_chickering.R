@@ -16,7 +16,7 @@ pattern <- pattern(nodes = c("X1", "X2", "X3", "X4"), edges =
                             "X3", "X4", "-->"), byrow = T, ncol = 3),
                    validate = F)
 
-expect_equal(shd(as.pattern(dag), pattern), 0)
+expect_equal(shd(chickering(dag), pattern), 0)
 })
 
 # This more complicated test checks to see that chickering correctly generates
@@ -54,7 +54,7 @@ pattern <- pattern(nodes = c("X1", "X2", "X3", "X4", "X5", "X6", "X7"), edges =
                            "X2", "X6", "-->"
                   ), byrow = T, ncol = 3), validate = F)
 
-expect_equal(shd(as.pattern(dag), pattern), 0)
+expect_equal(shd(chickering(dag), pattern), 0)
 })
 
 # a chordal graph has no V structures, so its pattern is completely undirected
@@ -82,5 +82,5 @@ sachs.pattern <-
                            "Erk",  "Akt",  "---"), ncol = 3, byrow = T),
           validate = F)
 
-  expect_equal(shd(sachs.dag, as.pattern(sachs.dag)), 0)
+  expect_equal(shd(sachs.dag, chickering(sachs.dag)), 0)
 })

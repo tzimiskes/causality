@@ -1,3 +1,42 @@
+#' Partially Directed Acyclic Graphs
+#' @name pdag
+#' @export
+pdag <- function(nodes, edges, validate = TRUE) {
+  if (!is.logical(validate))
+    stop("validate must take on a logical value")
+  graph <- cgraph(nodes, edges, validate)
+  if (validate) {
+    if (!is_valid_pdag(graph))
+      stop("Input is not a valid causality pdag")
+  }
+  class(graph) <- .PDAG_CLASS
+  return(graph)
+}
+
+#' @details \code{is_valid_pdag} checks to see if the input is a valid
+#'   "causality.pdag". Specifically, it checks that the \code{graph} is
+#'   nonlatent and acyclic.
+#' @usage is_valid_pdag(graph)
+#' @rdname pdag
+#' @return \code{is_valid_pdag} returns \code{TRUE} or \code{FALSE} depending
+#'   on whether or not the input is a valid "causality.pdag".
+#' @export
+is_valid_pdag <- function(graph) {
+  if (!is.cgraph(graph))
+    stop("Input must be a causality graph!")
+  if (is.nonlatent(graph) && is.acyclic(graph)) {
+    return(TRUE)
+  }
+  else if (!is.nonlatent(graph)) {
+    warning("graph contains latent edges")
+    return(FALSE)
+  }
+  else {
+    warning("graph is not acyclic")
+    return(FALSE)
+  }
+}
+
 
 #' @export
 is.pdag <-function(cgraph) {

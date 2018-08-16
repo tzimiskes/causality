@@ -1,8 +1,4 @@
 #' @useDynLib causality ccf_chickering_wrapper
-
-
-
-
 #' @export
 chickering <- function(graph) {
   if(!is.cgraph(graph))
@@ -19,20 +15,23 @@ chickering <- function(graph) {
   return(dag)
 }
 
-
+#' @useDynLib causality ccf_chickering_wrapper
+#' @export
 pdx <- function(graph) {
   if(!is.cgraph(graph))
     stop("Input must be a causality.graph!")
   if(!is.pdag(graph) && !is.pattern(graph))
     stop("Input must be a causality.pdag or causality.pattern!")
-  return(graph)
+  return(.pdx(graph))
 }
 
 #' @useDynLib causality ccf_pdx_wrapper
 .pdx <- function(pdag) {
   pdag <- .Call("ccf_pdx_wrapper", pdag)
-  if(is.null(pdag))
+  if(is.null(pdag)) {
     warning("graph lacks a DAG extension. Returning NULL")
+    return(NULL)
+  }
   class(pdag) <- .DAG_CLASS
   return(pdag)
 }

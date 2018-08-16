@@ -18,7 +18,7 @@ be in decreasing order. default is \code{FALSE}}
 \value{
 A charcter vector that contains the nodes of the graph ordered
   according to their topological order. In the event that \code{graph} is
-  cyclic, a warning is issued and \code{NA} is returned.
+  cyclic, a warning is issued and \code{NULL} is returned.
 }
 \description{
 \code{sort} calculates the topological ordering of graph, that is sorts it.
