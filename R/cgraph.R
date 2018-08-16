@@ -155,15 +155,16 @@ is_valid_cgraph <- function(graph) {
 .CIRCLECIRCLE   <- "o-o"
 .BIDIRECTED     <- "<->"
 
-# edges that show up in pags
-.LATENT_EDGE_TYPES    <- c(.DIRECTED, .SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED,
-                           .CIRCLECIRCLE)
-#edges that show up in pdags
+# edges that show up in PAGs ~~>, ++>, o->, o-o, <->
+.LATENT_EDGE_TYPES    <- c(.SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED,
+                           .CIRCLECIRCLE, .BIDIRECTED)
+#edges that show up in PDAGs: -->, ---
 .NONLATENT_EDGE_TYPES <- c(.DIRECTED, .UNDIRECTED)
 
+# edges of the type -->, ~~>, ++>, o->
+.DIRECTED_EDGE_TYPES <- c(.DIRECTED, .SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED)
 
-
-# Casusality Graph is.* Functions ----------------------------------------------
+# Casusality Graph is Function ----------------------------------------------
 #' @usage is.cgraph(graph)
 #' @details \code{is.cgraph} tests whether or not an object has the class
 #'   causality.graph
@@ -176,71 +177,6 @@ is.cgraph <- function(graph) {
   else
     return(FALSE)
 }
-
-
-#' @export
-is.pdag <-function(cgraph) {
-  if (isTRUE(all.equal(.PDAG_CLASS, class(cgraph))))
-    return(TRUE)
-  else
-    return(FALSE)
-}
-#' @export
-is.pag <-function(cgraph) {
-  if (isTRUE(all.equal(.PAG_CLASS, class(cgraph))))
-    return(TRUE)
-  else
-    return(FALSE)
-}
-
-# Causality Graph as.dag Functions ---------------------------------------------
-
-# Causality Graph as.pdag Functions --------------------------------------------
-
-as.pdag <- function(cgraph) {
-  if(!is.cgraph(cgraph))
-    stop("Input is not a causality graph")
-  if(is.pdag(cgraph))
-    return(cgraph)
-
-  if (is.nonlatent(cgraph)) {
-    if (!is.cyclic(cgraph)) {
-      class(cgraph) <- .PDAG_CLASS
-      return(cgraph)
-    }
-  }
-  else
-    stop("input contains a cycle, so it cannot be coerced to pdag")
-}
-
-as.pdag.causality.dag <- function(cgraph) {
-  if(!is.dag(cgraph))
-    stop("Input is not a causality dag")
-  class(cgraph) = .PDAG_CLASS
-  return(cgraph)
-}
-
-as.pdag.causality.dag <- function(cgraph) {
-  if(!is.pattern(cgraph))
-    stop("Input is not a causality pattern")
-  class(cgraph) = .PDAG_CLASS
-  return(cgraph)
-}
-
-as.pdag.causality.pag <- function(cgraph) {
-  if(!is.pag(cgraph))
-    stop("Input is not a causality pag")
-
-    stop("not implemented")
-}
-
-# Causality Graph as.pag Functions ---------------------------------------------
-as.pag <- function(cgraph) {
-  stop("not implemented")
-}
-
-
-
 
 # Causality Graph as.cgraph Functions ------------------------------------------
 #' Coerce a graph to a Causality Graph

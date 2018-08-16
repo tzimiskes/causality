@@ -105,7 +105,7 @@ as.dag.causality.graph <- function(graph) {
         return(graph)
       }
       else { # we have a a pdag
-        dag <- .dag_from_pdag(graph)
+        dag <- .pdx(graph)
         if (is.null(dag))
           warning("Unable to coerce input to causality.dag")
         return(dag)
@@ -130,10 +130,9 @@ as.dag.causality.pdag <- function(graph) {
   if (!is.pdag(graph))
     stop("input is not a causality.graph")
 
-  dag <- .dag_from_pdag(graph)
-  if (is.null(dag)) {
+  dag <- .pdx(graph)
+  if (is.null(dag))
     warning("Unable to coerce input to causality.dag")
-  }
   return(dag)
 }
 
@@ -142,7 +141,7 @@ as.dag.causality.pdag <- function(graph) {
 as.dag.causality.pattern <- function(graph) {
   if (!is.pattern(graph))
     stop("input is not a causality.pattern")
-  return(.dag_from_pattern(graph))
+  return(.pdx(graph))
 }
 
 #' @rdname dag

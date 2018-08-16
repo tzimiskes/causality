@@ -99,6 +99,7 @@ is.pattern <- function(graph) {
 as.pattern <- function(graph) {
   UseMethod("as.pattern")
 }
+
 #' @rdname pattern
 #' @export
 as.pattern.default <- function(graph) {
@@ -113,7 +114,7 @@ as.pattern.default <- function(graph) {
 as.pattern.causality.dag <- function(graph) {
   if (!is.dag(graph))
     stop("input is not a dag")
-  return(.dag_to_pattern(graph))
+  return(.chickering(graph))
 }
 
 #' @rdname pattern
@@ -121,7 +122,13 @@ as.pattern.causality.dag <- function(graph) {
 as.pattern.causality.pdag <- function(graph) {
   if (!is.pdag(graph))
     stop("input is not a pdag")
-  return(.dag_from_pdag(graph))
+  # test to if graph can be turned into a dag
+  dag <- .pdx(graph)
+  if(is.null(dag)) {
+     warning("graph cannot be coerced to a pattern")
+    return(NULL)
+  }
+  return(.chickering(pdag))
 }
 
 #' @rdname pattern
