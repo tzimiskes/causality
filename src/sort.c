@@ -14,6 +14,7 @@
 #include <cgraph.h>
 #include <int_linked_list.h>
 #include <edgetypes.h>
+#include <sort.h>
 
 /* macros used in ccf_sort */
 #define UNMARKED 0

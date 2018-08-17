@@ -2,6 +2,8 @@
 #include <cgraph.h>
 #include <int_linked_list.h>
 #include <edgetypes.h>
+#include <sort.h>
+#include <chickering.h>
 
 #define UNKNOWN   -1
 #define COMPELLED  1 /* This means directed */

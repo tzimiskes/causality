@@ -2,6 +2,7 @@
 #include <cgraph.h>
 #include <int_linked_list.h>
 #include <edgetypes.h>
+#include <pdx.h>
 
 #define CLIQUE 1
 #define NOCLIQUE 0
