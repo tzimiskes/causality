@@ -20,7 +20,7 @@
 #'
 #' Pearl, Judea. Causality. Cambridge university press, 2009.
 #' @export
-#' @useDynLib causality ccf_meek_rules_wrapper
+#' @useDynLib causality ccf_meek_wrapper
 meek <- function(graph) {
   if (!is.cgraph(graph))
     stop("Input is not a cgraph")
@@ -31,11 +31,10 @@ meek <- function(graph) {
     stop("The meek rules can only be run on nonlatent acylic graphs.")
 
   # maybe check to see if it has a dag extension first?
-  tmp <- .prepare_cgraph_for_call(pdag, nodes = F, edges = T, adjacencies = F)
-  tmp <- .Call("cf_meek_rules", tmp)
-  pdag$edges[, 1] <- pdag$nodes[tmp[, 1] + 1]
-  pdag$edges[, 2] <- pdag$nodes[tmp[, 2] + 1]
-  pdag$edges[, 3] <- .NONLATENT_EDGE_TYPES[tmp[, 3]]
-
-  return(pdag)
+  graph <- .Call("ccf_meek_wrapper", graph)
+  if (is.directed(graph))
+    class(graph) <- .DAG_CLASS
+  else
+    class(graph) <- .PATTERN_CLASS
+  return(graph)
 }
