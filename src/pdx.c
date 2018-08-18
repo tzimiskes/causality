@@ -75,7 +75,6 @@ SEXP ccf_pdx_wrapper(SEXP Pdag) {
     int n_edges            = nrows(VECTOR_ELT(Pdag, EDGES));
     cgraph_ptr cg_ptr      = create_cgraph(n_nodes);
     fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
-
     free(edges_ptr);
     cg_ptr = ccf_pdx(cg_ptr);
     if(cg_ptr == NULL) {

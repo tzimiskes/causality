@@ -191,7 +191,7 @@ void unorient_directed_edge(cgraph_ptr cg_ptr, int parent, int child) {
     ill_ptr parents = cg_ptr->parents[child];
     while(parents->next) {
       if(parents->next->key == parent) {
-        node = parents->next;
+        node          = parents->next;
         parents->next = parents->next->next;
         break;
       }

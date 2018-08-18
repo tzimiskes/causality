@@ -1,26 +1,26 @@
-#include"headers/causality.h"
-#include"headers/edgetypes.h"
-#include"headers/int_linked_list.h"
-#include"headers/cmpct_cg.h"
+#include <causality.h>
+#include <edgetypes.h>
+#include <int_linked_list.h>
+#include <cgraph.h>
 
-#define ORIENT 2
-#define FLIP 1
-#define UNORIENTABLE 0
-
-void ccf_meek_rules(int * edges_ptr, const int n_nodes, const int n_edges);
+#define RULE_APPLIED 1
+#define NO_RULE_APPLIED 0
+void ccf_meek_rules(cgraph_ptr cg_ptr);
 
 SEXP ccf_meek_rules_wrapper(SEXP Graph) {
-
-  int * edges_ptr = calculate_edges_ptr(Graph);
-  int n_nodes     = length(VECTOR_ELT(Graph, NODES));
-  int n_edges     = length(VECTOR_ELT(Graph, EDGES));
-
-  ccf_meek_rules(edges_ptr, n_nodes, n_edges);
-
-  SEXP Output = PROTECT(duplicate(Graph));
-  SET_VECTOR_ELT(Output, EDGES, calculate_edges_from_ptr(edges_ptr, Graph));
+  int * edges_ptr   = calculate_edges_ptr(Graph);
+  int n_nodes       = length(VECTOR_ELT(Graph, NODES));
+  int n_edges       = length(VECTOR_ELT(Graph, EDGES));
+  /* create an empty cgraph and fill it in */
+  cgraph_ptr cg_ptr = create_cgraph(n_nodes);
+  fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
+  free(edges_ptr);
+  ccf_meek_rules(cg_ptr);
+  SEXP Pattern = PROTECT(duplicate(Graph));
+  recalculate_edges_from_cgraph(cg_ptr, Pattern);
+  free_cgraph(cg_ptr);
   UNPROTECT(1);
-  return Output;
+  return Pattern;
 }
 
 /* these are the four meek rules as described by meek(1995). A better discussion
@@ -28,63 +28,47 @@ SEXP ccf_meek_rules_wrapper(SEXP Graph) {
  * each rule is described where it is implemented
  * these functions either return ORIENT, FLIP, or UNORIENTABLE
  */
-static int meek1(int node1, int node2, cmpct_cg_ptr cg_ptr);
-static int meek2(int node1, int node2, cmpct_cg_ptr cg_ptr);
-static int meek3(int node1, int node2, cmpct_cg_ptr cg_ptr);
-static int meek4(int node1, int node2, cmpct_cg_ptr cg_ptr);
+static int meek1(cgraph_ptr cg_ptr, const int x, const int y);
+static int meek2(cgraph_ptr cg_ptr, const int x, const int y);
+static int meek3(cgraph_ptr cg_ptr, const int x, const int y);
+static int meek4(cgraph_ptr cg_ptr, const int x, const int y);
 
 /*
  * apply_rule applied the selected meek rule (passed in by function pointer)
  * it returns 1 if the rule was applied, and 0 if not
  */
-static int apply_rule(int (*meek_rule) (int, int, cmpct_cg_ptr), int* edges_ptr,
-                      int i, int node1, int node2, cmpct_cg_ptr cg_ptr);
 
 /*
  * meek_rules take in a PDAG and maximially orients it by repeatedly applying
  * the four meek rules
  * it currently returns an updated edge matrix
  */
-void ccf_meek_rules(int * edges_ptr, const int n_nodes, const int n_edges) {
-
-   /*
-   * generate underlying causal graph represntation (in this case, a compact
-   * causal graph), and fill it in using regular insertion
-   */
-  cmpct_cg_ptr cg_ptr = create_cmpct_cg(n_nodes, n_edges);
-  fill_in_cmpct_cg(cg_ptr, edges_ptr, ill_insert2, BY_PARENTS);
-  /*
-   * idea for loop: index through the edges of graph, and attempt to apply meek
-   * rules to unidrected edges. repeat this process until no rules are applied
-   */
+void ccf_meek_rules(cgraph_ptr cg_ptr) {
+  int n_nodes       = cg_ptr->n_nodes;
+  ill_ptr * spouses = cg_ptr->spouses;
   int rule_applied;
   do {
     rule_applied = 0;
-    for(int i = 0; i < n_edges; ++i) {
-      int edge_type = edges_ptr[i + 2*n_edges];
-      // check to see if the edge is undirected
-      if(edge_type == UNDIRECTED) {
-        // if it is, grab the nodes involved, and attempt to apply meek rules
-        int node1 = edges_ptr[i          ];
-        int node2 = edges_ptr[i + n_edges];
-
-        rule_applied = apply_rule(meek1, edges_ptr, i, node1, node2, cg_ptr);
-        if(rule_applied) /* if a rule is applied successfully, skip the rest */
-          goto EOFL;
-        rule_applied = apply_rule(meek2, edges_ptr, i, node1, node2, cg_ptr);
-        if(rule_applied)
-          goto EOFL;
-        rule_applied = apply_rule(meek3, edges_ptr, i, node1, node2, cg_ptr);
-        if(rule_applied)
-          goto EOFL;
-        rule_applied = apply_rule(meek4, edges_ptr, i, node1, node2, cg_ptr);
-        EOFL : {}
+    for(int i = 0; i < n_nodes; ++i) {
+      TOP: {
+        rule_applied++;
+      }
+      ill_ptr spouse = spouses[i];
+      while(spouse) {
+        if (meek1(cg_ptr, i, spouse->key))
+          goto TOP;
+        else if (meek2(cg_ptr, i, spouse->key))
+          goto TOP;
+        else if (meek3(cg_ptr, i, spouse->key))
+          goto TOP;
+        else if (meek4(cg_ptr, i, spouse->key))
+          goto TOP;
+        else
+          spouse = spouse->next;
       }
     }
-     R_CheckUserInterrupt();
+    R_CheckUserInterrupt();
   } while(rule_applied);
-  // free malloc'd memory
-  free_cmpct_cg(cg_ptr);
 }
 
 /*
@@ -94,78 +78,67 @@ void ccf_meek_rules(int * edges_ptr, const int n_nodes, const int n_edges) {
  *
  * Reverse case: node3 --> node1, ! adj(node3, node1); orient node2 --> node1
  */
-static int meek1(const int node1, const int node2, cmpct_cg_ptr cg_ptr) {
-  ill_ptr* parents      = get_cmpct_cg_parents(cg_ptr);
-
-  // look for a directed parent of node1
-  ill_ptr node1_parents = parents[node1];
-  while(node1_parents != NULL) {
-    if(ill_value(node1_parents) == DIRECTED) {
-      int node3 = ill_key(node1_parents); /* found it */
-      // check to see of node2 and node3 are adjacent
-      if(!adjacent_in_cg(cg_ptr, node2, node3))
-        return ORIENT;
+static int meek1(cgraph_ptr cg_ptr, const int x, const int y) {
+  ill_ptr * parents = cg_ptr->parents;
+  ill_ptr x_par     = parents[x];
+  while(x_par) {
+    if(!adjacent_in_cgraph(cg_ptr, x_par->key, y)) {
+      orient_undirected_edge(cg_ptr, x, y);
+      return RULE_APPLIED;
     }
-    node1_parents = ill_next(node1_parents);
+    x_par = x_par->next;
   }
   /* if we are here, we now look at the parents of node2 instead of node1 */
-  ill_ptr node2_parents = parents[node2];
-  while(node2_parents != NULL) {
-    if(ill_value(node2_parents) == DIRECTED) {
-      int node3 = ill_key(node2_parents); /* found it */
-      // check to see of node1 and node3 are adjacent
-      if(!adjacent_in_cg(cg_ptr, node1, node3))
-        return FLIP;
+  ill_ptr y_par = parents[y];
+  while(y_par) {
+    if(!adjacent_in_cgraph(cg_ptr, x, y_par->key)) {
+      orient_undirected_edge(cg_ptr, y, x);
+      return RULE_APPLIED;
     }
-    node2_parents = ill_next(node2_parents);
+    y_par = y_par->next;
   }
-  return UNORIENTABLE;
+  return NO_RULE_APPLIED;
 }
 
 /*
- * meek rule 2: look for node3 such that, node3 --> node1, node2 --> node3. If
- * so, orient node2 --> node1 to prevent a cycle.
+ * meek rule 2: look for z such that, z --> x, y --> z. If
+ * so, orient y --> x to prevent a cycle.
  *
  * In the reverse case, look for node3 --> node2, node1 --> node3, so that we
  * orient node1 --> node2
  */
-static int meek2(const int node1, const int node2, cmpct_cg_ptr cg_ptr) {
-  ill_ptr* parents      = get_cmpct_cg_parents(cg_ptr);
-  ill_ptr node1_parents = parents[node1];
+static int meek2(cgraph_ptr cg_ptr, const int x, const int y) {
+  ill_ptr * parents = cg_ptr->parents;
+  ill_ptr x_par     = parents[x];
   // look for node3 --> node1
-  while(node1_parents != NULL) {
-    if(ill_value(node1_parents) == DIRECTED) {
-      int node3 = ill_key(node1_parents); /* found it */
-      ill_ptr node3_parents = parents[node3];
-      // look for node2 --> node3
-      while(node3_parents != NULL) {
-        if(ill_value(node3_parents) == DIRECTED &&
-           ill_key(node3_parents) == node2)
-          {
-            return FLIP;
-          }
-        node3_parents = ill_next(node3_parents);
+  while(x_par) {
+    int z         = x_par->key;
+    ill_ptr z_par = parents[z];
+    // look for node2 --> node3
+    while(z_par) {
+      if(z_par->key == y) {
+        orient_undirected_edge(cg_ptr, y, x);
+        return RULE_APPLIED;
       }
+      z_par = z_par->next;
     }
-    node1_parents = ill_next(node1_parents);
+    x_par = x_par->next;
   }
   // if we are here, we now look at the parents of node2 instead of node1
-  ill_ptr node2_parents = parents[node2];
-  while(node2_parents != NULL) {
-    if(ill_value(node2_parents) == DIRECTED) {
-      int node3 = ill_key(node2_parents); /* found it */
-      ill_ptr node3_parents = parents[node3];
-      while(node3_parents != NULL) {
-        if(ill_value(node3_parents) == DIRECTED) {
-          if(ill_key(node3_parents) == node1)
-            return ORIENT;
-        }
-        node3_parents = ill_next(node3_parents);
+  ill_ptr y_par = parents[y];
+  while(y_par) {
+    int z = y_par->key; /* found it */
+    ill_ptr z_par = parents[z];
+    while(z_par) {
+      if(z_par->key == x) {
+        orient_undirected_edge(cg_ptr, x, y);
+        return RULE_APPLIED;
       }
+      z_par = z_par->next;
     }
-    node2_parents = ill_next(node2_parents);
+    y_par = y_par->next;
   }
-  return UNORIENTABLE;
+  return NO_RULE_APPLIED;
 }
 
 /*
@@ -176,64 +149,57 @@ static int meek2(const int node1, const int node2, cmpct_cg_ptr cg_ptr) {
  * reverse case: chains node1 --- node3 --> node2 and node1 --- node4 --> node2,
  * with !adj(node3, node4)
  */
-static int meek3(const int node1, const int node2, cmpct_cg_ptr cg_ptr) {
-  ill_ptr* parents          = get_cmpct_cg_parents(cg_ptr);
-
+static int meek3(cgraph_ptr cg_ptr, const int x, const int y) {
+  ill_ptr* parents = cg_ptr->parents;
   // look for node3 --> node1
-  ill_ptr node1_parents     = parents[node1];
-  while(node1_parents != NULL ) {
-    if(ill_value(node1_parents) == DIRECTED) {
-      int node3 = ill_key(node1_parents); /* found node3 */
-      // look for node4 --> node1
-      ill_ptr node1_parents_cpy = parents[node1];
-      while(node1_parents_cpy != NULL) {
-        if(ill_value(node1_parents_cpy) == DIRECTED &&
-           ill_key(node1_parents_cpy) != node3)
-        {
-          int node4 = ill_key(node1_parents_cpy);
-          // check to see if they are adjacent
-          if(!adjacent_in_cg(cg_ptr, node3, node4)) {
-            // if they are not, look for node2 -- node3, node2 -- node4
-            if(edge_undirected_in_cg(cg_ptr, node3, node2) &&
-               edge_undirected_in_cg(cg_ptr, node4, node2))
-            {
-              return FLIP;
-            }
+  ill_ptr x_par    = parents[x];
+  while(x_par) {
+    int z = ill_key(x_par); /* found node3 */
+    // look for node4 --> node1
+    ill_ptr x_par_cpy = parents[x];
+    while(x_par_cpy) {
+      if(ill_key(x_par_cpy) != z) {
+        int w = x_par_cpy->key;
+        // check to see if they are adjacent
+        if(!adjacent_in_cgraph(cg_ptr, w, z)) {
+          // if they are not, look for node2 -- node3, node2 -- node4
+          if(edge_undirected_in_cgraph(cg_ptr, z, y) &&
+             edge_undirected_in_cgraph(cg_ptr, w, y))
+          {
+            orient_undirected_edge(cg_ptr, y, x);
+            return RULE_APPLIED;
           }
         }
-        node1_parents_cpy = ill_next(node1_parents_cpy);
       }
+      x_par_cpy = x_par_cpy->next;
     }
-    node1_parents = ill_next(node1_parents);
+    x_par = ill_next(x_par);
   }
   // now we look through the parents of node2 instead of node1
-  ill_ptr node2_parents     = parents[node2];
-  while(node2_parents != NULL ) {
-    if(ill_value(node2_parents) == DIRECTED) {
-      int node3 = ill_key(node2_parents);
+  ill_ptr y_par = parents[y];
+  while(y_par) {
+      int z = ill_key(y_par);
       // look for node4 --> node1
-      ill_ptr node2_parents_cpy = parents[node2];
-      while(node2_parents_cpy != NULL) {
-        if(ill_value(node2_parents_cpy) == DIRECTED &&
-           ill_key(node2_parents_cpy) != node3)
-        {
-          int node4 = ill_key(node2_parents_cpy);
+      ill_ptr y_par_cpy = parents[y];
+      while(y_par_cpy) {
+        if(y_par_cpy->key != z) {
+          int w = y_par_cpy->key;
           // check to see if they are adjacent
-          if(!adjacent_in_cg(cg_ptr, node3, node4)) {
+          if(!adjacent_in_cgraph(cg_ptr, z, w)) {
             // if they are not, look for node1 -- node3, node1 -- node4
-            if(edge_undirected_in_cg(cg_ptr, node3, node1) &&
-               edge_undirected_in_cg(cg_ptr, node4, node1))
+            if(edge_undirected_in_cgraph(cg_ptr, z, x) &&
+               edge_undirected_in_cgraph(cg_ptr, w, x))
             {
-              return ORIENT;
+              orient_undirected_edge(cg_ptr, x , y);
+              return RULE_APPLIED;
             }
           }
         }
-        node2_parents_cpy = ill_next(node2_parents_cpy);
+        y_par_cpy = y_par_cpy->next;
       }
-    }
-    node2_parents = ill_next(node2_parents);
+    y_par = y_par->next;
   }
-  return UNORIENTABLE;
+  return NO_RULE_APPLIED;
 }
 
 /*
@@ -241,81 +207,44 @@ static int meek3(const int node1, const int node2, cmpct_cg_ptr cg_ptr) {
  * node4 --> node3 --> node2, node1 --- node4, with adj(node3, node1) and
  * !adj(node2, node4)
  */
-static int meek4(const int node1, const int node2, cmpct_cg_ptr cg_ptr) {
-  ill_ptr* parents          = get_cmpct_cg_parents(cg_ptr);
-
-  ill_ptr node1_parents     = parents[node1];
-  while(node1_parents != NULL) {
-    if(ill_value(node1_parents) == DIRECTED) {
-      int node3 = ill_key(node1_parents);
-      if(adjacent_in_cg(cg_ptr, node2, node3)) {
-        ill_ptr node3_parents = parents[node3];
-        while(node3_parents != NULL) {
-            if(ill_value(node3_parents) == DIRECTED) {
-              int node4 = ill_key(node3_parents);
-              if(edge_undirected_in_cg(cg_ptr, node4, node2) &&
-                 !adjacent_in_cg(cg_ptr, node1, node4))
-              {
-                return FLIP;
-              }
-            }
-          node3_parents = ill_next(node3_parents);
+static int meek4(cgraph_ptr cg_ptr, const int x, const int y) {
+  ill_ptr * parents = cg_ptr->parents;
+  ill_ptr x_par     = parents[x];
+  while(x_par) {
+    int z = x_par->key;
+    if(adjacent_in_cgraph(cg_ptr, y, z)) {
+      ill_ptr z_par = parents[z];
+      while(z_par) {
+        int w = z_par->key;
+        if(edge_undirected_in_cgraph(cg_ptr, w, y) &&
+           !adjacent_in_cgraph(cg_ptr, x, w))
+        {
+          orient_undirected_edge(cg_ptr, y , y);
+          return RULE_APPLIED;
         }
+        z_par = z_par->next;
       }
     }
-    node1_parents = ill_next(node1_parents);
+    x_par = x_par->next;
   }
   // now we look through the parents of node2 instead of node1
-  ill_ptr node2_parents = parents[node2];
-  while(node2_parents != NULL) {
-    if(ill_value(node2_parents) == DIRECTED) {
-      int node3 = ill_key(node2_parents);
-      if(adjacent_in_cg(cg_ptr, node1, node3)) {
-        ill_ptr node3_parents = parents[node3];
-        while(node3_parents != NULL) {
-          if(ill_value(node3_parents) == DIRECTED) {
-            int node4 = ill_key(node3_parents);
-            if(edge_undirected_in_cg(cg_ptr, node4, node1) &&
-               !adjacent_in_cg(cg_ptr, node2, node4))
-            {
-              return ORIENT;
-            }
+  ill_ptr y_par = parents[y];
+  while(y_par) {
+    int z = y_par->key;
+    if(adjacent_in_cgraph(cg_ptr, x, z)) {
+      ill_ptr z_par = parents[z];
+      while(z_par) {
+          int w = z_par->key;
+          if(edge_undirected_in_cgraph(cg_ptr, w, x) &&
+             !adjacent_in_cgraph(cg_ptr, y, w))
+          {
+            orient_undirected_edge(cg_ptr, x , y);
+            return RULE_APPLIED;
           }
-          node3_parents = ill_next(node3_parents);
-        }
+        z_par = z_par->next;
       }
     }
-    node2_parents = ill_next(node2_parents);
+    y_par = y_par->next;
   }
-  return UNORIENTABLE;
-}
-
-/*
- * apply_meek_rule applies the selected meek rule (passed in by pointer)
- * it returns 1 if the rule was applied, and 0 if not
- */
-static int apply_rule(int (*meek_rule) (int, int, cmpct_cg_ptr), int* edges_ptr,
-                      int i, int node1, int node2, cmpct_cg_ptr cg_ptr)
-{
-  int result  = meek_rule(node1, node2, cg_ptr);
-  int n_edges = get_cmpct_cg_n_edges(cg_ptr);
-  // decide what to do with result
-  switch(result) {
-    case UNORIENTABLE :
-      return 0;
-  case ORIENT : {
-      orient_cmpct_cg_edge(cg_ptr, node1, node2, ill_insert2); /* orient edge */
-      edges_ptr[i + 2*n_edges] = DIRECTED;
-      break;
-  }
-  case FLIP : {
-      /* flip node1 and node2 */
-      edges_ptr[i            ] = node2;
-      edges_ptr[i + n_edges  ] = node1;
-      edges_ptr[i + 2*n_edges] = DIRECTED;
-      orient_cmpct_cg_edge(cg_ptr, node2, node1, ill_insert2); /* orient edge */
-      break;
-    }
-  }
-  return 1;
+  return NO_RULE_APPLIED;
 }
