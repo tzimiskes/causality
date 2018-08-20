@@ -27,7 +27,7 @@ static inline double fddot(double * x, double * y, int n) {
       case 3: psum[3] += x[q + 3] * y[q + 3];
       case 2: psum[2] += x[q + 2] * y[q + 2];
       case 1: psum[1] += x[q + 1] * y[q + 1];
-      case 0:                          ;
+      case 0:                               ;
     }
     #pragma omp critical
     sum += (psum[0] + psum[1] + psum[2] + psum[3]);
