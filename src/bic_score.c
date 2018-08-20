@@ -1,5 +1,5 @@
 # include <causality.h>
-# include <continuous_bic.h>
+# include <bic_score.h>
 # include <R_ext/Lapack.h>
 
 # ifdef _OPENMP
@@ -36,7 +36,7 @@ static inline double fddot(double * x, double * y, int n) {
 }
 /* This assumes the data is normalized. This is done during preprocessing
 during the algorithm */
-double continuous_bic(
+double bic_score(
   double * node,     /* node data vector */
   double ** parents, /* data matrix of parents of node */
   int n_parents,
