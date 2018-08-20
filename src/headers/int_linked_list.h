@@ -28,4 +28,5 @@ void       ill_set_value(ill_ptr root, int value);
 int        ill_value(ill_ptr root);
 void       ill_delete(ill_ptr* root, int key);
 void       ill_print(ill_ptr root);
+int        ill_size(ill_ptr root);
 #endif

@@ -105,6 +105,15 @@ void ill_print(ill_ptr root) {
   }
 }
 
+int ill_size(ill_ptr root) {
+  int size = 0;
+  while(root) {
+    size++;
+    root = root->next;
+  }
+  return size;
+}
+
 void ill_delete(ill_ptr* root, int key) {
   ill_ptr tmp = *root; /* should probably check to see if this is not null */
   if(tmp == NULL)
