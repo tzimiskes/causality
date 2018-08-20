@@ -5,21 +5,23 @@
 
 #define RULE_APPLIED 1
 #define NO_RULE_APPLIED 0
-void ccf_meek_rules(cgraph_ptr cg_ptr);
+void ccf_meek(cgraph_ptr cg_ptr);
 
-SEXP ccf_meek_rules_wrapper(SEXP Graph) {
+SEXP ccf_meek_wrapper(SEXP Graph) {
   int * edges_ptr   = calculate_edges_ptr(Graph);
   int n_nodes       = length(VECTOR_ELT(Graph, NODES));
-  int n_edges       = length(VECTOR_ELT(Graph, EDGES));
+  int n_edges       = nrows(VECTOR_ELT(Graph, EDGES));
   /* create an empty cgraph and fill it in */
   cgraph_ptr cg_ptr = create_cgraph(n_nodes);
   fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
   free(edges_ptr);
-  ccf_meek_rules(cg_ptr);
+  ccf_meek(cg_ptr);
+  Rprintf("meek\n");
   SEXP Pattern = PROTECT(duplicate(Graph));
   recalculate_edges_from_cgraph(cg_ptr, Pattern);
   free_cgraph(cg_ptr);
   UNPROTECT(1);
+  Rprintf("return\n");
   return Pattern;
 }
 
@@ -43,29 +45,42 @@ static int meek4(cgraph_ptr cg_ptr, const int x, const int y);
  * the four meek rules
  * it currently returns an updated edge matrix
  */
-void ccf_meek_rules(cgraph_ptr cg_ptr) {
+void ccf_meek(cgraph_ptr cg_ptr) {
   int n_nodes       = cg_ptr->n_nodes;
   ill_ptr * spouses = cg_ptr->spouses;
   int rule_applied;
   do {
     rule_applied = 0;
     for(int i = 0; i < n_nodes; ++i) {
-      TOP: {
-        rule_applied++;
-      }
+      TOP: {}
       ill_ptr spouse = spouses[i];
       while(spouse) {
-        if (meek1(cg_ptr, i, spouse->key))
+
+        if(meek1(cg_ptr, i, spouse->key)) {
+          Rprintf("meek1\n");
+          rule_applied++;
           goto TOP;
-        else if (meek2(cg_ptr, i, spouse->key))
+        }
+        else if(meek2(cg_ptr, i, spouse->key)) {
+          Rprintf("meek2\n");
+          rule_applied++;
           goto TOP;
-        else if (meek3(cg_ptr, i, spouse->key))
+        }
+        else if(meek3(cg_ptr, i, spouse->key)) {
+          Rprintf("meek3\n");
+          rule_applied++;
           goto TOP;
-        else if (meek4(cg_ptr, i, spouse->key))
+        }
+        else if(meek4(cg_ptr, i, spouse->key)) {
+          rule_applied++;
+          Rprintf("meek4\n");
           goto TOP;
-        else
+        }
+        else {
           spouse = spouse->next;
+        }
       }
+      Rprintf("rule_applied = %i\n", rule_applied);
     }
     R_CheckUserInterrupt();
   } while(rule_applied);
