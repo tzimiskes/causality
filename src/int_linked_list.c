@@ -33,13 +33,6 @@ ill_ptr copy_ill(ill_ptr root) {
   return copy;
 }
 
-void ill_insert2(ill_ptr* root, int key, int value, int i, ill_ptr nodes) {
-    nodes[i].next = *root;
-    nodes[i].key   = key;
-    nodes[i].value = value;
-    *root          = &nodes[i];
-}
-
 void ill_set_next(ill_ptr root, ill_ptr next) {
   root->next = next;
 }

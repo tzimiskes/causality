@@ -16,12 +16,10 @@ SEXP ccf_meek_wrapper(SEXP Graph) {
   fill_in_cgraph(cg_ptr, n_edges, edges_ptr);
   free(edges_ptr);
   ccf_meek(cg_ptr);
-  Rprintf("meek\n");
   SEXP Pattern = PROTECT(duplicate(Graph));
   recalculate_edges_from_cgraph(cg_ptr, Pattern);
   free_cgraph(cg_ptr);
   UNPROTECT(1);
-  Rprintf("return\n");
   return Pattern;
 }
 
@@ -55,32 +53,27 @@ void ccf_meek(cgraph_ptr cg_ptr) {
       TOP: {}
       ill_ptr spouse = spouses[i];
       while(spouse) {
-
         if(meek1(cg_ptr, i, spouse->key)) {
-          Rprintf("meek1\n");
           rule_applied++;
           goto TOP;
         }
+
         else if(meek2(cg_ptr, i, spouse->key)) {
-          Rprintf("meek2\n");
           rule_applied++;
           goto TOP;
         }
         else if(meek3(cg_ptr, i, spouse->key)) {
-          Rprintf("meek3\n");
           rule_applied++;
           goto TOP;
         }
         else if(meek4(cg_ptr, i, spouse->key)) {
           rule_applied++;
-          Rprintf("meek4\n");
           goto TOP;
         }
         else {
           spouse = spouse->next;
         }
       }
-      Rprintf("rule_applied = %i\n", rule_applied);
     }
     R_CheckUserInterrupt();
   } while(rule_applied);
@@ -234,7 +227,7 @@ static int meek4(cgraph_ptr cg_ptr, const int x, const int y) {
         if(edge_undirected_in_cgraph(cg_ptr, w, y) &&
            !adjacent_in_cgraph(cg_ptr, x, w))
         {
-          orient_undirected_edge(cg_ptr, y , y);
+          orient_undirected_edge(cg_ptr, y, x);
           return RULE_APPLIED;
         }
         z_par = z_par->next;
