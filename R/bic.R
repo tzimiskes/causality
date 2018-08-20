@@ -52,3 +52,39 @@ parents <- function(cgraph) {
   }
   return(parents)
 }
+
+new_score <- function(graph, df, score = c("BIC", "BDue")) {
+  if(!is.cgraph(graph))
+    stop("graph is not a causality.graph!")
+  if(!is.dag(graph))
+    stop("graph is not a causality.dag!")
+  score <- match.arg(score, c("BIC", "BDue"))
+  # the first step is to convert the data frame into one that only contains
+  # numerics and integers. numerics are normalized.
+  ncol       <- ncol(df)
+  dimensions <- rep(0L, ncol)
+  for (j in 1:ncol) {
+    col <- df[[j]]
+    if (is.numeric(col)) {
+      col     <- col - mean(col)
+      df[[j]] <- col/sd(col)
+    }
+    else if (is.integer(col)) {
+      dimensions[j] <- length(unique(col))
+    }
+    else if (is.factor(col)) {
+      dimensions[j] <- nlevels(col)
+      df[[j]]       <- as.integer(col)
+    }
+    else if (is.character(col)) {
+      col           <- as.factor(col)
+      dimensions[j] <- nlevels(col)
+      df[[j]]       <- as.integer(col)
+    }
+    else
+      stop("Unrecognized type in df!")
+  }
+  # score <- .Call("ccf_score_graph", graph, df, score, dimensions)
+  return(dimensions)
+}
+

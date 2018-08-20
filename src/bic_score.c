@@ -1,39 +1,16 @@
-# include <causality.h>
-# include <bic_score.h>
-# include <R_ext/Lapack.h>
+#include <causality.h>
+#include <bic_score.h>
+#include <R_ext/Lapack.h>
 
-# ifdef _OPENMP
-# include <omp.h>
-# endif
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
-# define OMP_N_THRESH     100
-# define LOOP_UNROLL_SIZE 4
-# define ERROR_THRESH     1e-5
+#define OMP_N_THRESH     100
+#define LOOP_UNROLL_SIZE 4
+#define ERROR_THRESH     1e-5
 
-static inline double fddot(double * x, double * y, int n) {
-  double sum = 0.0f;
-  {
-    double psum[LOOP_UNROLL_SIZE] = {0.0f};
-    int q                         = n / LOOP_UNROLL_SIZE;
-    int r                         = n % LOOP_UNROLL_SIZE;
-    #pragma omp for
-    for(int i = 0; i < n; i += LOOP_UNROLL_SIZE) {
-      psum[0] += x[i + 0] * y[i + 0];
-      psum[1] += x[i + 1] * y[i + 1];
-      psum[2] += x[i + 2] * y[i + 2];
-      psum[3] += x[i + 3] * y[i + 3];
-    }
-    switch(r) {
-      case 3: psum[3] += x[q + 3] * y[q + 3];
-      case 2: psum[2] += x[q + 2] * y[q + 2];
-      case 1: psum[1] += x[q + 1] * y[q + 1];
-      case 0:                               ;
-    }
-    #pragma omp critical
-    sum += (psum[0] + psum[1] + psum[2] + psum[3]);
-  }
-  return sum;
-}
+static inline double fddot(double * x, double * y, int n);
 /* This assumes the data is normalized. This is done during preprocessing
 during the algorithm */
 double bic_score(
@@ -168,4 +145,29 @@ void fcov_xy(double * restrict cov_xy, double * restrict node,
 {
   for(int i = 0 ; i < n_parents; ++i)
     cov_xy[i] = fddot(node, parents[i], n_obs);
+}
+
+static inline double fddot(double * x, double * y, int n) {
+  double sum = 0.0f;
+  {
+    double psum[LOOP_UNROLL_SIZE] = {0.0f};
+    int q                         = n / LOOP_UNROLL_SIZE;
+    int r                         = n % LOOP_UNROLL_SIZE;
+    #pragma omp for
+    for(int i = 0; i < n; i += LOOP_UNROLL_SIZE) {
+      psum[0] += x[i + 0] * y[i + 0];
+      psum[1] += x[i + 1] * y[i + 1];
+      psum[2] += x[i + 2] * y[i + 2];
+      psum[3] += x[i + 3] * y[i + 3];
+    }
+    switch(r) {
+      case 3: psum[3] += x[q + 3] * y[q + 3];
+      case 2: psum[2] += x[q + 2] * y[q + 2];
+      case 1: psum[1] += x[q + 1] * y[q + 1];
+      case 0:                               ;
+    }
+    #pragma omp critical
+    sum += (psum[0] + psum[1] + psum[2] + psum[3]);
+  }
+  return sum;
 }
