@@ -1,17 +1,13 @@
 #ifndef CONTINUOUS_BIC_H
 #define CONTINUOUS_BIC_H
 
-double bic_score(double * node,
-                 double ** parents,
-                 int n_parents,
-                 int n_obs);
+double bic_score(void ** xy_df, int * dims, int n_par, int n_obs);
 void fcov_yy(double * restrict cov_yy,
-             double ** parents,
-             int n_parents,
+             double ** y_df,
+             int n_par,
              int n_obs);
-void fcov_xy(double * restrict cov_yy,
-             double * restrict node,
-             double ** parents,
-             int n_parents,
+void fcov_xy(double * restrict cov_xy,
+             double ** xy_df,
+             int n_par,
              int n_obs);
 #endif
