@@ -3,9 +3,13 @@
 #include <bic_score.h>
 #include <bdeu_score.h>
 
+#define BENCHMARK
+#include <benchmarkr.h>
+
+CREATE_TIMER(score_timer);
+
 const char * BIC_SCORE  = "BIC";
 const char * BDEU_SCORE = "BDeu";
-
 
 double score_graph(cgraph_ptr cg_ptr, void ** df, int * dims, int n_obs,
   double (* score_fp)(void **, int *, int, int));
@@ -22,8 +26,8 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP Dims) {
    * to be zero instead of 1, as this allows me to use the actual value in each
    * entry of dims to determine the type (real or discrete/integer) of the
    * variable in the data frame. This helps divorce C and R. */
-  int     n_var  = ncols(Df);
-  int     n_obs  = nrows(Df);
+  int     n_var  = length(Df);
+  int     n_obs  = length(VECTOR_ELT(Df, 0));
   int *   dims   = INTEGER(Dims);
   void ** df     = malloc(n_var * sizeof(void *));
   /* populate df with the pointers to the columns of the R dataframe */
@@ -36,13 +40,16 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP Dims) {
 
   double (* score_fp)(void **, int * dims, int n_par, int n_obs);
 
-  if(!strcmp(CHAR(ScoreType), BIC_SCORE))
+  if(!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
     score_fp = bic_score;
-  else if (!strcmp(CHAR(ScoreType), BDEU_SCORE))
-    score_fp = bdue_score;
+  else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
+    score_fp = bdeu_score;
   else
     error("nope\n");
-  double score = score_graph(cg_ptr, df, dims, n_obs, score_fp);
+
+  TIME_FUNC(score_timer, double score = score_graph(cg_ptr, df, dims, n_obs, score_fp);
+  );
+  PRINT_TIMER(score_timer);
   free(df);
   free_cgraph(cg_ptr);
   return(ScalarReal(score));
@@ -61,15 +68,20 @@ double score_graph(cgraph_ptr cg_ptr, void ** df, int * dims, int n_obs,
       void * xy_df   [n_par + 1];
       int    xy_dims [n_par + 1];
       int j = 1;
-      xy_df[0]   = df[0];
-      xy_dims[0] = dims[0];
+      xy_df[0]   = df[i];
+      xy_dims[0] = dims[i];
+      Rprintf("scoring node %i, which has parents", i);
       while(p) {
+        Rprintf(" %i", p->key);
         xy_df[j]   = df[p->key];
         xy_dims[j] = dims[p->key];
+        j         += 1;
         p = p->next;
       }
+      Rprintf("\n");
       score += score_fp(xy_df, xy_dims, n_par, n_obs);
     }
   }
+  Rprintf("score: %f\n", score);
   return score;
 }

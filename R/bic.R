@@ -26,6 +26,10 @@ score_graph <- function(cgraph, data) {
       return(NA)
     }
   }
+
+  for(var in names(data)) {
+    data[[var]] <- (data[[var]]- mean(data[[var]]))/sd(data[[var]])
+  }
   parents <- parents(cgraph)
   sum_BIC <- 0
   for (node in names(parents)) {
@@ -36,7 +40,7 @@ score_graph <- function(cgraph, data) {
     ssq   <- ssq - COVXY %*% ginv(COVXX) %*% COVXY # SLOW!!!!
     theta <- length(node.parents) + 1
     n <- nrow(data)
-    sum_BIC <- sum_BIC + n * log(unname(ssq)) + theta * log(n)
+    sum_BIC <- sum_BIC +  log(unname(ssq)) + theta * log(n)
   }
   return(as.numeric(sum_BIC))
 }
@@ -53,19 +57,21 @@ parents <- function(cgraph) {
   return(parents)
 }
 
+#' @useDynLib causality ccf_score_graph_wrapper
+#' @export
 new_score <- function(graph, df, score = c("BIC", "BDue")) {
   if(!is.cgraph(graph))
     stop("graph is not a causality.graph!")
   if(!is.dag(graph))
     stop("graph is not a causality.dag!")
-  score <- match.arg(score, c("BIC", "BDue"))
+  score <- match.arg(score, c("BIC", "BDeu"))
   # the first step is to convert the data frame into one that only contains
   # numerics and integers. numerics are normalized.
   ncol       <- ncol(df)
   dimensions <- rep(0L, ncol)
   for (j in 1:ncol) {
     col <- df[[j]]
-    if (is.numeric(col)) {
+    if (is.double(col)) {
       col     <- col - mean(col)
       df[[j]] <- col/sd(col)
     }
@@ -84,7 +90,6 @@ new_score <- function(graph, df, score = c("BIC", "BDue")) {
     else
       stop("Unrecognized type in df!")
   }
-  # score <- .Call("ccf_score_graph", graph, df, score, dimensions)
-  return(dimensions)
+  score <- .Call("ccf_score_graph_wrapper", graph, df, score, dimensions)
+  return(score)
 }
-

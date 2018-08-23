@@ -13,7 +13,7 @@ static clock_t c2 = 0;
 #define TIME_FUNC(TIMER, FUNC) c1 = clock(); \
                                FUNC; \
                                c2 = clock(); \
-                               TIMER += ((double) (c2-c1))/(CLOCKS_PER_SEC *1e3);
-#define PRINT_TIMER(TIMER) Rprintf(#TIMER); Rprintf(": %f (ms)\n");
+                               TIMER += ((double) (c2-c1))/(CLOCKS_PER_SEC *1.0e3);
+#define PRINT_TIMER(TIMER) Rprintf(#TIMER); Rprintf(": %f (ms)\n", TIMER);
 #endif
 #endif /* benchmarkr.h */

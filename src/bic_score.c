@@ -11,8 +11,8 @@
 #define ERROR_THRESH     1e-5
 
 static inline double fddot(double * x, double * y, int n);
-/* This assumes the data is normalized. This is done during preprocessing
-during the algorithm */
+
+/* TODO */
 double bic_score(void ** xy_df, int * dims, int n_par, int n_obs) {
   /* we use this for error checking. if there is a problem with the covariance
    * matrix. it is probably not postive definite */
@@ -27,6 +27,7 @@ double bic_score(void ** xy_df, int * dims, int n_par, int n_obs) {
   /* calculate the covariance vector between a single variable x, and y */
   double * cov_xy = aug_matrix + n_par*n_par;
   fcov_xy(cov_xy, (double **) xy_df, n_par, n_obs);
+
   /* Now, we shall calcluate the BIC score of this configuration by computing
    * log(cov_xx - cov_xy**T cov_yy^-1 * cov_xy) + log(n) * (n_par + 1). The
    * first (and main step) in the rest of this function is to calcluate
@@ -91,8 +92,8 @@ double bic_score(void ** xy_df, int * dims, int n_par, int n_obs) {
     warning("covariance matrix not positive definite\n");
     return NA_REAL;
   }
-  result += fddot(xy_df[0], xy_df[0], n_obs);
-  result = log(result) +  log(n_obs) * (n_par + 1);
+  result += fddot(xy_df[0], xy_df[0], n_obs)/(n_obs-1);
+  result = n_obs * log(result) +  log(n_obs) * (2 * n_par + 1);
   return result;
 }
 
@@ -107,29 +108,30 @@ double bic_score(void ** xy_df, int * dims, int n_par, int n_obs) {
 void fcov_yy(double * restrict cov_yy, double ** y_df, int n_par,
              int n_obs)
 {
+  double inv_nminus1 = 1.0f/(n_obs-1);
   /* I am unsure if these if statements are faster 8*/
   if(n_par == 1) {
-    cov_yy[0] = fddot(y_df[0], y_df[0], n_obs);
+    cov_yy[0] = fddot(y_df[0], y_df[0], n_obs) * inv_nminus1;
     return;
   }
   if(n_par == 2) {
     {
-      cov_yy[0] = fddot(y_df[0], y_df[0], n_obs);
+      cov_yy[0] = fddot(y_df[0], y_df[0], n_obs) * inv_nminus1;
       cov_yy[2] = /* assigned to coy_yy[1] below */
-      cov_yy[1] = fddot(y_df[0], y_df[1], n_obs);
-      cov_yy[3] = fddot(y_df[1], y_df[1], n_obs);
+      cov_yy[1] = fddot(y_df[0], y_df[1], n_obs) * inv_nminus1;
+      cov_yy[3] = fddot(y_df[1], y_df[1], n_obs) * inv_nminus1;
     }
     return;
   }
   for(int j = 0; j < n_par; ++j) {
     double * y1 = y_df[j];
-    int jnp        = j*n_par;
+    int jnp      = j * n_par;
     double * cov_yy_j_off = cov_yy + j;
     for(int i = 0; i <= j; ++i) {
       /* I don't think there is a speed up if I check i == j here, so just
        *  rewrite if i == j because then there is no branch */
       cov_yy_j_off[i*n_par] =
-      cov_yy[i + jnp]       = fddot(y1, y_df[i], n_obs);
+      cov_yy[i + jnp]       = fddot(y1, y_df[i], n_obs) * inv_nminus1;
     }
   }
 }
@@ -137,12 +139,15 @@ void fcov_yy(double * restrict cov_yy, double ** y_df, int n_par,
  * and the random variable vector, y. */
 void fcov_xy(double * restrict cov_xy, double ** xy_df, int n_par, int n_obs)
 {
+  double inv_nminus1 = 1.0f/(n_obs - 1);
+
   for(int i = 0 ; i < n_par; ++i)
-    cov_xy[i] = fddot(xy_df[0], xy_df[i + 1], n_obs);
+    cov_xy[i] = fddot(xy_df[0], xy_df[i + 1], n_obs) * inv_nminus1;
 }
 
 static inline double fddot(double * x, double * y, int n) {
   double sum = 0.0f;
+  #pragma omp parallel
   {
     double psum[LOOP_UNROLL_SIZE] = {0.0f};
     int q                         = n / LOOP_UNROLL_SIZE;
