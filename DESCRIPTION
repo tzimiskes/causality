@@ -1,7 +1,7 @@
 Package: causality
 Type: Package
 Title: Discover the Underlying Causal Structure of Data
-Version: 0.0.0.9009
+Version: 0.0.0.9097
 Authors@R: person("Alexander", "Rix", email = "alexanderjrix@gmail.com",
   role = c("aut", "cre"))
 Author: Alexander Rix [aut, cre]
