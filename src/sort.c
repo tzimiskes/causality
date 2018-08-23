@@ -105,7 +105,7 @@ int * ccf_sort(cgraph_ptr cg_ptr) {
 /* visit: recursively look through the children of the node, looking for cycles
  * if a cycle is found, a longjmp is performed back to ccf_sort, where cleanup
  * occurs. Otherwise, once it has been determined that there are no cylces, the
- * node is permentantly marked, the node is pushed onto the topological sort,
+ * node is permanently marked, the node is pushed onto the topological sort,
  * stack_index is decremented, and the function terminates. */
 static void visit(const int node,
                   int * restrict marked,
