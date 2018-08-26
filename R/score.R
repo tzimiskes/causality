@@ -1,21 +1,3 @@
-# score_graph <- function(cgraph, data) {
-#   if(!is.cgraph(cgraph))
-#     stop("Graph is not a causality graph!")
-#   if(!is.dag(cgraph) & !is.pattern(cgraph))
-#     stop("Graph must be a dag or pattern!")
-#   if(is.pattern(cgraph))
-#     cgraph <- as.dag(cgraph)
-#
-#   parents <- parents(cgraph)
-#   sum_BIC <- 0
-#   for (node in names(parents)) {
-#     form <- paste(node, "~", paste(parents[[node]], collapse = "+"))
-#     form <- as.formula(form)
-#     sum_BIC <- sum_BIC + BIC(lm(form, data)) + 2*length(parents[[node]]) + 1 #bias correction
-#   }
-#   return(sum_BIC)
-# }
-#' @export
 score_graph <- function(cgraph, data) {
   if (!is.cgraph(cgraph))
     stop("Graph is not a causality graph!")
@@ -27,20 +9,20 @@ score_graph <- function(cgraph, data) {
     }
   }
 
-  for(var in names(data)) {
+  for (var in names(data)) {
     data[[var]] <- (data[[var]]- mean(data[[var]]))/sd(data[[var]])
   }
   parents <- parents(cgraph)
   sum_BIC <- 0
   for (node in names(parents)) {
-    ssq   <- cov(data[node])
+    ssq   <- 1
     node.parents <- parents[[node]]
     COVXX <- cov(data[node.parents])
     COVXY <- as.vector(cov(data[node], data[node.parents]))
     ssq   <- ssq - COVXY %*% ginv(COVXX) %*% COVXY # SLOW!!!!
-    theta <- length(node.parents) + 1
+    theta <- 2 * length(node.parents) + 1
     n <- nrow(data)
-    sum_BIC <- sum_BIC +  log(unname(ssq)) + theta * log(n)
+    sum_BIC <- sum_BIC +  n * log(unname(ssq)) + theta * log(n)
   }
   return(as.numeric(sum_BIC))
 }
@@ -59,10 +41,15 @@ parents <- function(cgraph) {
 
 #' @useDynLib causality ccf_score_graph_wrapper
 #' @export
-new_score <- function(graph, df, score = c("BIC", "BDue")) {
-  if(!is.cgraph(graph))
+score <- function(graph,
+                  df,
+                  score = c("BIC", "BDue"),
+                  penalty = 1.0,
+                  sample_prior = 1.0,
+                  structure_prior = 1.0) {
+  if (!is.cgraph(graph))
     stop("graph is not a causality.graph!")
-  if(!is.dag(graph))
+  if (!is.dag(graph))
     stop("graph is not a causality.dag!")
   score <- match.arg(score, c("BIC", "BDeu"))
   # the first step is to convert the data frame into one that only contains
@@ -73,7 +60,7 @@ new_score <- function(graph, df, score = c("BIC", "BDue")) {
     col <- df[[j]]
     if (is.double(col)) {
       col     <- col - mean(col)
-      df[[j]] <- col/sd(col)
+      df[[j]] <- col / sd(col)
     }
     else if (is.integer(col)) {
       dimensions[j] <- length(unique(col))
@@ -87,9 +74,24 @@ new_score <- function(graph, df, score = c("BIC", "BDue")) {
       dimensions[j] <- nlevels(col)
       df[[j]]       <- as.integer(col)
     }
-    else
-      stop("Unrecognized type in df!")
+    if (score == "BIC" && is.integer(col))
+      col <- as.double(col)
   }
-  score <- .Call("ccf_score_graph_wrapper", graph, df, score, dimensions)
+  # deterime the floating and integer arguments depending on the score
+  if (score == "BIC") {
+  floating.args <- c(penalty)
+  integer.args <- c()
+  }
+  else if (score == "BDeu") {
+    floating.args <- c(sample_prior, structure_prior)
+    integer.args <- c()
+  }
+  score <- .Call("ccf_score_graph_wrapper",
+                 graph,
+                 df,
+                 score,
+                 dimensions,
+                 floating.args,
+                 integer.args)
   return(score)
 }
