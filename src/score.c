@@ -81,7 +81,7 @@ double score_graph(cgraph_ptr cg_ptr, dataframe df, double * fargs, int * iargs,
       int j = 1;
       Rprintf("scoring node %i, which has parents", i);
       while(p) {
-        Rprintf(" %i", p->key);
+        Rprintf("%i", p->key);
         xy[j] = p->key;
         j++;
         p = p->next;
@@ -92,4 +92,22 @@ double score_graph(cgraph_ptr cg_ptr, dataframe df, double * fargs, int * iargs,
   }
   Rprintf("total score: %f\n", score);
   return score;
+}
+/* score diff calculates the difference in BIC scores between two configurations
+* new and old */
+double score_diff(dataframe df,
+                int * new_xy,
+                int * old_xy,
+                int new_n_par,
+                int old_n_par,
+                double * fargs,
+                int * iargs,
+                double (* score_fp)(dataframe, int *, int, double *, int *)
+              )
+{
+  if(old_n_par == 0)
+    return score_fp(df, new_xy, new_n_par, fargs, iargs);
+  else
+    return score_fp(df, new_xy, new_n_par, fargs, iargs)
+             - score_fp(df, old_xy, old_n_par, fargs, iargs);
 }
