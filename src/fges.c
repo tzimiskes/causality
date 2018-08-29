@@ -2,8 +2,6 @@
 #include <cgraph.h>
 #include <dataframe.h>
 #include <scores.h>
-const char * BIC_SCORE  = "BIC";
-const char * BDEU_SCORE = "BDeu";
 
 void ccf_fges(cgraph_ptr cg_ptr,
          dataframe df,

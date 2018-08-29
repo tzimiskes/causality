@@ -1,65 +1,106 @@
-#include <causality.h>
+#include <stdlib.h>
+#include <float.h>
 
-
-struct heap {
+typedef struct heap {
   double * dscore;
-  int    * parent;
-  int    * child;
+  void **  records;
   int      max_size;
-  int      cur_size;
-};
+  int      size;
+} heap;
 
-struct heap create_heap(int heap_size) {
-  struct heap heap;
-  heap.max_size  = heap_size;
-  heap.cur_size  = 0;
-  heap.dscore = malloc(heap_size * sizeof(double));
-  heap.parent = malloc(heap_size * sizeof(int));
-  heap.child  = malloc(heap_size * sizeof(int));
-  return heap;
+heap * create_heap(int heap_size) {
+  heap * hp = malloc(sizeof(heap));
+  hp->max_size = heap_size;
+  hp->size     = 0;
+  hp->dscore   = malloc(heap_size * sizeof(double));
+  hp->records  = malloc(heap_size * sizeof(void *));
+  return hp;
 }
 
-void free_heap(struct heap heap) {
-  free(heap.dscore);
-  free(heap.parent);
-  free(heap.child);
+void free_heap(heap * hp) {
+  free(hp->dscore);
+  free(hp->records);
+  free(hp);
 }
 
-inline static int parent(int i) {
+static inline int parent(int i) {
   return (i - 1)/2;
 }
 
-inline static int left(int i) {
+static inline int left(int i) {
   return i*2 + 1;
 }
 
-inline static int right(int i) {
+static inline int right(int i) {
   return i*2 + 2;
 }
 
-inline static void swap(struct heap heap, int i , int min) {
-  double d = heap.dscore[i];
-  int    p = heap.parent[i];
-  int    c = heap.child[i];
+static inline void swap(heap h, int i, int j) {
+  double d = h.dscore[i];
+  void * p = h.records[i];
   /* swap */
-  heap.dscore[i]   = heap.dscore[min];
-  heap.parent[i]   = heap.parent[min];
-  heap.parent[i]   = heap.parent[min];
-  heap.dscore[min] = d;
-  heap.parent[min] = p;
-  heap.parent[min] = c;
+  h.dscore[i]  = h.dscore[j];
+  h.records[i] = h.records[j];
+  h.dscore[j]  = d;
+  h.records[j] = p;
 }
 
-void min_heapify(struct heap heap, int i) {
+/* todo make non recursive */
+static inline void min_heapify(heap h, int i) {
   int l   = left(i);
   int r   = right(i);
   int min = i;
-  if(l < heap.cur_size && (heap.dscore[i] < heap.dscore[i]))
+  if(l < h.size && (h.dscore[i] < h.dscore[i]))
     min = l;
-  if(r < heap.cur_size && heap.dscore[r] < heap.dscore[min])
+  if(r < h.size && h.dscore[r] < h.dscore[min])
     min = r;
   if(i != min) {
-    swap(heap, i, min);
-    min_heapify(heap, min);
+    swap(h, i, min);
+    min_heapify(h, min);
   }
+}
+
+/* probably not working */
+void build_heap(heap * hp) {
+  hp->size = hp->max_size;
+  heap h   = *hp;
+  for(int i = (h.size - 1)/2; i >= 0; --i)
+    min_heapify(h, i);
+}
+
+static inline void pop_heap(heap *  hp) {
+  hp->size--;
+  heap h = *hp;
+  h.dscore[0]  = h.dscore[h.size];
+  h.records[0] = h.records[h.size];
+  min_heapify(h, 0);
+}
+
+void * extract_heap(heap * hp, double * ds) {
+  if(hp->size < 1)
+    return NULL;
+  *ds = hp->dscore[0];
+  void * p = hp->records[0];
+  pop_heap(hp);
+  return p;
+}
+
+static inline void decrease_key(heap heap, int i, double key) {
+  heap.dscore[i] = key;
+  while( i > 0 && heap.dscore[parent(i)] > heap.dscore[i]) {
+    swap(heap, parent(i), i);
+    i = parent(i);
+  }
+}
+
+void insert_heap(heap heap, double dscore, void * p) {
+  heap.size++;
+  heap.dscore[heap.size]  = DBL_MAX;
+  heap.records[heap.size] = p;
+  decrease_key(heap, heap.size - 1, dscore);
+}
+
+void delete_heap(heap * hp, int i) {
+  decrease_key(*hp, i, DBL_MIN);
+  pop_heap(hp);
 }

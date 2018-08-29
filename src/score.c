@@ -4,8 +4,7 @@
 
 #include <benchmarkr.h>
 
-const char * BIC_SCORE  = "BIC";
-const char * BDEU_SCORE = "BDeu";
+
 
 double score_graph(cgraph_ptr cg_ptr, dataframe d, double * fargs, int * iargs,
   double (* score_fp)(dataframe, int *, int, double *, int *));
