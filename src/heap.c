@@ -1,9 +1,10 @@
-#include <stdlib.h>
+#include <causality.h>
 #include <float.h>
 
 typedef struct heap {
   double * dscore;
   void **  records;
+  int *    indices;
   int      max_size;
   int      size;
 } heap;
@@ -14,12 +15,14 @@ heap * create_heap(int heap_size) {
   hp->size     = 0;
   hp->dscore   = malloc(heap_size * sizeof(double));
   hp->records  = malloc(heap_size * sizeof(void *));
+  hp->indices  = malloc(heap_size * sizeof(int));
   return hp;
 }
 
 void free_heap(heap * hp) {
   free(hp->dscore);
   free(hp->records);
+  free(hp->indices);
   free(hp);
 }
 
@@ -28,11 +31,11 @@ static inline int parent(int i) {
 }
 
 static inline int left(int i) {
-  return i*2 + 1;
+  return i * 2 + 1;
 }
 
 static inline int right(int i) {
-  return i*2 + 2;
+  return i * 2 + 2;
 }
 
 static inline void swap(heap h, int i, int j) {
@@ -43,6 +46,9 @@ static inline void swap(heap h, int i, int j) {
   h.records[i] = h.records[j];
   h.dscore[j]  = d;
   h.records[j] = p;
+  /* now we need to redirect the indices so we keep them straight */
+  h.indices[i] = j;
+  h.indices[j] = i;
 }
 
 /* todo make non recursive */
@@ -73,6 +79,7 @@ static inline void pop_heap(heap *  hp) {
   heap h = *hp;
   h.dscore[0]  = h.dscore[h.size];
   h.records[0] = h.records[h.size];
+  h.indices[0] = h.indices[h.size];
   min_heapify(h, 0);
 }
 
@@ -93,14 +100,16 @@ static inline void decrease_key(heap heap, int i, double key) {
   }
 }
 
-void insert_heap(heap heap, double dscore, void * p) {
+void insert_heap(heap heap, double dscore, void * p, int node) {
   heap.size++;
   heap.dscore[heap.size]  = DBL_MAX;
   heap.records[heap.size] = p;
+  heap.indices[node]      = heap.size;
   decrease_key(heap, heap.size - 1, dscore);
 }
 
-void delete_heap(heap * hp, int i) {
-  decrease_key(*hp, i, DBL_MIN);
+/* delete the entry of a node through the heap */
+void delete_heap(heap * hp, int node) {
+  decrease_key(*hp, hp->indices[node], DBL_MIN);
   pop_heap(hp);
 }
