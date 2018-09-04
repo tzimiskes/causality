@@ -16,7 +16,8 @@ typedef struct cgraph {
 
 cgraph_ptr create_cgraph(int n_nodes);
 void fill_in_cgraph(cgraph_ptr cg_ptr, int n_edges, int * edges_ptr);
-void add_edge_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge_type);
+void add_edge_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge);
+void delete_edge_from_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge);
 void free_cgraph(cgraph_ptr cg_ptr);
 cgraph_ptr copy_cgraph(cgraph_ptr cg_ptr);
 

@@ -76,6 +76,21 @@ void add_edge_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge) {
   cg_ptr->n_edges++;
 }
 
+void delete_edge_from_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge) {
+  ill_ptr * parents   = cg_ptr->parents;
+  ill_ptr * children  = cg_ptr->children;
+  ill_ptr * spouses   = cg_ptr->spouses;
+  if(is_directed(edge)) {
+    ill_delete(&parents[node2], node1);
+    ill_delete(&children[node1], node2);
+  }
+  else {
+    ill_delete(&spouses[node2], node1);
+    ill_delete(&spouses[node1], node2);
+  }
+  cg_ptr->n_edges--;
+}
+
 void free_cgraph(cgraph_ptr cg_ptr) {
   cgraph cg          = *cg_ptr;
   ill_ptr * parents  = cg.parents;
