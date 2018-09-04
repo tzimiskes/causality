@@ -4,6 +4,8 @@
 #include <ges_record.h>
 #include <dataframe.h>
 #include <scores.h>
+#include <pdx.h>
+#include <chickering.h>
 #include <edgetypes.h>
 
 void ccf_fges(cgraph_ptr cg_ptr,
@@ -53,9 +55,75 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType,
 
   cgraph_ptr cg_ptr = create_cgraph(df.n_var);
   ccf_fges(cg_ptr, df, score_fp, fargs, iargs);
+  free_cgraph(cg_ptr);
   free(df.df);
   return ScalarReal(0);
 }
+
+
+int is_clique(cgraph_ptr cg_ptr, int * nodes, int n_nodes) {
+  for(int i = 0; i < n_nodes; ++i) {
+    int inode = nodes[i];
+    for(int j = 0; j < i; ++j) {
+      if(!adjacent_in_cgraph(cg_ptr, inode, nodes[j]))
+        return 0;
+    }
+  }
+  return 1;
+}
+
+static inline void ges_insert(cgraph_ptr cg_ptr, ges_record gesrec) {
+  add_edge_to_cgraph(cg_ptr, gesrec.parent, gesrec.child, DIRECTED);
+  for(int i = 0; i < gesrec.n_s; ++i)
+    orient_undirected_edge(cg_ptr, gesrec.s[i], gesrec.child);
+}
+
+void rescore_node(cgraph_ptr cg_ptr,
+         dataframe df,
+         ges_record * gesrecp,
+         double (* score_fp)(dataframe, int *, int, double *, int *),
+         double * fargs,
+         int * iargs)
+{
+  int child = gesrecp->child;
+
+  ges_record * gesrecs    = calloc(df.n_var, sizeof(ges_record));
+  heap       * rescore_hp = create_heap(df.n_var);
+  for(int i = 0; i < df.n_var; ++i) {
+    if(i != child && !adjacent_in_cgraph(cg_ptr, i, child)) {
+      ill_ptr na_xy   = NULL;
+      ill_ptr s       = NULL;
+      ill_ptr tmp     = cg_ptr->spouses[child];
+      int     n_s     = 0;
+      int     n_na_xy = 0;
+      while(tmp) {
+        if(!adjacent_in_cgraph(cg_ptr, i, tmp->key)) {
+          s = ill_insert(s, tmp->key, 0);
+          n_s++;
+        }
+        else {
+          na_xy = ill_insert(na_xy, tmp->key, 0);
+          n_na_xy++;
+        }
+        tmp = tmp->next;
+      }
+
+    }
+  }
+}
+
+
+
+
+static inline void ges_delete(cgraph_ptr cg_ptr, ges_record gesrec) {
+  delete_edge_from_cgraph(cg_ptr, gesrec.parent, gesrec.child, DIRECTED);
+  for(int i = 0; i < gesrec.n_s; ++i) {
+    orient_undirected_edge(cg_ptr, gesrec.parent, gesrec.s[i]);
+    orient_undirected_edge(cg_ptr, gesrec.child, gesrec.s[i]);
+  }
+}
+
+
 
 void ccf_fges(cgraph_ptr cg_ptr,
          dataframe df,
@@ -70,13 +138,13 @@ void ccf_fges(cgraph_ptr cg_ptr,
    * this works is that each the highest scoring edge incident in each node is
    * recorded and then we find the highest scoring edge of all of those by
    * using the heap data structure we have */
-  ges_record * node_scores = calloc(df.n_var, sizeof(ges_record));
+  ges_record * gesrecords = calloc(df.n_var, sizeof(ges_record));
   heap *       queue       = create_heap(df.n_var);
   double *     dscores     = queue->dscores;
   void **      records     = queue->records;
   int  *       indices     = queue->indices;
   for(int i = 0; i < df.n_var; ++i) {
-    records[i] = node_scores + i;
+    records[i] = gesrecords + i;
     indices[i] = i;
   }
   /* step 0 score each edge y --> x. only check score if index(x) < index(y) */
@@ -94,16 +162,26 @@ void ccf_fges(cgraph_ptr cg_ptr,
     }
     Rprintf("dscore %f\n", min);
     dscores[i]            = min;
-    node_scores[i].parent = arg_min;
-    node_scores[i].child  = i;
+    gesrecords[i].parent = arg_min;
+    gesrecords[i].child  = i;
   }
   build_heap(queue);
-  int triple = 0;
-  ges_record * gr_ptr;
-  while(gr_ptr = extract_heap(queue, &dscore)) {
+  ges_record * gesrecp;
+  while((gesrecp = extract_heap(queue, &dscore)) && dscore <= 0) {
+    score += dscore;
+    ges_insert(cg_ptr, *gesrecp);
 
-    add_edge_to_cgraph(cg_ptr, gr_ptr->parent, gr_ptr->child, DIRECTED);
+    rescore_node(cg_ptr, df, gesrecp, score_fp, fargs, iargs);
+    insert_heap(queue, dscore, gesrecp, gesrecp - gesrecords);
+    /* revert the now incomplete PDAG to a pattern */
+    /* COULD BE SPED UP */
+    ccf_chickering(cg_ptr = ccf_pdx(cg_ptr));
 
+
+
+    if(0) {
+      ges_delete(cg_ptr, *gesrecp);
+    }
   }
 
   /* build phase
@@ -120,8 +198,7 @@ void ccf_fges(cgraph_ptr cg_ptr,
   ???
   */
 
-
-
-  free(node_scores);
+  free(gesrecords);
+  print_cgraph(cg_ptr);
   free_heap(queue);
 }
