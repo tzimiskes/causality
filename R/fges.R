@@ -1,4 +1,5 @@
 #' @export
+#' @useDynLib causality ccf_fges_wrapper
 fges <- function(df,
                   score = c("BIC", "BDue"),
                   penalty = 1.0,
@@ -47,5 +48,6 @@ fges <- function(df,
   }
   else if (score == "CG")
     stop("not implemented")
-  return(score)
+  .Call("ccf_fges_wrapper", df, score ,dimensions, floating.args, integer.args)
+  return()
 }

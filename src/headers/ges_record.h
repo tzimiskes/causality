@@ -1,7 +1,7 @@
-#ifndef FGES_RECORD_H
-#define FGES_RECORD_H
+#ifndef GES_RECORD_H
+#define GES_RECORD_H
 
-typedef struct fges_record {
+typedef struct ges_record {
   int   parent;
   int   child;
   int   n_s;

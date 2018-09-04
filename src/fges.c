@@ -1,7 +1,10 @@
 #include <causality.h>
 #include <cgraph.h>
+#include <heap.h>
+#include <ges_record.h>
 #include <dataframe.h>
 #include <scores.h>
+#include <edgetypes.h>
 
 void ccf_fges(cgraph_ptr cg_ptr,
          dataframe df,
@@ -47,10 +50,10 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType,
     error("nope\n");
   /* All the preprocessing work has now been done, so lets instantiate
    * an empty graph and run FGES */
+
   cgraph_ptr cg_ptr = create_cgraph(df.n_var);
   ccf_fges(cg_ptr, df, score_fp, fargs, iargs);
   free(df.df);
-
   return ScalarReal(0);
 }
 
@@ -60,7 +63,48 @@ void ccf_fges(cgraph_ptr cg_ptr,
          double * fargs,
          int * iargs)
 {
-  /* STEP 0 score all y --> x and form a data strucure that will be used */
+  double score  = 0.0f;
+  double dscore = 0.0f;
+  /* We need to set up the priority queue so we know which edge to add
+   * (and the other relevant information) at each stage of fges. Roughly how
+   * this works is that each the highest scoring edge incident in each node is
+   * recorded and then we find the highest scoring edge of all of those by
+   * using the heap data structure we have */
+  ges_record * node_scores = calloc(df.n_var, sizeof(ges_record));
+  heap *       queue       = create_heap(df.n_var);
+  double *     dscores     = queue->dscores;
+  void **      records     = queue->records;
+  int  *       indices     = queue->indices;
+  for(int i = 0; i < df.n_var; ++i) {
+    records[i] = node_scores + i;
+    indices[i] = i;
+  }
+  /* step 0 score each edge y --> x. only check score if index(x) < index(y) */
+  for(int i = 0; i < df.n_var; ++i) {
+    double min     = DBL_MAX;
+    int    arg_min = -1;
+    int    xy[2]   = {i, 0};
+    for(int j = 0; j < i; ++j) {
+      xy[1]     = j;
+      double ds = score_diff(df, xy, NULL, 1, 0, fargs, iargs, score_fp);
+      if(ds < min) {
+        min     = ds;
+        arg_min = j;
+      }
+    }
+    Rprintf("dscore %f\n", min);
+    dscores[i]            = min;
+    node_scores[i].parent = arg_min;
+    node_scores[i].child  = i;
+  }
+  build_heap(queue);
+  int triple = 0;
+  ges_record * gr_ptr;
+  while(gr_ptr = extract_heap(queue, &dscore)) {
+
+    add_edge_to_cgraph(cg_ptr, gr_ptr->parent, gr_ptr->child, DIRECTED);
+
+  }
 
   /* build phase
   * while buff !is.empty()
@@ -78,6 +122,6 @@ void ccf_fges(cgraph_ptr cg_ptr,
 
 
 
-
-
+  free(node_scores);
+  free_heap(queue);
 }

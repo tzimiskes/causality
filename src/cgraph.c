@@ -61,7 +61,7 @@ cgraph_ptr copy_cgraph(cgraph_ptr cg_ptr) {
   return copy_ptr;
 }
 
-void add_node_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge) {
+void add_edge_to_cgraph(cgraph_ptr cg_ptr, int node1, int node2, int edge) {
   ill_ptr * parents   = cg_ptr->parents;
   ill_ptr * children  = cg_ptr->children;
   ill_ptr * spouses   = cg_ptr->spouses;

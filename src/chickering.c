@@ -7,7 +7,7 @@
 
 //#define BENCHMARK
 #include <benchmarkr.h>
-CREATE_TIMER(chickering_timer);
+
 #define UNKNOWN   -1
 #define COMPELLED  1 /* This means directed */
 #define REVERSABLE 2 /* This means undirected */
