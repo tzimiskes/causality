@@ -3,7 +3,7 @@
 typedef struct dataframe {
   void ** df;
   int  *  states;
-  int     n_var;
-  int     n_obs;
+  int     nvar;
+  int     nobs;
 } dataframe;
 #endif
