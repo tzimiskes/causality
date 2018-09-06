@@ -32,9 +32,11 @@ double bic_rss(dataframe data, int *xy, int npar, double *fargs, int *iargs)
     double penalty = fargs[0];
     int    err     = 0;
     /* Allocate memory for cov_xx, cov_xy, and cov_xy_cpy in one block. */
-    double *aug_matrix = CALLOC(npar * (npar + 2), double);
-    double *cov_xx     = aug_matrix;
-    double *cov_xy     = aug_matrix + npar * npar;
+    double *alloced_mem = CALLOC(npar * (npar + 2), double);
+    if(alloced_mem == NULL)
+        error("failed to allocate memory for BIC score\n");
+    double *cov_xx     = alloced_mem;
+    double *cov_xy     = alloced_mem + npar * npar;
     /* Calculate the covariance matrix of the data matrix of the variables x */
     fcov_xx(cov_xx, df, npar, nobs);
     /* calculate the covariance vector between the single variable y and x */
@@ -89,7 +91,7 @@ double bic_rss(dataframe data, int *xy, int npar, double *fargs, int *iargs)
             goto END; /* We can skip the next LAPACK routine */
         }
         /* We need to create a copy of cov_xy to perform the next subroutine */
-        double * cov_xy_cpy = aug_matrix + npar * (npar + 1);
+        double *cov_xy_cpy = alloced_mem + npar * (npar + 1);
         memcpy(cov_xy_cpy, cov_xy, npar * sizeof(double));
         /* Now, we use the LAPACK routine dpotrs to solve the aforemention system
         * cov_xx * X = cov_xy. cov_xy_cpy is modified in place to be transformed
@@ -110,7 +112,7 @@ double bic_rss(dataframe data, int *xy, int npar, double *fargs, int *iargs)
             rss -= fddot(cov_xy, cov_xy_cpy, npar);
         END: {};
     }
-    FREE(aug_matrix);
+    FREE(alloced_mem);
     if(rss < ERROR_THRESH)
         err = NON_POSITIVE_RESIDUAL_VARIANCE;
 
