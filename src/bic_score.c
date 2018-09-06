@@ -19,7 +19,7 @@ void fcov_xx(double *cov_xx, double **df, int npar, int nobs);
 void fcov_xy(double *cov_xy, double **df, int npar, int nobs);
 
 /* TODO */
-double bic_rss(dataframe data, int *xy, int npar, double *fargs, int *iargs)
+double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
 {
     /*
      * The first thing we need to do is construct the (subset of the) dataframe
