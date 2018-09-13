@@ -158,7 +158,7 @@ void fcov_xx(double * restrict cov_xx, double **x, int npar, int nobs)
 void fcov_xy(double * restrict cov_xy, double **df, int npar, int nobs)
 {
     double inv_nminus1 = 1.0f/(nobs - 1);
-    double *y          = df[npar + 1];
+    double *y          = df[npar];
     for(int i = 0 ; i < npar; ++i)
         cov_xy[i] = fddot(df[i], y, nobs) * inv_nminus1;
 }
