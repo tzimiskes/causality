@@ -2,8 +2,8 @@
 #define GES_RECORD_H
 
 typedef struct ges_record {
-  int   parent;
-  int   child;
+  int   x;
+  int   y;
   int   set_size;
   int   naxy_size;
   int * set;
