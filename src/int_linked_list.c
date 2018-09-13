@@ -3,25 +3,26 @@
 
 
 static inline ill_ptr ill_instantiate(int key, int value) {
-  ill_ptr tmp = malloc(sizeof(ill));
+  ill *tmp = malloc(sizeof(ill));
   if(tmp == NULL)
     error("Failed to instaniate linked list!\n");
-  tmp->key =  key;
+  tmp->key   =  key;
   tmp->value = value;
-  tmp->next = NULL;
+  tmp->next  = NULL;
   return(tmp);
 }
 
-ill_ptr ill_insert(ill_ptr root, int key, int value) {
-  if(root == NULL)
-    return(ill_instantiate(key, value));
-  else {
-    ill_ptr tmp = root;
-    while(tmp->next != NULL)
-      tmp = tmp->next;
-    tmp->next = ill_instantiate(key, value);
-    return(root);
-  }
+ill_ptr ill_insert(ill_ptr root, int key, int value)
+{
+    if(root == NULL)
+        return(ill_instantiate(key, value));
+    else {
+        ill_ptr tmp = root;
+        while(tmp->next)
+            tmp = tmp->next;
+        tmp->next = ill_instantiate(key, value);
+        return(root);
+    }
 }
 
 ill_ptr copy_ill(ill_ptr root) {
@@ -74,12 +75,12 @@ void ill_set_value(ill_ptr root, int new_value) {
 
 ill_ptr ill_search(ill_ptr root, const int key) {
   while(root != NULL) {
-    if(root-> key == key)
+    if(root->key == key)
       return root;
     else
       root = root->next;
   }
-  return root; /* root is NULL */
+  return NULL; /* root is NULL */
 }
 
 ill_ptr* create_ptr_to_ill_ptr(const int n) {
