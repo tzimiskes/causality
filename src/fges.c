@@ -8,19 +8,13 @@
 #include <edgetypes.h>
 #include <stdint.h>
 
-
-#define UNBLOCKED_PATH    0
-#define NO_UNBLOCKED_PATH 1
-#define CLIQUE    1
-#define NO_CLIQUE 0
-
 typedef struct gesrec {
   int   x;
   int   y;
   int   set_size;
   int   naxy_size;
-  int * set;
-  int * naxy;
+  int  *set;
+  int  *naxy;
 } gesrec; /*  32 bytes */
 
 cgraph  *ccf_fges(dataframe df, score_func score, double * fargs, int * iargs);
@@ -38,7 +32,7 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     double *fargs = NULL;
     if(!isNull(FloatingArgs))
         fargs = REAL(FloatingArgs);
-        dataframe df;
+    dataframe df;
     df.nvar  = length(Df);
     df.nobs  = length(VECTOR_ELT(Df, 0));
     df.states = INTEGER(States);
@@ -77,64 +71,69 @@ static int is_clique(cgraph *cg, int * nodes, int n_nodes)
     for(int i = 0; i < n_nodes; ++i) {
         int inode = nodes[i];
         for(int j = 0; j < i; ++j) {
-            if(!adjacent_in_cgraph(cg, inode, nodes[j]))
-                return NO_CLIQUE;
+            if(!adjacent_in_cgraph(cg, inode, nodes[j])) {
+                return 0;
+            }
         }
     }
-    return CLIQUE;
+    return 1;
 }
 
-static int traverse(ill *p, ill *queue, ill *v, int dst,
-                            int seps_size, int *seps) {
-    while(p) {
-        int neighbor = p->key;
-        for(int i = 0; i < seps_size; ++i) {
-            if(neighbor == seps[i])
+int unblocked_semidirected_path(cgraph *cg, int src, int dst, int *onion,
+                                            int onion_size)
+{
+
+    int unblocked_path = 0;
+    ill *stack  = ill_insert_front(NULL, src, 0);
+    int *marked = calloc(cg->n_nodes, sizeof(int));
+    if(marked == NULL)
+        error("Failed to allocate memory for marked in fges!\n");
+    while(stack) {
+        /* pop */
+        int node = stack->key;
+        ill *tmp = stack->next;
+        free(stack);
+        stack = tmp;
+        /* check to if T \cup NAXY block the path. */
+        for(int i = 0; i < onion_size; ++i) {
+            if(node == onion[i])
                 goto NEXT;
         }
-        if(neighbor == dst) {
-            return UNBLOCKED_PATH;
+        /* If node == dst, we have a cycle */
+        if(node == dst) {
+            unblocked_path = 1;
+            goto CLEANUP;
         }
-        if(!ill_search(v, neighbor)) {
-            queue = ill_insert(queue, neighbor, 0);
-            v     = ill_insert(v, neighbor, 0);
+        /*
+         * if we haven't visited the node before, we need to push all of its
+         * spouses and children onto the stack and mark it
+         */
+        if(!marked[node]) {
+            marked[node] = 1;
+            ill *p = cg->spouses[node];
+            while(p) {
+                stack = ill_insert_front(stack, p->key, 0);
+                p     = p->next;
+            }
+            p = cg->children[node];
+            while(p) {
+                stack = ill_insert_front(stack, p->key, 0);
+                p     = p->next;
+            }
         }
-        NEXT:
-        p = p->next;
+        NEXT: ;
     }
-    return NO_UNBLOCKED_PATH;
-}
+    CLEANUP: ;
+    if(stack)
+        ill_free(stack);
+    free(marked);
 
-int no_unblocked_semidirected_path(cgraph *cg, int src, int dst,
-                                               int * seps, int seps_size)
-{
-    int no_unblocked_path = 1;
-    ill *queue = ill_insert(NULL, src, 0);
-    ill *v     = ill_insert(NULL, src, 0);
-    while(queue) {
-        /* deque the head of the queue */
-        int node = queue->key;
-        ill *tmp = queue;
-        queue    = queue->next;
-        free(tmp);
-        ill *p = cg->spouses[node];
-        no_unblocked_path = traverse(p, queue, v, dst, seps_size, seps);
-        if(!no_unblocked_path)
-            goto END;
-        p = cg->children[node];
-        no_unblocked_path = traverse(p, queue, v, dst, seps_size, seps);
-        if(!no_unblocked_path)
-            goto END;
-        }
-    END:
-    ill_free(queue);
-    ill_free(v);
-    return no_unblocked_path;
+    return unblocked_path;
 }
 
 int is_valid_insertion(cgraph *cg, gesrec g, int *onion, int onion_size) {
     if(is_clique(cg, onion, onion_size)) {
-        if(no_unblocked_semidirected_path(cg, g.y, g.x, onion, onion_size))
+        if(!unblocked_semidirected_path(cg, g.y, g.x, onion, onion_size))
             return 1;
     }
     return 0;
@@ -144,15 +143,25 @@ gesrec score_powerset(cgraph *cg, dataframe data, gesrec g, double *dscore,
                                       score_func score, double *fargs,
                                       int *iargs)
 {
-    double ds     = DBL_MAX;
     double min_ds = DBL_MAX;
-    gesrec min_g = g;
-    min_g.naxy = malloc(min_g.naxy_size * sizeof(int));
+    gesrec min_g;
+    min_g.x         = g.x;
+    min_g.y         = g.y;
+    min_g.set_size  = 0;
+    min_g.naxy_size = g.naxy_size;
+    min_g.set       = NULL;
+    min_g.naxy      = malloc(min_g.naxy_size * sizeof(int));
+    if(min_g.naxy == NULL)
+        error("failed to allocate memory for naxy in fges!\n");
     memcpy(min_g.naxy, g.naxy, min_g.naxy_size * sizeof(int));
+
     /* saute in butter for best results */
     int *onion = malloc((g.naxy_size + g.set_size) * sizeof(int));
+    if(onion == NULL)
+        error("failed to allocate memory for onion in fges!\n");
     for(int i = 0; i < g.naxy_size; ++i)
         onion[i] = g.naxy[i];
+
     uint64_t n = 1 << g.set_size;
     for(int i = 0; i < n; ++i) {
         int onion_size = 0;
@@ -163,21 +172,26 @@ gesrec score_powerset(cgraph *cg, dataframe data, gesrec g, double *dscore,
             }
         }
         onion_size += g.naxy_size;
+
         if(is_valid_insertion(cg, g, onion, onion_size)) {
             ill *parents = cg->parents[g.y];
             int new_npar = onion_size + ill_size(parents) + 1;
             int *xy = malloc((new_npar + 1) * sizeof(int));
+            if(xy == NULL)
+                error("failed to allocate memory for xy in fges!\n");
             xy[0]        = g.x;
             xy[new_npar] = g.y;
-            int j;
-            for(j = 0; j < onion_size; ++j)
+            for(int j = 0; j < onion_size; ++j)
                 xy[1 + j] = onion[j];
+            int j = onion_size + 1;
             while(parents) {
-                xy[j++] = parents->key;
+                xy[j]   = parents->key;
                 parents = parents->next;
+                j++;
             }
-            ds = score_diff(data, xy, xy + 1, new_npar, new_npar - 1,
+            double ds = score_diff(data, xy, xy + 1, new_npar, new_npar - 1,
                                              fargs, iargs, score);
+            free(xy);
             if(ds < min_ds) {
                 min_ds = ds;
                 min_g.set_size = onion_size - g.naxy_size;
@@ -186,7 +200,6 @@ gesrec score_powerset(cgraph *cg, dataframe data, gesrec g, double *dscore,
                     min_g.set[j] = onion[j + min_g.naxy_size];
                 }
             }
-            free(xy);
         }
     }
     free(onion);
@@ -198,10 +211,8 @@ gesrec score_powerset(cgraph *cg, dataframe data, gesrec g, double *dscore,
 
 static void insert(cgraph *cg, gesrec gesrec)
 {
-    Rprintf("add %i --> %i\n", gesrec.x, gesrec.y);
     add_edge_to_cgraph(cg, gesrec.x, gesrec.y, DIRECTED);
     for(int i = 0; i < gesrec.set_size; ++i) {
-        Rprintf("orient  %i --> %i\n", gesrec.set[i], gesrec.y);
         orient_undirected_edge(cg, gesrec.set[i], gesrec.y);
     }
 }
@@ -235,13 +246,19 @@ double recalcluate_node(dataframe df, cgraph *cg, gesrec *gesrecp,
         int k = 0;
         while(l) {
             int z = l->key;
-            if(adjacent_in_cgraph(cg, x, z))
-                g.naxy[j++] = z;
-            else
-                g.set[k++]  = z;
+            if(adjacent_in_cgraph(cg, x, z)) {
+                g.naxy[j] = z;
+                j++;
+            }
+            else {
+                g.set[k]  = z;
+                k++;
+            }
             l = l->next;
         }
         gesrec min_g = score_powerset(cg, df, g, &dscore, score, fargs, iargs);
+        free(g.set);
+        free(g.naxy);
         if(dscore < min_dscore) {
             min_dscore = dscore;
             free(gesrecp->set);
@@ -252,8 +269,6 @@ double recalcluate_node(dataframe df, cgraph *cg, gesrec *gesrecp,
             free(min_g.set);
             free(min_g.naxy);
         }
-    free(g.set);
-    free(g.naxy);
     }
     //Rprintf("%i --> %i\n naxy %i\n set %i\n dscore %f\n", gesrecp->x, gesrecp->y,
     //gesrecp->naxy_size, gesrecp->set_size, min_dscore);
@@ -316,6 +331,7 @@ cgraph *ccf_fges(dataframe df, score_func score,
         graph_score += dscore;
         insert(cg, *gesrecp);
         ccf_chickering(cg = ccf_pdx(cg));
+        //print_cgraph(cg);
         for(int i = 0; i < df.nvar; ++i) {
             gesrecp = gesrecords + i;
             gesrecp->y = i;
@@ -325,7 +341,6 @@ cgraph *ccf_fges(dataframe df, score_func score,
             queue->indices[i] = i;
         }
         build_heap(queue);
-
         /*
         insert_heap(queue, dscore, gesrecp, gesrecp->y);
         remove_heap(queue, gesrecp->x);
@@ -335,7 +350,7 @@ cgraph *ccf_fges(dataframe df, score_func score,
         */
 
     }
-    /* FORWARD EQUIVALENCE SEARCH (FES) */
+    /* BACKWARD EQUIVALENCE SEARCH (FES) */
     while(0) { /* TODO */}
     if(0) {
         delete(cg, *gesrecp);
@@ -346,8 +361,8 @@ cgraph *ccf_fges(dataframe df, score_func score,
         free(gesrecords[i].naxy);
     }
     free(gesrecords);
-    print_cgraph(cg);
+    //print_cgraph(cg);
     free_heap(queue);
-    Rprintf("fges complete\n");
+    Rprintf("FES complete\n");
     return cg;
 }
