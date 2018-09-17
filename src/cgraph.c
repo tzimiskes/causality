@@ -237,15 +237,21 @@ void unorient_directed_edge(cgraph_ptr cg_ptr, int parent, int child) {
   cg_ptr->spouses[parent] = node;
 }
 
-void print_cgraph(cgraph_ptr cg_ptr) {
-  cgraph cg = *cg_ptr;
-  for (int i = 0; i < cg.n_nodes; ++i) {
-    Rprintf("Parents of %i:\n", i);
-    ill_print(cg.parents[i]);
-    Rprintf("Spouses of  %i:\n", i);
-    ill_print(cg.spouses[i]);
-    Rprintf("Children of  %i:\n", i);
-    ill_print(cg_ptr->children[i]);
-    Rprintf("\n");
-  }
+void print_cgraph(cgraph_ptr cg_ptr)
+{
+    cgraph cg = *cg_ptr;
+    for (int i = 0; i < cg.n_nodes; ++i) {
+        if(cg.parents[i]) {
+            Rprintf("Parents of %i:\n", i);
+            ill_print(cg.parents[i]);
+        }
+        if(cg.spouses[i]) {
+            Rprintf("Spouses of  %i:\n", i);
+            ill_print(cg.spouses[i]);
+        }
+        if(cg.children[i]) {
+            Rprintf("Children of  %i:\n", i);
+            ill_print(cg_ptr->children[i]);
+        }
+    }
 }
