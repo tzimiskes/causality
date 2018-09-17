@@ -1,14 +1,28 @@
 #include <causality.h>
 #include <cgraph.h>
 #include <heap.h>
-#include <ges_record.h>
 #include <dataframe.h>
 #include <scores.h>
 #include <pdx.h>
 #include <chickering.h>
 #include <edgetypes.h>
-
 #include <stdint.h>
+
+
+#define UNBLOCKED_PATH    0
+#define NO_UNBLOCKED_PATH 1
+#define CLIQUE    1
+#define NO_CLIQUE 0
+
+typedef struct gesrec {
+  int   x;
+  int   y;
+  int   set_size;
+  int   naxy_size;
+  int * set;
+  int * naxy;
+} gesrec; /*  32 bytes */
+
 cgraph  *ccf_fges(dataframe df, score_func score, double * fargs, int * iargs);
 
 SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
@@ -50,85 +64,91 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
      */
 
     cgraph *cg = ccf_fges(df, score, fargs, iargs);
+
+
+    /* POST PROCESSING */
     free_cgraph(cg);
     free(df.df);
     return ScalarReal(0);
 }
 
-
-int is_clique(cgraph *cg, int * nodes, int n_nodes)
+static int is_clique(cgraph *cg, int * nodes, int n_nodes)
 {
     for(int i = 0; i < n_nodes; ++i) {
         int inode = nodes[i];
         for(int j = 0; j < i; ++j) {
-            if (i >=0  && j >= 0) {
-                if(!adjacent_in_cgraph(cg, inode, nodes[j]))
-                    return 0;
-            }
+            if(!adjacent_in_cgraph(cg, inode, nodes[j]))
+                return NO_CLIQUE;
         }
     }
-    return 1;
+    return CLIQUE;
 }
 
-int no_unblocked_semidirected_path(cgraph *cg, int x, int y, int * seps,
-                                                   int seps_size)
+static int traverse(ill *p, ill *queue, ill *v, int dst,
+                            int seps_size, int *seps) {
+    while(p) {
+        int neighbor = p->key;
+        for(int i = 0; i < seps_size; ++i) {
+            if(neighbor == seps[i])
+                goto NEXT;
+        }
+        if(neighbor == dst) {
+            return UNBLOCKED_PATH;
+        }
+        if(!ill_search(v, neighbor)) {
+            queue = ill_insert(queue, neighbor, 0);
+            v     = ill_insert(v, neighbor, 0);
+        }
+        NEXT:
+        p = p->next;
+    }
+    return NO_UNBLOCKED_PATH;
+}
+
+int no_unblocked_semidirected_path(cgraph *cg, int src, int dst,
+                                               int * seps, int seps_size)
 {
-    ill *queue = ill_insert(NULL, x, 0);
-    ill *v     = ill_insert(NULL, x, 0);
+    int no_unblocked_path = 1;
+    ill *queue = ill_insert(NULL, src, 0);
+    ill *v     = ill_insert(NULL, src, 0);
     while(queue) {
+        /* deque the head of the queue */
         int node = queue->key;
         ill *tmp = queue;
-        queue = queue->next;
+        queue    = queue->next;
         free(tmp);
-
         ill *p = cg->spouses[node];
-        while(p) {
-            int spouse = p->key;
-            for(int i = 0; i < seps_size; ++i) {
-                if(spouse == seps[i])
-                    goto NEXT_SPOUSE;
-            }
-            if(spouse == y) {
-                ill_free(queue);
-                ill_free(v);
-                return 0;
-            }
-            if(!ill_search(v, spouse)) {
-                queue = ill_insert(queue, spouse, 0);
-                v     = ill_insert(v, spouse, 0);
-            }
-            NEXT_SPOUSE:
-            p = p->next;
-        }
+        no_unblocked_path = traverse(p, queue, v, dst, seps_size, seps);
+        if(!no_unblocked_path)
+            goto END;
         p = cg->children[node];
-        while(p) {
-            int child = p->key;
-            for(int i = 0; i < seps_size; ++i) {
-                if(child == seps[i])
-                    goto NEXT_CHILD;
-            }
-            if(child == y) {
-                ill_free(queue);
-                ill_free(v);
-                return 0;
-            }
-            if(!ill_search(v, child)) {
-                queue = ill_insert(queue, child, 0);
-                v     = ill_insert(v, child, 0);
-            }
-            NEXT_CHILD:
-            p = p->next;
+        no_unblocked_path = traverse(p, queue, v, dst, seps_size, seps);
+        if(!no_unblocked_path)
+            goto END;
         }
-    }
+    END:
     ill_free(queue);
     ill_free(v);
-    return 1;
+    return no_unblocked_path;
 }
 
-double score_powerset(cgraph *cg, dataframe data, ges_record g,
-                                score_func score, double *fargs, int *iargs)
+int is_valid_insertion(cgraph *cg, gesrec g, int *onion, int onion_size) {
+    if(is_clique(cg, onion, onion_size)) {
+        if(no_unblocked_semidirected_path(cg, g.y, g.x, onion, onion_size))
+            return 1;
+    }
+    return 0;
+}
+
+gesrec score_powerset(cgraph *cg, dataframe data, gesrec g, double *dscore,
+                                      score_func score, double *fargs,
+                                      int *iargs)
 {
-    double dscore = DBL_MAX;
+    double ds     = DBL_MAX;
+    double min_ds = DBL_MAX;
+    gesrec min_g = g;
+    min_g.naxy = malloc(min_g.naxy_size * sizeof(int));
+    memcpy(min_g.naxy, g.naxy, min_g.naxy_size * sizeof(int));
     /* saute in butter for best results */
     int *onion = malloc((g.naxy_size + g.set_size) * sizeof(int));
     for(int i = 0; i < g.naxy_size; ++i)
@@ -143,13 +163,12 @@ double score_powerset(cgraph *cg, dataframe data, ges_record g,
             }
         }
         onion_size += g.naxy_size;
-        if(is_clique(cg, onion, onion_size) &&
-           no_unblocked_semidirected_path(cg, g.y,g.y, onion, onion_size)) {
+        if(is_valid_insertion(cg, g, onion, onion_size)) {
             ill *parents = cg->parents[g.y];
-            int new_npar = onion_size + ill_size(parents);
-            int *xy = malloc((new_npar + 2) * sizeof(int));
+            int new_npar = onion_size + ill_size(parents) + 1;
+            int *xy = malloc((new_npar + 1) * sizeof(int));
             xy[0]        = g.x;
-            xy[new_npar + 1] = g.y;
+            xy[new_npar] = g.y;
             int j;
             for(j = 0; j < onion_size; ++j)
                 xy[1 + j] = onion[j];
@@ -157,52 +176,55 @@ double score_powerset(cgraph *cg, dataframe data, ges_record g,
                 xy[j++] = parents->key;
                 parents = parents->next;
             }
-            double ds = score_diff(data, xy, xy + 1, new_npar, new_npar - 1,
+            ds = score_diff(data, xy, xy + 1, new_npar, new_npar - 1,
                                              fargs, iargs, score);
-            if(ds < dscore) {
-                ds  = dscore;
-                g.set_size = onion_size - g.naxy_size;
-                free(g.set);
-                g.set = malloc(g.set_size * sizeof(int));
-                for(int j = 0; j < g.set_size; ++j) {
-                    g.set[j] = onion[j + g.naxy_size];
+            if(ds < min_ds) {
+                min_ds = ds;
+                min_g.set_size = onion_size - g.naxy_size;
+                min_g.set = malloc(min_g.set_size * sizeof(int));
+                for(int j = 0; j < min_g.set_size; ++j) {
+                    min_g.set[j] = onion[j + min_g.naxy_size];
                 }
             }
             free(xy);
         }
     }
     free(onion);
-    return dscore;
+    *dscore = min_ds;
+    return min_g;
 }
 
 
 
-static void insert(cgraph *cg, ges_record gesrec)
+static void insert(cgraph *cg, gesrec gesrec)
 {
+    Rprintf("add %i --> %i\n", gesrec.x, gesrec.y);
     add_edge_to_cgraph(cg, gesrec.x, gesrec.y, DIRECTED);
-    for(int i = 0; i < gesrec.set_size; ++i)
+    for(int i = 0; i < gesrec.set_size; ++i) {
+        Rprintf("orient  %i --> %i\n", gesrec.set[i], gesrec.y);
         orient_undirected_edge(cg, gesrec.set[i], gesrec.y);
+    }
 }
 
-double recalcluate_node(dataframe df, cgraph *cg, ges_record *gesrecp,
-                                         score_func score, double *fargs,
-                                         int *iargs)
+double recalcluate_node(dataframe df, cgraph *cg, gesrec *gesrecp,
+                                      score_func score, double *fargs,
+                                                        int *iargs)
 {
-    double     dscore = 0.0f;
+    double     dscore = DBL_MAX;
     double min_dscore = DBL_MAX;
     int y = gesrecp->y;
     for(int x = 0; x < df.nvar; ++x) {
-        if(x == y || adjacent_in_cgraph(cg, x, y))
+        if((x == y) || adjacent_in_cgraph(cg, x, y))
             continue;
-        ges_record g = {0};
+        gesrec g = {0};
         g.x = x;
         g.y = y;
         ill *l = cg->spouses[y];
         while(l) {
             if(adjacent_in_cgraph(cg, x, l->key))
-                g.naxy_size++;
+                g.naxy_size += 1;
             else
-                g.set_size++;
+                g.set_size += 1;
             l = l->next;
         }
         g.naxy = malloc(g.naxy_size * sizeof(int));
@@ -219,22 +241,27 @@ double recalcluate_node(dataframe df, cgraph *cg, ges_record *gesrecp,
                 g.set[k++]  = z;
             l = l->next;
         }
-        dscore = score_powerset(cg, df, g, score, fargs, iargs);
+        gesrec min_g = score_powerset(cg, df, g, &dscore, score, fargs, iargs);
         if(dscore < min_dscore) {
+            min_dscore = dscore;
             free(gesrecp->set);
             free(gesrecp->naxy);
-            *gesrecp = g;
+            *gesrecp = min_g;
         }
         else {
-            free(g.set);
-            free(g.naxy);
+            free(min_g.set);
+            free(min_g.naxy);
         }
+    free(g.set);
+    free(g.naxy);
     }
-    return dscore;
+    //Rprintf("%i --> %i\n naxy %i\n set %i\n dscore %f\n", gesrecp->x, gesrecp->y,
+    //gesrecp->naxy_size, gesrecp->set_size, min_dscore);
+    return min_dscore;
 }
 
 
-static void delete(cgraph *cg, ges_record gesrec)
+static void delete(cgraph *cg, gesrec gesrec)
 {
     delete_edge_from_cgraph(cg, gesrec.x, gesrec.y, DIRECTED);
     for(int i = 0; i < gesrec.set_size; ++i) {
@@ -250,7 +277,6 @@ cgraph *ccf_fges(dataframe df, score_func score,
     cgraph *cg         = create_cgraph(df.nvar);
     double graph_score = 0.0f;
     double dscore      = 0.0f;
-    Rprintf("hello!\n");
     /*
     * We need to set up the priority queue so we know which edge to add
     * (and the other relevant information) at each stage of fges. Roughly how
@@ -258,7 +284,7 @@ cgraph *ccf_fges(dataframe df, score_func score,
     * recorded and then we find the highest scoring edge of all of those by
     * using the heap data structure we have
     */
-    ges_record *gesrecords = calloc(df.nvar, sizeof(ges_record));
+    gesrec *gesrecords = calloc(df.nvar, sizeof(gesrec));
     heap       *queue      = create_heap(df.nvar);
     double     *dscores    = queue->dscores;
     void      **records    = queue->records;
@@ -267,48 +293,54 @@ cgraph *ccf_fges(dataframe df, score_func score,
         records[i] = gesrecords + i;
         indices[i] = i;
     }
-/* step 0 score each edge y --> x. only check score if index(x) < index(y) */
-    for(int i = 0; i < df.nvar; ++i) {
+    /* STEP 0: score x --> y */
+    for(int y = 0; y < df.nvar; ++y) {
         double min     = DBL_MAX;
         int    arg_min = -1;
-        int    xy[2]   = {0, i};
-        for(int j = 0; j < i; ++j) {
-            xy[0]     = j;
+        for(int x = 0; x < y; ++x) {
+            int    xy[2] = {x, y};
             double ds = score_diff(df, xy, NULL, 1, 0, fargs, iargs, score);
             if(ds < min) {
                 min     = ds;
-                arg_min = j;
+                arg_min = x;
             }
         }
-        dscores[i]      = min;
-        gesrecords[i].x = arg_min;
-        gesrecords[i].y = i;
+        dscores[y]      = min;
+        gesrecords[y].x = arg_min;
+        gesrecords[y].y = y;
     }
     build_heap(queue);
-    Rprintf("here\n");
-    ges_record * gesrecp;
+    /* FORWARD EQUIVALENCE SEARCH (FES) */
+    gesrec * gesrecp;
     while((gesrecp = extract_heap(queue, &dscore)) && dscore <= 0) {
         graph_score += dscore;
-        Rprintf("insert\n");
         insert(cg, *gesrecp);
-        /* revert the now incomplete PDAG to a pattern */
-        /* COULD BE SPED UP */
-        Rprintf("reorient\n");
         ccf_chickering(cg = ccf_pdx(cg));
-        Rprintf("rescore\n");
-        dscore = recalcluate_node(df, cg, gesrecp, score,  fargs, iargs);
-        Rprintf("put in heap\n");
-        insert_heap(queue, dscore, gesrecp, gesrecp - gesrecords);
-
-        Rprintf("graph_score %f\n", graph_score);
-        if(0) {
-            delete(cg, *gesrecp);
+        for(int i = 0; i < df.nvar; ++i) {
+            gesrecp = gesrecords + i;
+            gesrecp->y = i;
+            dscore = recalcluate_node(df, cg, gesrecp, score, fargs, iargs);
+            queue->dscores[i] = dscore;
+            queue->records[i] = gesrecp;
+            queue->indices[i] = i;
         }
+        build_heap(queue);
+
+        /*
+        insert_heap(queue, dscore, gesrecp, gesrecp->y);
+        remove_heap(queue, gesrecp->x);
+        gesrecp = gesrecords + gesrecp->x;
+        dscore = recalcluate_node(df, cg, gesrecp, score, fargs, iargs);
+        insert_heap(queue, dscore, gesrecp, gesrecp->y);
+        */
+
+    }
+    /* FORWARD EQUIVALENCE SEARCH (FES) */
+    while(0) { /* TODO */}
+    if(0) {
+        delete(cg, *gesrecp);
     }
 
-  /* step 2 prune
-  ???
-  */
     for(int i = 0; i < df.nvar; ++i) {
         free(gesrecords[i].set);
         free(gesrecords[i].naxy);
