@@ -53,7 +53,7 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
         rss -= cov_xy[0] * cov_xy[0] / cov_xx[0];
     }
     else if(npar == 2) {
-        double det = cov_xx[0]*cov_xx[3] - cov_xx[1]*cov_xx[1];
+        double det = cov_xx[0] * cov_xx[3] - cov_xx[1] * cov_xx[1];
         /*
          * For a 2x2 symmetric matrix, having a non positive determinent, or
          * a having positive determinant and negative trace is sufficient to
@@ -113,12 +113,13 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
         END: {};
     }
     FREE(alloced_mem);
-    if(rss < ERROR_THRESH)
+    if(rss < ERROR_THRESH) {
         err = NON_POSITIVE_RESIDUAL_VARIANCE;
+    }
 
     if(err) {
         warning("the augmented matrix xy is not of full rank.\n");
-        return NA_REAL;
+        return DBL_MAX;
     }
     return nobs * log(rss) +  penalty * log(nobs) * (2 * npar + 1);
 }
@@ -138,15 +139,15 @@ void fcov_xx(double * restrict cov_xx, double **x, int npar, int nobs)
     double inv_nminus1 = 1.0f/(nobs - 1);
     for(int j = 0; j < npar; ++j) {
         double *x_j          = x[j];
-        double *cov_xx_jnpar = cov_xx + j * npar;
-        double *cov_xx_joff  = cov_xx + j;
+        double *cov_xx_jnp = cov_xx + j * npar;
+        double *cov_xx_jof  = cov_xx + j;
         for(int i = 0; i <= j; ++i) {
             /* then we have cov(x_i, x_i), which is 1 */
             if(i == j)
-                cov_xx_jnpar[i]     = 1.0f;
+                cov_xx_jnp[i]     = 1.0f;
             else
-                cov_xx_joff[i*npar] =
-                cov_xx_jnpar[i]     = fddot(x_j, x[i], nobs) * inv_nminus1;
+                cov_xx_jof[i*npar] =
+                cov_xx_jnp[i]     = fddot(x_j, x[i], nobs) * inv_nminus1;
         }
     }
 }
