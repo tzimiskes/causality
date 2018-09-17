@@ -2,14 +2,15 @@
 #include <int_linked_list.h>
 
 
-static inline ill_ptr ill_instantiate(int key, int value) {
-  ill *tmp = malloc(sizeof(ill));
-  if(tmp == NULL)
-    error("Failed to instaniate linked list!\n");
-  tmp->key   =  key;
-  tmp->value = value;
-  tmp->next  = NULL;
-  return(tmp);
+static inline ill_ptr ill_instantiate(int key, int value)
+{
+    ill *tmp = malloc(sizeof(struct ill));
+    if(tmp == NULL)
+        error("Failed to instaniate linked list!\n");
+    tmp->key   =  key;
+    tmp->value = value;
+    tmp->next  = NULL;
+    return tmp;
 }
 
 ill_ptr ill_insert(ill_ptr root, int key, int value)
@@ -24,6 +25,18 @@ ill_ptr ill_insert(ill_ptr root, int key, int value)
         return(root);
     }
 }
+
+ill_ptr ill_insert_front(ill_ptr root, int key, int value)
+{
+    ill *tmp = ill_instantiate(key, value);
+    if(!root)
+        return tmp;
+    else {
+        tmp->next = root;
+        return tmp;
+    }
+}
+
 
 ill_ptr copy_ill(ill_ptr root) {
   ill_ptr copy = NULL;
