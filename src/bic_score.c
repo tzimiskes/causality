@@ -10,7 +10,7 @@
 
 #define LOOP_UNROLL_SIZE 8
 
-#define ERROR_THRESH     1e-5
+#define ERROR_THRESH     1e-6
 #define NOT_POSITIVE_DEFINITE 1
 #define NON_POSITIVE_RESIDUAL_VARIANCE 2
 
@@ -50,22 +50,25 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
      */
     double rss = 1.0f;
     if(npar == 1) {
-        rss -= cov_xy[0] * cov_xy[0] / cov_xx[0];
+        rss -= cov_xy[0] * cov_xy[0];
     }
+    /*
+     * In the 2x2 case, we have cov_xx = |1, cov(x1, x2)|
+     *                                   |cov(x2, x1), 1|
+     */
     else if(npar == 2) {
-        double det = cov_xx[0] * cov_xx[3] - cov_xx[1] * cov_xx[1];
+        double det = 1.0f - cov_xx[1] * cov_xx[1];
         /*
-         * For a 2x2 symmetric matrix, having a non positive determinent, or
-         * a having positive determinant and negative trace is sufficient to
-         * know that the matrix is not positive definite
+         * For a 2x2 symmetric matrix with 1's on the diagonal, having a non
+         * positive determinent is enough to know that the matrix is not
+         * positive definite
          */
-        if(det < ERROR_THRESH || (det > 0 && cov_xx[3] + cov_xx[0] < 0))
+        if(det < ERROR_THRESH)
             err = NOT_POSITIVE_DEFINITE;
         else
-            /* this is the exact formula to find the inverse of a 2x2 matrix */
-            rss -= (cov_xx[3] * cov_xy[0] * cov_xy[0]
-                      + cov_xx[0] * cov_xy[1] * cov_xy[1]
-                      - 2 * cov_xx[1] * cov_xy[0] * cov_xy[1])/det;
+            /* formula by hand */
+            rss -= (cov_xy[0] * cov_xy[0] + cov_xy[1] * cov_xy[1]
+                   - 2 * cov_xx[1] * cov_xy[0] * cov_xy[1])/det;
         }
     /*
      * since npar > 2, we will now use a few LAPACK routines to solve the
@@ -118,7 +121,7 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
     }
 
     if(err) {
-        warning("the augmented matrix xy is not of full rank.\n");
+        warning("The augmented matrix xy is not of full rank!\n");
         return DBL_MAX;
     }
     return nobs * log(rss) +  penalty * log(nobs) * (2 * npar + 1);
@@ -134,15 +137,15 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
  * data.frames, so we need to calculate cov_xx anyway to create a compact matrix
  * libRblas can operate on.
  */
-void fcov_xx(double * restrict cov_xx, double **x, int npar, int nobs)
+void fcov_xx(double *cov_xx, double **x, int npar, int nobs)
 {
     double inv_nminus1 = 1.0f/(nobs - 1);
     for(int j = 0; j < npar; ++j) {
         double *x_j          = x[j];
         double *cov_xx_jnp = cov_xx + j * npar;
-        double *cov_xx_jof  = cov_xx + j;
+        double *cov_xx_jof = cov_xx + j;
         for(int i = 0; i <= j; ++i) {
-            /* then we have cov(x_i, x_i), which is 1 */
+            /* cov(x_i, x_i) == 1 */
             if(i == j)
                 cov_xx_jnp[i]     = 1.0f;
             else
@@ -156,7 +159,7 @@ void fcov_xx(double * restrict cov_xx, double **x, int npar, int nobs)
  * fcov_xy caclulates the covariance vector between the ranodom variable x
  * and the random variable vector, y.
  */
-void fcov_xy(double * restrict cov_xy, double **df, int npar, int nobs)
+void fcov_xy(double *cov_xy, double **df, int npar, int nobs)
 {
     double inv_nminus1 = 1.0f/(nobs - 1);
     double *y          = df[npar];
@@ -183,13 +186,13 @@ static double fddot(double *x, double *y, int n)
     }
     q = q * LOOP_UNROLL_SIZE;
     switch(r) {
-    case 7: psums[7] += x[q + 7] * y[q + 7];
-    case 6: psums[6] += x[q + 6] * y[q + 6];
-    case 5: psums[5] += x[q + 5] * y[q + 5];
-    case 4: psums[4] += x[q + 4] * y[q + 4];
-    case 3: psums[3] += x[q + 3] * y[q + 3];
-    case 2: psums[2] += x[q + 2] * y[q + 2];
-    case 1: psums[1] += x[q + 1] * y[q + 1];
+    case 7: psums[6] += x[q + 6] * y[q + 6];
+    case 6: psums[5] += x[q + 5] * y[q + 5];
+    case 5: psums[4] += x[q + 4] * y[q + 4];
+    case 4: psums[3] += x[q + 3] * y[q + 3];
+    case 3: psums[2] += x[q + 2] * y[q + 2];
+    case 2: psums[1] += x[q + 1] * y[q + 1];
+    case 1: psums[0] += x[q + 0] * y[q + 0];
     case 0:
         psums[0] += psums[1] + psums[2] + psums[3] + psums[4]
                              + psums[5] + psums[6] + psums[7];
