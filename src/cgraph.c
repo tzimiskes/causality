@@ -145,7 +145,7 @@ int edge_directed_in_cgraph(struct cgraph *cg, int parent, int child)
 {
     struct ill *children = cg->children[parent];
     while (children) {
-        ill node = *children;
+        struct ill node = *children;
         if (node.key == child)
             return 1;
         children = node.next;

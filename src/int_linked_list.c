@@ -2,34 +2,34 @@
 #include <int_linked_list.h>
 
 
-static inline ill_ptr ill_instantiate(int key, int value)
+static struct ill * ill_instantiate(int key, int value)
 {
-    ill *tmp = malloc(sizeof(struct ill));
-    if(tmp == NULL)
+    struct ill *p = malloc(sizeof(struct ill));
+    if (p == NULL)
         error("Failed to instaniate linked list!\n");
-    tmp->key   =  key;
-    tmp->value = value;
-    tmp->next  = NULL;
-    return tmp;
+    p->key   =  key;
+    p->value = value;
+    p->next  = NULL;
+    return p;
 }
 
-ill_ptr ill_insert(ill_ptr root, int key, int value)
+struct ill * ill_insert(struct ill *root, int key, int value)
 {
-    if(root == NULL)
+    if (root == NULL)
         return(ill_instantiate(key, value));
     else {
-        ill_ptr tmp = root;
-        while(tmp->next)
-            tmp = tmp->next;
-        tmp->next = ill_instantiate(key, value);
+        struct ill *p = root;
+        while (p->next)
+            p = p->next;
+        p->next = ill_instantiate(key, value);
         return(root);
     }
 }
 
-ill_ptr ill_insert_front(ill_ptr root, int key, int value)
+struct ill * ill_insert_front(struct ill *root, int key, int value)
 {
-    ill *tmp = ill_instantiate(key, value);
-    if(!root)
+    struct ill *tmp = ill_instantiate(key, value);
+    if (!root)
         return tmp;
     else {
         tmp->next = root;
@@ -38,112 +38,88 @@ ill_ptr ill_insert_front(ill_ptr root, int key, int value)
 }
 
 
-ill_ptr copy_ill(ill_ptr root) {
-  ill_ptr copy = NULL;
-  while(root != NULL) {
-    copy = ill_insert(copy, root->key, root->value);
-    root = root->next;
-  }
-  return copy;
-}
-
-void ill_set_next(ill_ptr root, ill_ptr next) {
-  root->next = next;
-}
-
-ill_ptr ill_next(ill_ptr root) {
-  return(root->next);
-}
-
-int ill_key(ill_ptr root) {
-  return(root->key);
-}
-
-int ill_value(ill_ptr root) {
-  return(root->value);
-}
-
-void ill_free(ill_ptr root) {
-  while(root != NULL) {
-    ill_ptr next = root->next;
-    free(root);
-    root = next;
-  }
-}
-
-void ill_set_key(ill_ptr root, int new_key) {
-  if(root != NULL)
-    root->key = new_key;
-  else
-    error("Cannot assign key to a NULL pointer!\n");
-
-}
-
-void ill_set_value(ill_ptr root, int new_value) {
-  if(root != NULL)
-    root->value = new_value;
-  else
-    error("Cannot assign value to a NULL pointer!\n");
-}
-
-ill_ptr ill_search(ill_ptr root, const int key) {
-  while(root != NULL) {
-    if(root->key == key)
-      return root;
-    else
-      root = root->next;
-  }
-  return NULL; /* root is NULL */
-}
-
-ill_ptr* create_ptr_to_ill_ptr(const int n) {
-  ill_ptr* hash_table = malloc(n*sizeof(ill_ptr));
-  if(hash_table == NULL)
-    error("Failed to allocate pointer for ill_ptr*\n");
-  for(int i = 0; i < n; ++i)
-    hash_table[i] = NULL;
-  return(hash_table);
-}
-
-ill_ptr create_ill_ptr(const int n) {
-  ill_ptr ptr = calloc(n, sizeof(ill));
-  if(ptr == NULL)
-    error("Failed to allocate pointer for ill_ptr\n");
-  return(ptr);
-}
-
-void ill_print(ill_ptr root) {
-  while(root != NULL) {
-    Rprintf("Key: %i Value: %i\n", root->key, root->value);
-    root = root->next;
-  }
-}
-
-int ill_size(ill_ptr root) {
-  int size = 0;
-  while(root) {
-    size++;
-    root = root->next;
-  }
-  return size;
-}
-
-void ill_delete(ill_ptr* root, int key) {
-  ill_ptr tmp = *root; /* should probably check to see if this is not null */
-  if(tmp == NULL)
-    error("*root is NULL\n");
-  if(tmp->key == key) {
-    *root = (*root)->next;
-    free(tmp);
-    return;
-  }
-  while(tmp->next != NULL) {
-    if(tmp->next->key == key) {
-      ill_ptr tmp2 = tmp->next;
-      tmp->next    = tmp->next->next;
-      free(tmp2);
-      return;
+struct ill * copy_ill(struct ill *root)
+{
+    struct ill *copy = NULL;
+    while (root) {
+        copy = ill_insert(copy, root->key, root->value);
+        root = root->next;
     }
-    tmp = tmp->next;
-  }
+    return copy;
+}
+
+void ill_free(struct ill *root)
+{
+    while (root != NULL) {
+        struct ill *next = root->next;
+        free(root);
+        root = next;
+    }
+}
+
+struct ill * ill_search(struct ill *root, int key) {
+    while (root) {
+        if (root->key == key)
+            return root;
+        else
+        root = root->next;
+    }
+    return NULL; /* root is NULL */
+}
+
+struct ill ** create_ptr_to_ill_ptr(int n)
+{
+    ill_ptr* array = malloc(n * sizeof(struct ill *));
+    if (array == NULL)
+        error("Failed to allocate pointer for ill_ptr*\n");
+    for(int i = 0; i < n; ++i)
+        array[i] = NULL;
+    return(array);
+}
+
+struct ill * create_ill_ptr(int n)
+{
+    struct ill *p = calloc(n, sizeof(struct ill));
+    if (p == NULL)
+        error("Failed to allocate pointer for ill_ptr\n");
+    return(p);
+}
+
+void ill_print(struct ill *root)
+{
+    while (root) {
+        Rprintf("Key: %i Value: %i\n", root->key, root->value);
+        root = root->next;
+    }
+}
+
+int ill_size(struct ill *root)
+{
+    int size = 0;
+    while (root) {
+        size++;
+        root = root->next;
+    }
+    return size;
+}
+
+void ill_delete(ill_ptr* root, int key)
+{
+    struct ill *p = *root; /* should probably check to see if this is not null */
+    if (p == NULL)
+        error("*root is NULL\n");
+    if (p->key == key) {
+        *root = (*root)->next;
+        free(p);
+        return;
+    }
+    while (p->next) {
+        if (p->next->key == key) {
+            struct ill *p2 = p->next;
+            p->next    = p->next->next;
+            free(p2);
+            return;
+        }
+        p = p->next;
+    }
 }

@@ -14,7 +14,7 @@ static void insertion_sort(struct ill *list);
 static void find_compelled(struct cgraph *cg, int *sort);
 
 SEXP ccf_chickering_wrapper(SEXP Graph) {
-    int *edges        = calculate_edges_ptr(Graph);
+    int *edges         = calculate_edges_ptr(Graph);
     int  n_nodes       = length(VECTOR_ELT(Graph, NODES));
     int  n_edges       = nrows(VECTOR_ELT(Graph, EDGES));
     struct cgraph *cg = create_cgraph(n_nodes);
@@ -61,7 +61,7 @@ static void order_edges(struct cgraph *cg, int *sort)
  * faster because the average degree of causal graphs is 2-5, and insertion sort
  * is faster than merge sort until we hit 10-50 elements.
  */
-static void insertion_sort(ill *list)
+static void insertion_sort(struct ill *list)
 {
     while (list) {
         struct ill *top = list;
@@ -81,7 +81,7 @@ static void insertion_sort(ill *list)
     }
 }
 
-static void find_compelled(struct cgraph *cg, int * sort)
+static void find_compelled(struct cgraph *cg, int *sort)
 {
     struct ill **parents = cg->parents;
     int          n_nodes = cg->n_nodes;
@@ -92,8 +92,8 @@ static void find_compelled(struct cgraph *cg, int * sort)
     for (int i = 0; i < n_nodes; ++i) {
         struct ill *p = parents[i];
         while (p) {
-            ill_set_value(p, UNKNOWN);
-            p = p->next;
+            p->value = UNKNOWN;
+            p        = p->next;
         }
     }
     /*

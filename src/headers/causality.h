@@ -28,9 +28,9 @@
 #define EDGES       2
 #define NCOL_EDGES  3
 
-int *  calculate_edges_ptr(SEXP Graph);
-SEXP   calculate_edges_from_ptr(int * edges_ptr, SEXP Graph);
-void   recalculate_edges_from_cgraph(cgraph_ptr cg_ptr, SEXP Graph);
-int    is_directed(int edge);
-int *  calculate_edges_ptr(SEXP Graph);
+int * calculate_edges_ptr(SEXP Graph);
+SEXP  calculate_edges_from_ptr(int *edges_ptr, SEXP Graph);
+void  recalculate_edges_from_cgraph(cgraph_ptr cg_ptr, SEXP Graph);
+int   is_directed(int edge);
+int * calculate_edges_ptr(SEXP Graph);
 #endif

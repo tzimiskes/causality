@@ -162,11 +162,11 @@ static int meek3(cgraph_ptr cg_ptr, const int x, const int y) {
   // look for node3 --> node1
   ill_ptr x_par    = parents[x];
   while(x_par) {
-    int z = ill_key(x_par); /* found node3 */
+    int z = x_par->key; /* found node3 */
     // look for node4 --> node1
     ill_ptr x_par_cpy = parents[x];
     while(x_par_cpy) {
-      if(ill_key(x_par_cpy) != z) {
+      if(x_par_cpy->key != z) {
         int w = x_par_cpy->key;
         // check to see if they are adjacent
         if(!adjacent_in_cgraph(cg_ptr, w, z)) {
@@ -181,12 +181,12 @@ static int meek3(cgraph_ptr cg_ptr, const int x, const int y) {
       }
       x_par_cpy = x_par_cpy->next;
     }
-    x_par = ill_next(x_par);
+    x_par = x_par->next;
   }
   // now we look through the parents of node2 instead of node1
   ill_ptr y_par = parents[y];
   while(y_par) {
-      int z = ill_key(y_par);
+      int z = y_par->key;
       // look for node4 --> node1
       ill_ptr y_par_cpy = parents[y];
       while(y_par_cpy) {
