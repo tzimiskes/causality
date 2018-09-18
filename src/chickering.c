@@ -5,9 +5,6 @@
 #include <sort.h>
 #include <chickering.h>
 
-//#define BENCHMARK
-#include <benchmarkr.h>
-
 #define UNKNOWN   -1
 #define COMPELLED  1 /* This means directed */
 #define REVERSABLE 2 /* This means undirected */
@@ -23,12 +20,11 @@ SEXP ccf_chickering_wrapper(SEXP Graph) {
     struct cgraph *cg = create_cgraph(n_nodes);
     fill_in_cgraph(cg, n_edges, edges);
     free(edges);
-    TIME_FUNC(chickering_timer, ccf_chickering(cg));
+    ccf_chickering(cg);
     SEXP Pattern = PROTECT(duplicate(Graph));
     recalculate_edges_from_cgraph(cg, Pattern);
     free_cgraph(cg);
     UNPROTECT(1);
-    PRINT_TIMER(chickering_timer);
     return Pattern;
 }
 
