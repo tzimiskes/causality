@@ -5,13 +5,12 @@
 
 #define UNDEFINED  0
 
-typedef struct cgraph * cgraph_ptr;
 struct cgraph {
-  struct ill **parents;
-  struct ill **spouses;
-  struct ill **children;
-  int       n_nodes;
-  int       n_edges;
+    struct ill **parents;
+    struct ill **spouses;
+    struct ill **children;
+    int       n_nodes;
+    int       n_edges;
 }; /* 32 bytes */
 
 struct cgraph * create_cgraph(int n_nodes);

@@ -46,7 +46,7 @@ SEXP calculate_edges_from_ptr(int *edges_ptr, SEXP Graph)
     return(Output);
 }
 
-void recalculate_edges_from_cgraph(cgraph_ptr cg_ptr, SEXP Graph)
+void recalculate_edges_from_cgraph(struct cgraph *cg_ptr, SEXP Graph)
 {
     SEXP Edges        = PROTECT(VECTOR_ELT(Graph, EDGES));
     SEXP Nodes        = PROTECT(VECTOR_ELT(Graph, NODES));
