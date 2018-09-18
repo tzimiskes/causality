@@ -2,7 +2,7 @@
 #include <dataframe.h>
 #include <scores.h>
 
-double score_graph(cgraph_ptr cg_ptr, dataframe d, double * fargs, int * iargs,
+double score_graph(struct cgraph *cg, dataframe d, double * fargs, int * iargs,
   score_func score);
 
 SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
@@ -11,17 +11,17 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
     int    *edges   = calculate_edges_ptr(Graph);
     int     n_nodes = length(VECTOR_ELT(Graph, NODES));
     int     n_edges = nrows(VECTOR_ELT(Graph, EDGES));
-    cgraph *cg      = create_cgraph(n_nodes);
+    struct cgraph *cg      = create_cgraph(n_nodes);
     fill_in_cgraph(cg, n_edges, edges); free(edges);
     /*
      * Determine the integer arguments and floating point arguments for the
      * score function.
      */
     int *iargs = NULL;
-    if(!isNull(IntegerArgs))
+    if (!isNull(IntegerArgs))
         iargs = INTEGER(IntegerArgs);
     double *fargs = NULL;
-    if(!isNull(FloatingArgs))
+    if (!isNull(FloatingArgs))
         fargs = REAL(FloatingArgs);
     /*
      * states stores the number of states (in the sense of degrees of freedom)
@@ -38,15 +38,15 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
     df.states = INTEGER(States);
     df.df     = malloc(df.nvar * sizeof(void *));
     /* populate df with the pointers to the columns of the R dataframe */
-    for(int i = 0; i < df.nvar; ++i) {
-        if(df.states[i] != 0)
+    for (int i = 0; i < df.nvar; ++i) {
+        if (df.states[i] != 0)
             df.df[i] = INTEGER(VECTOR_ELT(Df, i));
         else
             df.df[i] = REAL(VECTOR_ELT(Df, i));
     }
 
     score_func score;
-    if(!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
+    if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
         score = bic_score;
     else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
         score = bdeu_score;
@@ -65,18 +65,18 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
  * to construct the model x --> y, where x:= Parents(y), and then score
  * the model given the data.
  */
-double score_graph(cgraph *cg, dataframe df, double *fargs, int *iargs,
+double score_graph(struct cgraph *cg, dataframe df, double *fargs, int *iargs,
                                       score_func score)
 {
     double   graph_score = 0.0f;
     int      n_nodes     = cg->n_nodes;
     ill_ptr *parents     = cg->parents;
-    for(int i = 0; i < n_nodes; ++i) {
+    for (int i = 0; i < n_nodes; ++i) {
         ill_ptr p = parents[i];
-        if(p) {
+        if (p) {
             int npar = ill_size(p);
             int xy[npar + 1];
-            for(int j = 0; j < npar; ++j) {
+            for (int j = 0; j < npar; ++j) {
                 xy[j] = p->key;
                 p     = p->next;
             }
@@ -95,7 +95,7 @@ double score_diff(dataframe df, int *new_xy, int *old_xy, int new_npar,
                                 int old_npar, double *fargs, int *iargs,
                                 score_func score)
 {
-    if(old_npar == 0)
+    if (old_npar == 0)
         return score(df, new_xy, new_npar, fargs, iargs);
     else
         return score(df, new_xy, new_npar, fargs, iargs)

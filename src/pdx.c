@@ -23,20 +23,20 @@ static int is_clique(struct cll *node, struct cgraph *cg)
 {
     ill_ptr spouses = *(node->spouses);
     /* grab a spouse (undirected adjacent) */
-    while(spouses) {
+    while (spouses) {
         int          spouse = spouses->key;
         struct ill *parents = *(node->parents);
         /* make sure spouse is adjacent to the parents of node */
-        while(parents) {
-            if(!adjacent_in_cgraph(cg, spouse, parents->key))
+        while (parents) {
+            if (!adjacent_in_cgraph(cg, spouse, parents->key))
                 return 0;
             parents = parents->next;
         }
         /* make sure spouse is adjacent to the other spouses of node */
         struct ill *p = *(node->spouses);
-        while(p) {
+        while (p) {
             int spouse2 = p->key;
-            if(spouse2 != spouse && !adjacent_in_cgraph(cg, spouse, spouse2))
+            if (spouse2 != spouse && !adjacent_in_cgraph(cg, spouse, spouse2))
                 return 0;
             p = p->next;
         }
@@ -45,11 +45,11 @@ static int is_clique(struct cll *node, struct cgraph *cg)
     return 1;
 }
 
-static inline void orient_in_cgraph(cgraph_ptr cg_ptr, int node) {
-  ill_ptr spouse = cg_ptr->spouses[node];
-  while(spouse) {
-    orient_undirected_edge(cg_ptr, spouse->key, node);
-    spouse = cg_ptr->spouses[node];
+static inline void orient_in_cgraph(struct cgraph *cg, int node) {
+  ill_ptr spouse = cg->spouses[node];
+  while (spouse) {
+    orient_undirected_edge(cg, spouse->key, node);
+    spouse = cg->spouses[node];
   }
 }
 
@@ -58,12 +58,12 @@ void remove_node(struct cll *current, struct cll *nodes)
     int node = current - nodes; /* ptr arithemtic */
     /* delete all listings of node in its parents and spouses */
     struct ill *parents = *(current->parents);
-    while(parents) {
+    while (parents) {
         ill_delete(nodes[parents->key].children, node);
         parents = parents->next;
     }
     struct ill *spouses = *(current->spouses);
-    while(spouses) {
+    while (spouses) {
         ill_delete(nodes[spouses->key].spouses, node);
         spouses = spouses->next;
     }
@@ -78,7 +78,7 @@ SEXP ccf_pdx_wrapper(SEXP Pdag)
     fill_in_cgraph(cg, n_edges, edges_ptr);
     free(edges_ptr);
     cg = ccf_pdx(cg);
-    if(cg == NULL) {
+    if (cg == NULL) {
         return R_NilValue;
     }
     SEXP Dag = PROTECT(duplicate(Pdag));
@@ -88,18 +88,18 @@ SEXP ccf_pdx_wrapper(SEXP Pdag)
     return Dag;
 }
 
-cgraph_ptr ccf_pdx(struct cgraph *cg)
+struct cgraph * ccf_pdx(struct cgraph *cg)
 {
     int            n_nodes = cg->n_nodes;
     struct cgraph *copy    = copy_cgraph(cg);
     struct cll    *nodes   = calloc(n_nodes, sizeof(struct cll));
-    if(nodes == NULL)
+    if (nodes == NULL)
         error("Failed to allocate memory for nodes in cf_extend_pdag\n");
     // set up circular linked list
     struct ill **parents  = cg->parents;
     struct ill **spouses  = cg->spouses;
     struct ill **children = cg->children;
-    for(int i = 0; i < n_nodes; ++i) {
+    for (int i = 0; i < n_nodes; ++i) {
         nodes[i].parents  = parents  + i;
         nodes[i].children = children + i;
         nodes[i].spouses  = spouses  + i;
@@ -110,8 +110,8 @@ cgraph_ptr ccf_pdx(struct cgraph *cg)
     int         n_checked = 0;
     int         ll_size   = n_nodes;
     /* Comment needed */
-    while(ll_size > 0 && n_checked <= ll_size) {
-        if(is_sink(current) && is_clique(current, cg)) {
+    while (ll_size > 0 && n_checked <= ll_size) {
+        if (is_sink(current) && is_clique(current, cg)) {
             orient_in_cgraph(copy, current - nodes);
             remove_node(current, nodes);
             prev->next = current->next;
@@ -129,7 +129,7 @@ cgraph_ptr ccf_pdx(struct cgraph *cg)
     /* check to see if pdx failed to generate an extension. If there is a
     * failure, free the copy_ptr and set it to NULL. */
     int failure = ll_size  > 0 ? 1 : 0;
-    if(failure) {
+    if (failure) {
         free_cgraph(copy);
         copy = NULL;
     }

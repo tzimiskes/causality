@@ -2,18 +2,20 @@
 #include <float.h>
 #include <heap.h>
 
-heap *create_heap(int heap_size)
+struct heap *create_heap(int heap_size)
 {
-    heap *hp = malloc(sizeof(heap));
+    struct heap *hp = calloc(1, sizeof(struct heap));
     hp->max_size = heap_size;
     hp->size     = 0;
     hp->dscores  = malloc(heap_size * sizeof(double));
     hp->records  = malloc(heap_size * sizeof(void *));
     hp->indices  = malloc(heap_size * sizeof(int));
+    if (!hp->dscores || !hp->records || !hp->records)
+        error("Failed to allocate memory for heap!\n");
     return hp;
 }
 
-void free_heap(heap * hp)
+void free_heap(struct heap *hp)
 {
     free(hp->dscores);
     free(hp->records);
@@ -36,7 +38,7 @@ static inline int right(int i)
     return i * 2 + 2;
 }
 
-static inline void swap(heap *hp, int i, int j)
+static inline void swap(struct heap *hp, int i, int j)
 {
     double d = hp->dscores[i];
     void  *p = hp->records[i];
@@ -51,29 +53,29 @@ static inline void swap(heap *hp, int i, int j)
 }
 
 /* todo make non recursive */
-static inline void min_heapify(heap *hp, int i)
+static inline void min_heapify(struct heap *hp, int i)
 {
     int l   = left(i);
     int r   = right(i);
     int min = i;
-    if(l < hp->size && (hp->dscores[l] < hp->dscores[min]))
+    if (l < hp->size && (hp->dscores[l] < hp->dscores[min]))
         min = l;
-    if(r < hp->size && hp->dscores[r] < hp->dscores[min])
+    if (r < hp->size && hp->dscores[r] < hp->dscores[min])
         min = r;
-    if(i != min) {
+    if (i != min) {
         swap(hp, i, min);
         min_heapify(hp, min);
     }
 }
 
-void build_heap(heap *hp)
+void build_heap(struct heap *hp)
 {
     hp->size = hp->max_size;
-    for(int i = (hp->size - 1)/2; i >= 0; --i)
+    for (int i = (hp->size - 1)/2; i >= 0; --i)
         min_heapify(hp, i);
 }
 
-static inline void pop_heap(heap *hp)
+static inline void pop_heap(struct heap *hp)
 {
     hp->dscores[0] = hp->dscores[hp->size -1];
     hp->records[0] = hp->records[hp->size -1];
@@ -82,10 +84,10 @@ static inline void pop_heap(heap *hp)
     min_heapify(hp, 0);
 }
 
-void *extract_heap(heap *hp, double *ds)
+void *extract_heap(struct heap *hp, double *ds)
 {
     void *p;
-    if(hp->size < 1)
+    if (hp->size < 1)
         return NULL;
 
     *ds = hp->dscores[0];
@@ -94,16 +96,16 @@ void *extract_heap(heap *hp, double *ds)
     return p;
 }
 
-void decrease_key(heap *hp, int i, double key)
+void decrease_key(struct heap *hp, int i, double key)
 {
     hp->dscores[i] = key;
-    while(i > 0 && (hp->dscores[parent(i)] > hp->dscores[i])) {
+    while (i > 0 && (hp->dscores[parent(i)] > hp->dscores[i])) {
         swap(hp, parent(i), i);
         i = parent(i);
     }
 }
 
-void insert_heap(heap *hp, double ds, void *p, int node)
+void insert_heap(struct heap *hp, double ds, void *p, int node)
 {
     hp->dscores[hp->size] = DBL_MAX;
     hp->records[hp->size] = p;
@@ -113,7 +115,7 @@ void insert_heap(heap *hp, double ds, void *p, int node)
 }
 
 /* delete the entry of a node through the heap */
-void remove_heap(heap * hp, int node)
+void remove_heap(struct heap *hp, int node)
 {
     decrease_key(hp, hp->indices[node], DBL_MIN);
     pop_heap(hp);

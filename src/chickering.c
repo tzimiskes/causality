@@ -45,9 +45,9 @@ static void order_edges(struct cgraph *cg, int *sort)
     struct ill **parents = cg->parents;
     int          n_nodes = cg->n_nodes;
     /* can be parallelized */
-    for(int i = 0; i < n_nodes; ++i) {
+    for (int i = 0; i < n_nodes; ++i) {
         ill_ptr tmp = parents[i];
-        while(tmp) {
+        while (tmp) {
             tmp->value = sort[tmp->key];
             tmp        = tmp->next;
         }
@@ -63,11 +63,11 @@ static void order_edges(struct cgraph *cg, int *sort)
  */
 static void insertion_sort(ill *list)
 {
-    while(list) {
+    while (list) {
         struct ill *top = list;
         struct ill *max = list;
-        while(top) {
-            if(top->value > max->value)
+        while (top) {
+            if (top->value > max->value)
                 max = top;
             top = top->next;
         }
@@ -89,9 +89,9 @@ static void find_compelled(struct cgraph *cg, int * sort)
      * order edges sets the value parameter for each edge, so we need to
      * change the value for everything to UNKNOWN
      */
-    for(int i = 0; i < n_nodes; ++i) {
+    for (int i = 0; i < n_nodes; ++i) {
         struct ill *p = parents[i];
-        while(p) {
+        while (p) {
             ill_set_value(p, UNKNOWN);
             p = p->next;
         }
@@ -100,13 +100,13 @@ static void find_compelled(struct cgraph *cg, int * sort)
      * we iterate through the sort to satisfy the max min condition
      * necessary to run this part of the algorithm
      */
-    for(int i = 0; i < n_nodes; ++i) {
+    for (int i = 0; i < n_nodes; ++i) {
         /* by lemma 5 in Chickering, all the incident edges on y are unknown
          * so we don't need to check to see its unordered */
         int         y         = sort[i];
         struct ill *y_parents = parents[y];
         /* if y has no incident edges, go to the next node in the order */
-        if(y_parents == NULL)
+        if (y_parents == NULL)
             continue;
         /* Since y has parents, run stepts 5-8 */
         int         x         = y_parents->key;
@@ -116,18 +116,18 @@ static void find_compelled(struct cgraph *cg, int * sort)
          * check to see if w forms a chain (w -> x -> y)
          * or shielded collider (w -> x -> y and w -> x)
          */
-        while(x_parents) { /* STEP 5 */
-            if(x_parents->value != COMPELLED)
+        while (x_parents) { /* STEP 5 */
+            if (x_parents->value != COMPELLED)
                 goto NEXT;
             int w = x_parents->key;
             /* if true , w --> y , x;  x--> y form a shielded collider */
-            if(edge_directed_in_cgraph(cg, w, y)) {
+            if (edge_directed_in_cgraph(cg, w, y)) {
                 x_parents->value = COMPELLED;
             }
             /* otherwise it is a chain and parents of y are compelled */
             else {
                 struct ill *p = y_parents;
-                while(p) {
+                while (p) {
                     p->value = COMPELLED;
                     p        = p->next;
                 }
@@ -144,9 +144,9 @@ static void find_compelled(struct cgraph *cg, int * sort)
         * STEP 7.5: look for an unshielded collider */
         int unshielded_collider = 0;
         struct ill *p = parents[y];
-        while(p) {
+        while (p) {
             int z = p->key;
-            if(z != x && !edge_directed_in_cgraph(cg, z, x)) {
+            if (z != x && !edge_directed_in_cgraph(cg, z, x)) {
                 unshielded_collider = 1;
                 goto STEP_89;
             }
@@ -156,16 +156,16 @@ static void find_compelled(struct cgraph *cg, int * sort)
         /* STEP 8: if there is an unshielded collider,
         * label all incident edges compelled */
         p = parents[y];
-        if(unshielded_collider) {
-            while(p) {
+        if (unshielded_collider) {
+            while (p) {
                 p->value = COMPELLED;
                 p = p->next;
             }
         }
         /* STEP 9, label all unknown edges reversable */
         else {
-            while(p) {
-                if(p->value == UNKNOWN) {
+            while (p) {
+                if (p->value == UNKNOWN) {
                     unorient_directed_edge(cg, p->key, y);
                     p = parents[y];
                 }

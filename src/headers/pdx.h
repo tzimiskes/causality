@@ -1,5 +1,5 @@
 #include <cgraph.h>
 #ifndef _PDX_H
 #define _PDX_H
-cgraph_ptr ccf_pdx(cgraph_ptr cg_ptr);
+struct cgraph *ccf_pdx(struct cgraph *cg);
 #endif

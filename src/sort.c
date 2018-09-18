@@ -50,14 +50,14 @@ SEXP ccf_sort_wrapper(SEXP Graph)
      */
     int *sort = ccf_sort(cg);
     free_cgraph(cg);
-    if(sort == NULL)
+    if (sort == NULL)
         return R_NilValue;
     /* grab the R structure that holds the Nodes (Char * vector) of the Graph */
     SEXP Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
     /* allocate memory for the output */
     SEXP Output = PROTECT(allocVector(STRSXP, n_nodes));
     /* convert C level output to R level output */
-    for(int i = 0; i < n_nodes; ++i)
+    for (int i = 0; i < n_nodes; ++i)
         SET_STRING_ELT(Output, i, STRING_ELT(Nodes, sort[i]));
     free(sort);
     UNPROTECT(2);
@@ -75,25 +75,25 @@ int * ccf_sort(struct cgraph *cg)
     int  n_nodes = cg->n_nodes;
     /* create an array to signify whether or not a node has been marked, */
     int *marked  = calloc(n_nodes, sizeof(int));
-    if(marked == NULL)
+    if (marked == NULL)
         error("Failed to allocate memory for marked in ccf_sort!\n");
 
     int *sort = malloc(n_nodes * sizeof(int));
-    if(sort == NULL)
+    if (sort == NULL)
         error("Failed to allocate memory for sort in ccf_sort!\n");
     /*
      * setjmp(FAIL_STATE) == 0 the first time this is called. longjmping here
      * from visit will have setjmp(FAIL_STATE) == 1
      */
-    if(!setjmp(FAIL_STATE)) {
+    if (!setjmp(FAIL_STATE)) {
         /*
          * Pick an unmarked node and do a breadth first search on it. If
          * the node is marked, go to the next node and try again
          */
         struct ill **children    = cg->children;
         int          stack_index = n_nodes;
-        for(int i = 0; i < n_nodes; ++i) {
-            if(!marked[i])
+        for (int i = 0; i < n_nodes; ++i) {
+            if (!marked[i])
                 visit(i, marked, &stack_index, children, sort);
         }
     }
@@ -122,10 +122,10 @@ static void visit(int node, int *marked, int *stack_index,
                             struct ill **children, int *sort)
 {
     /* Cycle exists; perform longjmp to so we can terminate the sort */
-    if(marked[node] == TEMPORARY) {
+    if (marked[node] == TEMPORARY) {
         longjmp(FAIL_STATE, 1);
     }
-    else if(marked[node] == UNMARKED) {
+    else if (marked[node] == UNMARKED) {
         marked[node]  = TEMPORARY;
         ill_ptr child = children[node];
         while(child != NULL) {

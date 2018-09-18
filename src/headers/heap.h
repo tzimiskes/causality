@@ -1,18 +1,18 @@
 #ifndef _HEAP_H
 #define _HEAP_H
 
-typedef struct heap {
-  double * dscores;
-  void **  records;
-  int *    indices;
-  int      max_size;
-  int      size;
-} heap;
+struct heap {
+    double *dscores;
+    void  **records;
+    int    *indices;
+    int     max_size;
+    int     size;
+};
 
-heap * create_heap(int heap_size);
-void free_heap(heap * hp);
-void build_heap(heap * hp);
-void * extract_heap(heap * hp, double * ds);
-void insert_heap(heap * hp, double ds, void * p, int node);
-void remove_heap(heap * hp, int node);
+struct heap *create_heap(int heap_size);
+void         free_heap(struct heap *hp);
+void         build_heap(struct heap *hp);
+void        *extract_heap(struct heap *hp, double *ds);
+void         insert_heap(struct heap *hp, double ds, void *p, int node);
+void         remove_heap(struct heap *hp, int node);
 #endif

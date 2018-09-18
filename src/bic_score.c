@@ -26,14 +26,14 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
      * that is relevent to x and its parents y
      */
     double * df[npar + 1];
-    for(int i = 0; i < npar + 1; ++i)
+    for (int i = 0; i < npar + 1; ++i)
         df[i] = data.df[xy[i]];
     int    nobs    = data.nobs;
     double penalty = fargs[0];
     int    err     = 0;
     /* Allocate memory for cov_xx, cov_xy, and cov_xy_cpy in one block. */
     double *alloced_mem = CALLOC(npar * (npar + 2), double);
-    if(alloced_mem == NULL)
+    if (alloced_mem == NULL)
         error("failed to allocate memory for BIC score\n");
     double *cov_xx     = alloced_mem;
     double *cov_xy     = alloced_mem + npar * npar;
@@ -49,21 +49,21 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
      * normalized variables, cov_yy = 1
      */
     double rss = 1.0f;
-    if(npar == 1) {
+    if (npar == 1) {
         rss -= cov_xy[0] * cov_xy[0];
     }
     /*
      * In the 2x2 case, we have cov_xx = |1, cov(x1, x2)|
      *                                   |cov(x2, x1), 1|
      */
-    else if(npar == 2) {
+    else if (npar == 2) {
         double det = 1.0f - cov_xx[1] * cov_xx[1];
         /*
          * For a 2x2 symmetric matrix with 1's on the diagonal, having a non
          * positive determinent is enough to know that the matrix is not
          * positive definite
          */
-        if(det < ERROR_THRESH)
+        if (det < ERROR_THRESH)
             err = NOT_POSITIVE_DEFINITE;
         else
             /* formula by hand */
@@ -89,7 +89,7 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
                          &lapack_err /* we use this to check for errors */
         );
         /* Check to see if cov_xx is not positive definite */
-        if(lapack_err) {
+        if (lapack_err) {
             err = NOT_POSITIVE_DEFINITE;
             goto END; /* We can skip the next LAPACK routine */
         }
@@ -109,18 +109,18 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
                          &npar,
                          &lapack_err
         );
-        if(lapack_err)
+        if (lapack_err)
             err = NOT_POSITIVE_DEFINITE;
         else
             rss -= fddot(cov_xy, cov_xy_cpy, npar);
         END: {};
     }
     FREE(alloced_mem);
-    if(rss < ERROR_THRESH) {
+    if (rss < ERROR_THRESH) {
         err = NON_POSITIVE_RESIDUAL_VARIANCE;
     }
 
-    if(err) {
+    if (err) {
         warning("The augmented matrix xy is not of full rank!\n");
         return DBL_MAX;
     }
@@ -140,13 +140,13 @@ double bic_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
 void fcov_xx(double *cov_xx, double **x, int npar, int nobs)
 {
     double inv_nminus1 = 1.0f/(nobs - 1);
-    for(int j = 0; j < npar; ++j) {
+    for (int j = 0; j < npar; ++j) {
         double *x_j          = x[j];
         double *cov_xx_jnp = cov_xx + j * npar;
         double *cov_xx_jof = cov_xx + j;
-        for(int i = 0; i <= j; ++i) {
+        for (int i = 0; i <= j; ++i) {
             /* cov(x_i, x_i) == 1 */
-            if(i == j)
+            if (i == j)
                 cov_xx_jnp[i]     = 1.0f;
             else
                 cov_xx_jof[i*npar] =
@@ -163,7 +163,7 @@ void fcov_xy(double *cov_xy, double **df, int npar, int nobs)
 {
     double inv_nminus1 = 1.0f/(nobs - 1);
     double *y          = df[npar];
-    for(int i = 0 ; i < npar; ++i)
+    for (int i = 0 ; i < npar; ++i)
         cov_xy[i] = fddot(df[i], y, nobs) * inv_nminus1;
 }
 
@@ -173,7 +173,7 @@ static double fddot(double *x, double *y, int n)
     int q = n / LOOP_UNROLL_SIZE;
     int r = n % LOOP_UNROLL_SIZE;
     double psums[LOOP_UNROLL_SIZE] = {0.0f};
-    for(int i = 0; i < q; ++i) {
+    for (int i = 0; i < q; ++i) {
         int i_lus = i * LOOP_UNROLL_SIZE;
         psums[0] += x[i_lus + 0] * y[i_lus + 0];
         psums[1] += x[i_lus + 1] * y[i_lus + 1];
