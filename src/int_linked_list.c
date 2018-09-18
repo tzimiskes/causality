@@ -69,7 +69,7 @@ struct ill * ill_search(struct ill *root, int key) {
 
 struct ill ** create_ptr_to_ill_ptr(int n)
 {
-    ill_ptr* array = malloc(n * sizeof(struct ill *));
+    struct ill ** array = malloc(n * sizeof(struct ill *));
     if (array == NULL)
         error("Failed to allocate pointer for ill_ptr*\n");
     for(int i = 0; i < n; ++i)
@@ -103,7 +103,7 @@ int ill_size(struct ill *root)
     return size;
 }
 
-void ill_delete(ill_ptr* root, int key)
+void ill_delete(struct ill ** root, int key)
 {
     struct ill *p = *root; /* should probably check to see if this is not null */
     if (p == NULL)

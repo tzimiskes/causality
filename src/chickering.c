@@ -46,7 +46,7 @@ static void order_edges(struct cgraph *cg, int *sort)
     int          n_nodes = cg->n_nodes;
     /* can be parallelized */
     for (int i = 0; i < n_nodes; ++i) {
-        ill_ptr tmp = parents[i];
+        struct ill *tmp = parents[i];
         while (tmp) {
             tmp->value = sort[tmp->key];
             tmp        = tmp->next;

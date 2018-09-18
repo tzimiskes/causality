@@ -21,7 +21,7 @@ static int is_sink(struct cll *node)
  * parent forms a clique with all the other parents of current */
 static int is_clique(struct cll *node, struct cgraph *cg)
 {
-    ill_ptr spouses = *(node->spouses);
+    struct ill *spouses = *(node->spouses);
     /* grab a spouse (undirected adjacent) */
     while (spouses) {
         int          spouse = spouses->key;
@@ -46,7 +46,7 @@ static int is_clique(struct cll *node, struct cgraph *cg)
 }
 
 static inline void orient_in_cgraph(struct cgraph *cg, int node) {
-  ill_ptr spouse = cg->spouses[node];
+  struct ill *spouse = cg->spouses[node];
   while (spouse) {
     orient_undirected_edge(cg, spouse->key, node);
     spouse = cg->spouses[node];

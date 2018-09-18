@@ -70,9 +70,9 @@ double score_graph(struct cgraph *cg, struct dataframe df, double *fargs,
 {
     double   graph_score = 0.0f;
     int      n_nodes     = cg->n_nodes;
-    ill_ptr *parents     = cg->parents;
+    struct ill **parents     = cg->parents;
     for (int i = 0; i < n_nodes; ++i) {
-        ill_ptr p = parents[i];
+        struct ill *p = parents[i];
         if (p) {
             int npar = ill_size(p);
             int xy[npar + 1];

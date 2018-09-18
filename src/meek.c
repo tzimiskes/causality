@@ -160,7 +160,7 @@ static int meek2(struct cgraph *cg, int x, int y) {
  * with !adj(node3, node4)
  */
 static int meek3(struct cgraph *cg, int x, int y) {
-    ill_ptr* parents = cg->parents;
+    struct ill ** parents = cg->parents;
     // look for node3 --> node1
     struct ill *x_par    = parents[x];
     while(x_par) {
