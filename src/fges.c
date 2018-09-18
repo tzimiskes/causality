@@ -17,7 +17,8 @@ struct gesrec {
     int  *naxy;
 }; /*  32 bytes */
 
-struct cgraph *ccf_fges(struct dataframe df, score_func score, double * fargs, int * iargs);
+struct cgraph * ccf_fges(struct dataframe df, score_func score, double *fargs,
+                                              int *iargs);
 
 SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
                                SEXP FloatingArgs, SEXP IntegerArgs)
@@ -129,7 +130,8 @@ int unblocked_semidirected_path(struct cgraph *cg, int src, int dst, int *onion,
     return unblocked_path;
 }
 
-int is_valid_insertion(struct cgraph *cg, struct gesrec g, int *onion, int onion_size)
+int is_valid_insertion(struct cgraph *cg, struct gesrec g, int *onion,
+                                          int onion_size)
 {
     if (is_clique(cg, onion, onion_size)) {
         if (!unblocked_semidirected_path(cg, g.y, g.x, onion, onion_size))
@@ -138,9 +140,10 @@ int is_valid_insertion(struct cgraph *cg, struct gesrec g, int *onion, int onion
     return 0;
 }
 
-struct gesrec score_powerset(struct cgraph *cg, struct dataframe data, struct gesrec g,
-                                         double *dscore, score_func score,
-                                         double *fargs, int *iargs)
+struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
+                                                struct gesrec g, double *dscore,
+                                                score_func score, double *fargs,
+                                                int *iargs)
 {
     double min_ds = DBL_MAX;
     struct gesrec min_g;
@@ -193,7 +196,7 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe data, struct ge
                 parents = parents->next;
                 j++;
             }
-            double ds = score_diff(data, xy, xy + 1, new_npar, new_npar - 1,
+            double ds = score_diff(df, xy, xy + 1, new_npar, new_npar - 1,
                                              fargs, iargs, score);
             free(xy);
             if (ds < min_ds) {
@@ -221,9 +224,10 @@ static void insert(struct cgraph *cg, struct gesrec g)
     }
 }
 
-double recalcluate_node(struct dataframe df, struct cgraph *cg, struct gesrec *gesrecp,
-                                      score_func score, double *fargs,
-                                                        int *iargs)
+double recalcluate_node(struct dataframe df, struct cgraph *cg,
+                                             struct gesrec *gesrecp,
+                                             score_func score, double *fargs,
+                                             int *iargs)
 {
     double     dscore = DBL_MAX;
     double min_dscore = DBL_MAX;

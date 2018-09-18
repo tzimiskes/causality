@@ -2,8 +2,8 @@
 #include <dataframe.h>
 #include <scores.h>
 
-double score_graph(struct cgraph *cg, struct dataframe d, double * fargs, int * iargs,
-  score_func score);
+double score_graph(struct cgraph *cg, struct dataframe df, double *fargs,
+                                      int *iargs, score_func score);
 
 SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
                                          SEXP FloatingArgs, SEXP IntegerArgs)
@@ -65,8 +65,8 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
  * to construct the model x --> y, where x:= Parents(y), and then score
  * the model given the data.
  */
-double score_graph(struct cgraph *cg, struct dataframe df, double *fargs, int *iargs,
-                                      score_func score)
+double score_graph(struct cgraph *cg, struct dataframe df, double *fargs,
+                                      int *iargs, score_func score)
 {
     double   graph_score = 0.0f;
     int      n_nodes     = cg->n_nodes;
