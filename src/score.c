@@ -2,8 +2,6 @@
 #include <dataframe.h>
 #include <scores.h>
 
-#include <benchmarkr.h>
-
 double score_graph(cgraph_ptr cg_ptr, dataframe d, double * fargs, int * iargs,
   score_func score);
 

@@ -8,8 +8,6 @@
 #include <edgetypes.h>
 #include <stdint.h>
 
-
-
 struct gesrec {
     int   x;
     int   y;
