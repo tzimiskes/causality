@@ -17,7 +17,7 @@ struct gesrec {
     int  *naxy;
 }; /*  32 bytes */
 
-struct cgraph *ccf_fges(dataframe df, score_func score, double * fargs, int * iargs);
+struct cgraph *ccf_fges(struct dataframe df, score_func score, double * fargs, int * iargs);
 
 SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
                                SEXP FloatingArgs, SEXP IntegerArgs)
@@ -32,7 +32,7 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     double *fargs = NULL;
     if (!isNull(FloatingArgs))
         fargs = REAL(FloatingArgs);
-    dataframe df;
+    struct dataframe df;
     df.nvar  = length(Df);
     df.nobs  = length(VECTOR_ELT(Df, 0));
     df.states = INTEGER(States);
@@ -138,7 +138,7 @@ int is_valid_insertion(struct cgraph *cg, struct gesrec g, int *onion, int onion
     return 0;
 }
 
-struct gesrec score_powerset(struct cgraph *cg, dataframe data, struct gesrec g,
+struct gesrec score_powerset(struct cgraph *cg, struct dataframe data, struct gesrec g,
                                          double *dscore, score_func score,
                                          double *fargs, int *iargs)
 {
@@ -221,7 +221,7 @@ static void insert(struct cgraph *cg, struct gesrec g)
     }
 }
 
-double recalcluate_node(dataframe df, struct cgraph *cg, struct gesrec *gesrecp,
+double recalcluate_node(struct dataframe df, struct cgraph *cg, struct gesrec *gesrecp,
                                       score_func score, double *fargs,
                                                         int *iargs)
 {
@@ -288,7 +288,7 @@ static void delete(struct cgraph *cg, struct gesrec g)
     }
 }
 
-struct cgraph *ccf_fges(dataframe df, score_func score,
+struct cgraph *ccf_fges(struct dataframe df, score_func score,
                                         double *fargs, int *iargs)
 {
     struct cgraph *cg         = create_cgraph(df.nvar);

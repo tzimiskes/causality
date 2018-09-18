@@ -2,7 +2,7 @@
 #include <causality.h>
 #include <scores.h>
 
-double bdeu_score(dataframe data, int *xy, int npar, double *fargs, int *iargs)
+double bdeu_score(struct dataframe data, int *xy, int npar, double *fargs, int *iargs)
 {
     double sample_prior    = fargs[0];
     double structure_prior = fargs[1];

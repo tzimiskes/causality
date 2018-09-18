@@ -2,7 +2,7 @@
 #include <dataframe.h>
 #include <scores.h>
 
-double score_graph(struct cgraph *cg, dataframe d, double * fargs, int * iargs,
+double score_graph(struct cgraph *cg, struct dataframe d, double * fargs, int * iargs,
   score_func score);
 
 SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
@@ -32,7 +32,7 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
      * Instead, we store the columns as void pointers in df. This helps divorce
      * C and R so it is easier to port this package to python, julia, etc.
      */
-    dataframe df;
+    struct dataframe df;
     df.nvar  = length(Df);
     df.nobs  = length(VECTOR_ELT(Df, 0));
     df.states = INTEGER(States);
@@ -65,7 +65,7 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
  * to construct the model x --> y, where x:= Parents(y), and then score
  * the model given the data.
  */
-double score_graph(struct cgraph *cg, dataframe df, double *fargs, int *iargs,
+double score_graph(struct cgraph *cg, struct dataframe df, double *fargs, int *iargs,
                                       score_func score)
 {
     double   graph_score = 0.0f;
@@ -91,7 +91,7 @@ double score_graph(struct cgraph *cg, dataframe df, double *fargs, int *iargs,
  * score diff calculates the difference in BIC scores between two configurations
  * new and old
  */
-double score_diff(dataframe df, int *new_xy, int *old_xy, int new_npar,
+double score_diff(struct dataframe df, int *new_xy, int *old_xy, int new_npar,
                                 int old_npar, double *fargs, int *iargs,
                                 score_func score)
 {
