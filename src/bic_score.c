@@ -150,7 +150,7 @@ void fcov_xx(double *cov_xx, double **x, int npar, int nobs)
                 cov_xx_jnp[i]     = 1.0f;
             else
                 cov_xx_jof[i*npar] =
-                cov_xx_jnp[i]     = fddot(x_j, x[i], nobs) * inv_nminus1;
+                cov_xx_jnp[i]      = fddot(x_j, x[i], nobs) * inv_nminus1;
         }
     }
 }
