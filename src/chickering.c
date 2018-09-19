@@ -9,9 +9,9 @@
 #define COMPELLED  1 /* This means directed */
 #define REVERSABLE 2 /* This means undirected */
 
-static void order_edges(struct cgraph *cg, int *sort);
-static void insertion_sort(struct ill *list);
-static void find_compelled(struct cgraph *cg, int *sort);
+ void order_edges(struct cgraph *cg, int *sort);
+ void insertion_sort(struct ill *list);
+ void find_compelled(struct cgraph *cg, int *sort);
 
 SEXP ccf_chickering_wrapper(SEXP Graph) {
     int *edges         = calculate_edges_ptr(Graph);
@@ -40,7 +40,7 @@ void ccf_chickering(struct cgraph *cg)
  * order_edges orders the parents of cg such that the nodes are in descending
  * order according to the sort.
  */
-static void order_edges(struct cgraph *cg, int *sort)
+ void order_edges(struct cgraph *cg, int *sort)
 {
     struct ill **parents = cg->parents;
     int          n_nodes = cg->n_nodes;
@@ -61,7 +61,7 @@ static void order_edges(struct cgraph *cg, int *sort)
  * faster because the average degree of causal graphs is 2-5, and insertion sort
  * is faster than merge sort until we hit 10-50 elements.
  */
-static void insertion_sort(struct ill *list)
+ void insertion_sort(struct ill *list)
 {
     while (list) {
         struct ill *top = list;
@@ -81,7 +81,7 @@ static void insertion_sort(struct ill *list)
     }
 }
 
-static void find_compelled(struct cgraph *cg, int *sort)
+ void find_compelled(struct cgraph *cg, int *sort)
 {
     struct ill **parents = cg->parents;
     int          n_nodes = cg->n_nodes;
@@ -122,11 +122,12 @@ static void find_compelled(struct cgraph *cg, int *sort)
             int w = x_parents->key;
             /* if true , w --> y , x;  x--> y form a shielded collider */
             if (edge_directed_in_cgraph(cg, w, y)) {
-                x_parents->value = COMPELLED;
+                struct ill* p = ill_search(parents[y], w);
+                p->value = COMPELLED;
             }
             /* otherwise it is a chain and parents of y are compelled */
             else {
-                struct ill *p = y_parents;
+                struct ill *p = parents[y];
                 while (p) {
                     p->value = COMPELLED;
                     p        = p->next;
