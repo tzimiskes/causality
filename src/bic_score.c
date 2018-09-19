@@ -14,7 +14,7 @@
 #define NOT_POSITIVE_DEFINITE 1
 #define NON_POSITIVE_RESIDUAL_VARIANCE 2
 
-static double fddot(double *x, double *y, int n);
+ double fddot(double *x, double *y, int n);
 void fcov_xx(double *cov_xx, double **df, int npar, int nobs);
 void fcov_xy(double *cov_xy, double **df, int npar, int nobs);
 
@@ -169,7 +169,7 @@ void fcov_xy(double *cov_xy, double **df, int npar, int nobs)
 }
 
 /* fddot should do reasonably fast dot products by employing loop unrolling */
-static double fddot(double *x, double *y, int n)
+ double fddot(double *x, double *y, int n)
 {
     int q = n / LOOP_UNROLL_SIZE;
     int r = n % LOOP_UNROLL_SIZE;

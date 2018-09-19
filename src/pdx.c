@@ -11,7 +11,7 @@ struct cll {
     struct cll  *next;
 };
 
-static int is_sink(struct cll *node)
+ int is_sink(struct cll *node)
  {
      return *(node->children) == NULL;
 }
@@ -19,7 +19,7 @@ static int is_sink(struct cll *node)
 /*
  * clique checks each undirected parent of current if that undirected
  * parent forms a clique with all the other parents of current */
-static int is_clique(struct cll *node, struct cgraph *cg)
+ static int is_clique(struct cll *node, struct cgraph *cg)
 {
     struct ill *spouses = *(node->spouses);
     /* grab a spouse (undirected adjacent) */
@@ -45,7 +45,7 @@ static int is_clique(struct cll *node, struct cgraph *cg)
     return 1;
 }
 
-static inline void orient_in_cgraph(struct cgraph *cg, int node) {
+ inline void orient_in_cgraph(struct cgraph *cg, int node) {
   struct ill *spouse = cg->spouses[node];
   while (spouse) {
     orient_undirected_edge(cg, spouse->key, node);
@@ -132,6 +132,7 @@ struct cgraph * ccf_pdx(struct cgraph *cg)
     if (failure) {
         free_cgraph(copy);
         copy = NULL;
+        Rprintf("pdx failure!");
     }
     return copy;
 }
