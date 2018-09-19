@@ -66,7 +66,7 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     return ScalarReal(0);
 }
 
-static int is_clique(struct cgraph *cg, int *nodes, int n_nodes)
+ int is_clique(struct cgraph *cg, int *nodes, int n_nodes)
 {
     for (int i = 0; i < n_nodes; ++i) {
         int inode = nodes[i];
@@ -216,13 +216,42 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
 
 
 
-static void insert(struct cgraph *cg, struct gesrec g)
+ void insert(struct cgraph *cg, struct gesrec g)
 {
+    //Rprintf("insert %i -- > %i\n", g.x, g.y);
     add_edge_to_cgraph(cg, g.x, g.y, DIRECTED);
     for (int i = 0; i < g.set_size; ++i) {
+        //Rprintf("orient %i -- > %i\n", g.set[i], g.y);
         orient_undirected_edge(cg, g.set[i], g.y);
     }
 }
+
+
+ void connected_nodes(int node, int *marked, int *nodes, int *n_nodes,
+                            struct cgraph *cg)
+{
+    if (marked[node] == 0) {
+        marked[node]  = 1;
+        struct ill *p = cg->children[node];
+        while(p) {
+            connected_nodes(p->key, marked, nodes, n_nodes, cg);
+            p = p->next;
+        }
+        p = cg->spouses[node];
+        while(p) {
+            connected_nodes(p->key, marked, nodes, n_nodes, cg);
+            p = p->next;
+        }
+        p = cg->parents[node];
+        while(p) {
+            connected_nodes(p->key, marked, nodes, n_nodes, cg);
+            p = p->next;
+        }
+        nodes[*n_nodes] = node;
+        *n_nodes       += 1;
+    }
+}
+
 
 double recalcluate_node(struct dataframe df, struct cgraph *cg,
                                              struct gesrec *gesrecp,
@@ -283,10 +312,11 @@ double recalcluate_node(struct dataframe df, struct cgraph *cg,
 }
 
 
-static void delete(struct cgraph *cg, struct gesrec g)
+ void delete(struct cgraph *cg, struct gesrec g)
 {
     delete_edge_from_cgraph(cg, g.x, g.y, DIRECTED);
     for (int i = 0; i < g.set_size; ++i) {
+
         orient_undirected_edge(cg, g.x, g.set[i]);
         orient_undirected_edge(cg, g.y, g.set[i]);
     }
@@ -306,9 +336,10 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
     * using the heap data structure we have
     */
     struct gesrec *gesrecords = calloc(df.nvar, sizeof(struct gesrec));
-    struct heap   *heap       = create_heap(df.nvar);
-    double        *dscores    = heap->dscores;
-    void         **records    = heap->records;
+    struct heap   *heap       = create_heap(df.nvar, gesrecords,
+                                                     sizeof(struct gesrec));
+    double        *dscores    = heap->keys;
+    void         **records    = heap->data;
     int           *indices    = heap->indices;
     for (int i = 0; i < df.nvar; ++i) {
         records[i] = gesrecords + i;
@@ -331,23 +362,45 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         gesrecords[y].y = y;
     }
     build_heap(heap);
+    int *marked = calloc(df.nvar, sizeof(int));
+    int *nodes  = calloc(df.nvar, sizeof(int));
+    int n_nodes = 0;
     /* FORWARD EQUIVALENCE SEARCH (FES) */
     struct gesrec *gesrecp;
     while ((gesrecp = extract_heap(heap, &dscore)) && dscore <= 0) {
         graph_score += dscore;
         insert(cg, *gesrecp);
         ccf_chickering(cg = ccf_pdx(cg));
-        //print_cgraph(cg);
-        for (int i = 0; i < df.nvar; ++i) {
-             gesrecp =  gesrecords + i;
-             gesrecp->y = i;
-            dscore = recalcluate_node(df, cg, gesrecp, score, fargs, iargs);
-            heap->dscores[i] = dscore;
-            heap->records[i] = gesrecp;
-            heap->indices[i] = i;
+        // for (int i = 0; i < df.nvar; ++i) {
+        //     gesrecp =  gesrecords + i;
+        //     gesrecp->y = i;
+        //     dscore = recalcluate_node(df, cg, gesrecp, score, fargs, iargs);
+        //     heap->keys[i] = dscore;
+        //     heap->data[i] = gesrecp;
+        //     heap->indices[i] = i;
+        // }
+        // build_heap(heap);
+
+        connected_nodes(gesrecp->y, marked, nodes, &n_nodes, cg);
+        double dscore = recalcluate_node(df, cg, gesrecp, score, fargs,
+                                             iargs);
+        insert_heap(heap, dscore, gesrecp);
+        for(int i = 0; i < n_nodes - 1 ; ++i) {
+            remove_heap(heap, nodes[i]);
+            gesrecp = gesrecords + nodes[i];
+
+            double dscore = recalcluate_node(df, cg, gesrecp, score, fargs,
+                                                 iargs);
+            insert_heap(heap, dscore, gesrecp);
+
         }
-        build_heap(heap);
+        memset(marked, 0, df.nvar * sizeof(int));
+        memset(nodes, 0, df.nvar * sizeof(int));
+        n_nodes = 0;
     }
+    free(marked);
+    free(nodes);
+
 
     /* BACKWARD EQUIVALENCE SEARCH (FES) */
     while (0) { /* TODO */}
