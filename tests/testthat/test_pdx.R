@@ -18,12 +18,12 @@ test_that("PDX correctly fails to generate an extension", {
 # the pattern
 test_that("PDX works (simple)", {
   pdag <- pdag(nodes = c("X1", "X2", "X3", "X4"), edges =
-                 matrix(c("X1", "X3", "---",
-                          "X2", "X3", "---",
+                 matrix(c("X1", "X3", "-->",
+                          "X2", "X3", "-->",
                           "X3", "X4", "---"), byrow = T, ncol = 3))
   dag <- dag(nodes = c("X1", "X2", "X3", "X4"), edges =
-               matrix(c("X3", "X1", "-->",
-                        "X3", "X2", "-->",
+               matrix(c("X1", "X3", "-->",
+                        "X2", "X3", "-->",
                         "X3", "X4", "-->"), byrow = T, ncol = 3))
 
   # currently shd doesn't support a metric on dag space, though this may change
