@@ -1,3 +1,13 @@
+/* Author: Alexander Rix
+ * chickering.c Impements a function to convert directed acyclic graphs into
+ * patterns. The algorithm is described in Chickering's paper
+ * "A Transformational Characterization of Equivalent Bayesian Network
+ * Structures", avaliable on the arxiv: https://arxiv.org/abs/1302.4938
+ * ccf_chickering_wrapper is the R interface to ccf_chickering, which consists
+ * of several functions, sort (which is in sort.c), order_edges (which uses
+ * insertion_sort), and find_compelled.
+ */
+
 #include <causality.h>
 #include <cgraph.h>
 #include <int_linked_list.h>
@@ -9,15 +19,19 @@
 #define COMPELLED  1 /* This means directed */
 #define REVERSABLE 2 /* This means undirected */
 
- void order_edges(struct cgraph *cg, int *sort);
- void insertion_sort(struct ill *list);
- void find_compelled(struct cgraph *cg, int *sort);
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
+void order_edges(struct cgraph *cg, int *sort);
+void insertion_sort(struct ill *list);
+void find_compelled(struct cgraph *cg, int *sort);
 
 SEXP ccf_chickering_wrapper(SEXP Graph) {
-    int *edges         = calculate_edges_ptr(Graph);
-    int  n_nodes       = length(VECTOR_ELT(Graph, NODES));
-    int  n_edges       = nrows(VECTOR_ELT(Graph, EDGES));
-    struct cgraph *cg = create_cgraph(n_nodes);
+    int           *edges   = calculate_edges_ptr(Graph);
+    int            n_nodes = length(VECTOR_ELT(Graph, NODES));
+    int            n_edges = nrows(VECTOR_ELT(Graph, EDGES));
+    struct cgraph *cg      = create_cgraph(n_nodes);
     fill_in_cgraph(cg, n_edges, edges);
     free(edges);
     ccf_chickering(cg);
@@ -31,7 +45,14 @@ SEXP ccf_chickering_wrapper(SEXP Graph) {
 void ccf_chickering(struct cgraph *cg)
 {
     int *sort = ccf_sort(cg);
+    if (DEBUG) {
+        for(int i = 0; i < cg->n_nodes; ++i)
+            Rprintf("%i ", sort[i]);
+        Rprintf("\n");
+    }
     order_edges(cg, sort);
+    if (DEBUG)
+        print_cgraph(cg);
     find_compelled(cg, sort);
     free(sort);
 }
@@ -42,17 +63,26 @@ void ccf_chickering(struct cgraph *cg)
  */
  void order_edges(struct cgraph *cg, int *sort)
 {
+    int  n_nodes  = cg->n_nodes;
+    int *inv_sort = malloc(n_nodes * sizeof(int));
+    for (int i = 0; i < n_nodes; ++i)
+        inv_sort[sort[i]] = i;
+    /*
+     * Replace the value at each edge with the parent's location in the sort.
+     * Then, sort (in place) so that the edges are in descending order.
+     * This isn't a problem because in force compelled all the values will be
+     * declared unknown.
+     */
     struct ill **parents = cg->parents;
-    int          n_nodes = cg->n_nodes;
-    /* can be parallelized */
     for (int i = 0; i < n_nodes; ++i) {
-        struct ill *tmp = parents[i];
-        while (tmp) {
-            tmp->value = sort[tmp->key];
-            tmp        = tmp->next;
+        struct ill *p = parents[i];
+        while (p) {
+            p->value = inv_sort[p->key];
+            p        = p->next;
         }
         insertion_sort(parents[i]);
     }
+    free(inv_sort);
 }
 
 /*
@@ -103,30 +133,35 @@ void ccf_chickering(struct cgraph *cg)
     for (int i = 0; i < n_nodes; ++i) {
         /* by lemma 5 in Chickering, all the incident edges on y are unknown
          * so we don't need to check to see its unordered */
-        int         y         = sort[i];
-        struct ill *y_parents = parents[y];
+        int         y  = sort[i];
+        struct ill *yp = parents[y];
         /* if y has no incident edges, go to the next node in the order */
-        if (y_parents == NULL)
+        if (!yp)
             continue;
         /* Since y has parents, run stepts 5-8 */
-        int         x         = y_parents->key;
-        struct ill *x_parents =  parents[x];
+        int         x  = yp->key;
+        struct ill *xp = parents[x];
         /*
          * for each parent of x, w, where w -> x is compelled
          * check to see if w forms a chain (w -> x -> y)
          * or shielded collider (w -> x -> y and w -> x)
          */
-        while (x_parents) { /* STEP 5 */
-            if (x_parents->value != COMPELLED)
+        while (xp) { /* STEP 5 */
+            if (xp->value != COMPELLED)
                 goto NEXT;
-            int w = x_parents->key;
+            int w = xp->key;
             /* if true , w --> y , x;  x--> y form a shielded collider */
             if (edge_directed_in_cgraph(cg, w, y)) {
                 struct ill* p = ill_search(parents[y], w);
+                if(DEBUG)
+                    Rprintf("Shielded collider: %i --> %i\n", p->key, y);
                 p->value = COMPELLED;
             }
             /* otherwise it is a chain and parents of y are compelled */
             else {
+                if(DEBUG) {
+                    Rprintf("Chain : %i --> %i --> %i\n", w, x, y);
+                }
                 struct ill *p = parents[y];
                 while (p) {
                     p->value = COMPELLED;
@@ -134,46 +169,48 @@ void ccf_chickering(struct cgraph *cg)
                 }
                 goto EOFL; /* goto end of for loop */
             }
-            /* if step 7 is executed or w isn't compelled, goto the next parent of x */
             NEXT: ;
-            x_parents = x_parents->next;
+            xp = xp->next;
         }
-        /* now, we need to search for z, where z -> y, x != z,
-        * and z is not a parent of x. That is, an unshielded collider
-        * by starting at the second parent (might not exist),
-        * we avoid the need to check to see if z = x
-        * STEP 7.5: look for an unshielded collider */
+        /*
+         * now, we need to search for z, where z -> y, x != z, and z is not a
+         * parent of x. That is, an unshielded collider.
+         */
         int unshielded_collider = 0;
         struct ill *p = parents[y];
         while (p) {
             int z = p->key;
-            if (z != x && !edge_directed_in_cgraph(cg, z, x)) {
+            if (z != x && !adjacent_in_cgraph(cg, z, x)) {
+                if (DEBUG)
+                    Rprintf("Unshielded Collider: %i --> %i <-- %i\n", z, y, x);
                 unshielded_collider = 1;
-                goto STEP_89;
+                break;
             }
             p = p->next;
         }
-        STEP_89: {};
-        /* STEP 8: if there is an unshielded collider,
-        * label all incident edges compelled */
-        p = parents[y];
+        /* if there is an unshielded collider, label all parents compelled */
         if (unshielded_collider) {
+            p = parents[y];
             while (p) {
                 p->value = COMPELLED;
+                p        = p->next;
+            }
+        }
+        /* otherwise, label all unknown edges reversable */
+        else {
+            /*
+             * we need to create a because unorient_directed_edge operates in
+             * place, which would mess up the pointer if there were no copy
+             */
+            struct ill *cpy = copy_ill(parents[y]);
+            p = cpy;
+            while (p) {
+                if (p->value == UNKNOWN)
+                    unorient_directed_edge(cg, p->key, y);
                 p = p->next;
             }
+            free(cpy);
         }
-        /* STEP 9, label all unknown edges reversable */
-        else {
-            while (p) {
-                if (p->value == UNKNOWN) {
-                    unorient_directed_edge(cg, p->key, y);
-                    p = parents[y];
-                }
-                else
-                    p = p->next;
-            }
-        }
-        EOFL:{}; /* End Of For Loop */
+        EOFL: ;
     }
 }
