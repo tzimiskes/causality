@@ -35,7 +35,7 @@ void fill_in_cgraph(struct cgraph *cg, int n_edges, int *edges)
         }
         else {
             spouses[x]  = ill_insert(spouses[x],  y, edge);
-            spouses[x]  = ill_insert(spouses[y],  x, edge);
+            spouses[y]  = ill_insert(spouses[y],  x, edge);
         }
     }
     cg->n_edges = n_edges;
@@ -107,48 +107,47 @@ void free_cgraph(struct cgraph *cg)
     free(cg);
 }
 
-int adjacent_in_cgraph(struct cgraph *cg, int node1, int node2)
+int adjacent_in_cgraph(struct cgraph *cg, int x, int y)
 {
-    struct ill *p = cg->parents[node1];
+    struct ill *p = cg->parents[x];
     while (p) {
-        if (p->key == node2)
+        if (p->key == y)
             return 1;
         p = p->next;
     }
-    p = cg->children[node1];
+    p = cg->children[x];
     while (p) {
-        if (p->key == node2)
+        if (p->key == y)
             return 1;
         p = p->next;
     }
-    p = cg->spouses[node1];
+    p = cg->spouses[x];
     while (p) {
-        if (p->key == node2)
+        if (p->key == y)
             return 1;
         p = p->next;
     }
     return 0;
 }
 
-int edge_undirected_in_cgraph(struct cgraph *cg, int node1, int node2)
+int edge_undirected_in_cgraph(struct cgraph *cg, int x, int y)
 {
-    struct ill *spouses = cg->spouses[node1];
-    while (spouses) {
-        if (spouses->key == node2)
+    struct ill *p = cg->spouses[x];
+    while (p) {
+        if (p->key == y)
             return 1;
-        spouses = spouses->next;
+        p = p->next;
     }
     return 0;
 }
 
 int edge_directed_in_cgraph(struct cgraph *cg, int parent, int child)
 {
-    struct ill *children = cg->children[parent];
-    while (children) {
-        struct ill node = *children;
-        if (node.key == child)
+    struct ill *p = cg->children[parent];
+    while (p) {
+        if (p->key == child)
             return 1;
-        children = node.next;
+        p = p->next;
     }
     return 0;
 }
@@ -240,17 +239,15 @@ void unorient_directed_edge(struct cgraph *cg, int parent, int child)
 void print_cgraph(struct cgraph *cg)
 {
     for (int i = 0; i < cg->n_nodes; ++i) {
-        if (cg->parents[i]) {
-            Rprintf("Parents of %i:\n", i);
-            ill_print(cg->parents[i]);
+        struct ill *p = cg->parents[i];
+        while (p) {
+            Rprintf("%i --> %i, %i\n", p->key, i, p->value);
+            p = p->next;
         }
-        if (cg->spouses[i]) {
-            Rprintf("Spouses of  %i:\n", i);
-            ill_print(cg->spouses[i]);
-        }
-        if (cg->children[i]) {
-            Rprintf("Children of  %i:\n", i);
-            ill_print(cg->children[i]);
+        p = cg->spouses[i];
+        while (p) {
+            Rprintf("%i --- %i, %i\n", p->key, i, p->value);
+            p = p->next;
         }
     }
 }

@@ -4,6 +4,12 @@
 #include <edgetypes.h>
 #include <pdx.h>
 
+#define DEBUG 1
+
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
 struct cll {
     struct ill **children;
     struct ill **parents;
@@ -11,15 +17,17 @@ struct cll {
     struct cll  *next;
 };
 
- int is_sink(struct cll *node)
- {
+/* a node is a sink if it has no children */
+static int is_sink(struct cll *node)
+{
      return *(node->children) == NULL;
 }
 
 /*
  * clique checks each undirected parent of current if that undirected
- * parent forms a clique with all the other parents of current */
- static int is_clique(struct cll *node, struct cgraph *cg)
+ * parent forms a clique with all the other parents of current
+ */
+static int is_clique(struct cll *node, struct cgraph *cg)
 {
     struct ill *spouses = *(node->spouses);
     /* grab a spouse (undirected adjacent) */
@@ -45,12 +53,21 @@ struct cll {
     return 1;
 }
 
- inline void orient_in_cgraph(struct cgraph *cg, int node) {
-  struct ill *spouse = cg->spouses[node];
-  while (spouse) {
-    orient_undirected_edge(cg, spouse->key, node);
-    spouse = cg->spouses[node];
-  }
+void orient_in_cgraph(struct cgraph *cg, int node)
+{
+    struct ill *cpy = copy_ill(cg->spouses[node]);
+    if (DEBUG) {
+        Rprintf("Created copy: %p\n", cpy);
+        Rprintf("orienting towards node %i...\n", node);
+    }
+    struct ill *p = cpy;
+    while (p) {
+        if (DEBUG)
+            Rprintf("orient %i --> %i", p->key, node);
+        orient_undirected_edge(cg, p->key, node);
+        p = p->next;
+    }
+    free(cpy);
 }
 
 void remove_node(struct cll *current, struct cll *nodes)
@@ -76,6 +93,8 @@ SEXP ccf_pdx_wrapper(SEXP Pdag)
     int            n_edges   = nrows(VECTOR_ELT(Pdag, EDGES));
     struct cgraph *cg        = create_cgraph(n_nodes);
     fill_in_cgraph(cg, n_edges, edges_ptr);
+    if (DEBUG)
+        print_cgraph(cg);
     free(edges_ptr);
     cg = ccf_pdx(cg);
     if (cg == NULL) {
@@ -110,10 +129,19 @@ struct cgraph * ccf_pdx(struct cgraph *cg)
     int         n_checked = 0;
     int         ll_size   = n_nodes;
     /* Comment needed */
+    if (DEBUG)
+        Rprintf("begining pdx\n");
     while (ll_size > 0 && n_checked <= ll_size) {
         if (is_sink(current) && is_clique(current, cg)) {
+            if (DEBUG)
+                Rprintf("tests pass. orienting and removing node %i\n",
+                            current - nodes);
             orient_in_cgraph(copy, current - nodes);
+            if (DEBUG)
+                Rprintf("orientation complete\n");
             remove_node(current, nodes);
+            if (DEBUG)
+                Rprintf("remove complete\n");
             prev->next = current->next;
             ll_size--;
             n_checked = 0;
@@ -132,7 +160,8 @@ struct cgraph * ccf_pdx(struct cgraph *cg)
     if (failure) {
         free_cgraph(copy);
         copy = NULL;
-        Rprintf("pdx failure!");
+        if(DEBUG)
+            Rprintf("pdx failure!\n");
     }
     return copy;
 }
