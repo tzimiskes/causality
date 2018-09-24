@@ -2,19 +2,17 @@
 #include <edgetypes.h>
 #include <int_linked_list.h>
 #include <cgraph.h>
+#include <meek.h>
 
 struct pll {
     struct ill *p;
     struct pll *next;
 };
 
-typedef int (*meek_rule)(struct cgraph *cg, int x, int y);
-
-
 static void undirect_reversible_parents(int node, struct cgraph *cg,
-                                                struct ill **stack,
-                                                struct pll **compelled,
-                                                int *visited,  int *n_visited);
+                                                  struct ill **stack,
+                                                  struct pll **compelled,
+                                                  int *visited, int *n_visited);
 
 static void push_adjacents(int node, struct cgraph *cg, struct ill **stack);
 
@@ -22,18 +20,14 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
                                    struct pll **compelled, int *visited,
                                    int *n_visited, meek_rule _meek_rule);
 
-int _meek1(struct cgraph *cg, int x, int y);
-int _meek2(struct cgraph *cg, int x, int y);
-int _meek3(struct cgraph *cg, int x, int y);
-int _meek4(struct cgraph *cg, int x, int y);
 
 void meek_rules(struct cgraph *cg, int x, struct ill **stack,
-                                     struct pll **compelled, int *visited,
-                                     int *n_visited);
+                                   struct pll **compelled, int *visited,
+                                   int *n_visited);
 
 void orient(struct cgraph *cg, int x, int y, struct ill **stack,
-    struct pll **compelled, int *visited,
-    int *n_visited);
+                               struct pll **compelled, int *visited,
+                               int *n_visited);
 
 void insert_pll(struct pll **p, struct ill *l)
 {
@@ -62,11 +56,11 @@ int * meek_local(struct cgraph *cg, int *nodes, int n_nodes, int * n_visited)
         /* pop the top */
         int node = stack->key;
         struct ill *p = stack;
-        stack = stack->next;
-        free(p);
         undirect_reversible_parents(node, cg, &stack, &compelled, visited,
                                           n_visited);
         meek_rules(cg, node, &stack, &compelled, visited, n_visited);
+        stack = stack->next;
+        free(p);
     }
     /*
      * now that we've completed the pdag, we need to clean up the mess we made
@@ -174,8 +168,8 @@ static void push_adjacents(int node, struct cgraph *cg, struct ill **stack)
 }
 
 void orient(struct cgraph *cg, int x, int y, struct ill **stack,
-                               struct pll **compelled, int *visited,
-                               int *n_visited)
+                                     struct pll **compelled, int *visited,
+                                     int *n_visited)
 {
     Rprintf("direct %i --> %i\n", x, y);
     orient_undirected_edge(cg, x, y);
@@ -196,9 +190,9 @@ void orient(struct cgraph *cg, int x, int y, struct ill **stack,
     *stack = ill_insert_front(*stack, y, 0);
 }
 
-void apply_rule(struct cgraph *cg, int x, struct ill **stack,
-                                   struct pll **compelled, int *visited,
-                                   int *n_visited, meek_rule _meek_rule)
+void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
+                                         struct pll **compelled, int *visited,
+                                         int *n_visited, meek_rule _meek_rule)
 {
     /*
      * we need to create a copy of spouses incase an edge is
@@ -218,73 +212,6 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
     }
     ill_free(cpy);
 }
-
-int _meek1(struct cgraph *cg, int x, int y) {
-    struct ill *xp = cg->parents[x];
-    while (xp) {
-        int z = xp->key;
-        if (!adjacent_in_cgraph(cg, y, z)) {
-            return 1;
-        }
-        xp = xp->next;
-    }
-    return 0;
-}
-
-/* look for  z, st,  z --> y --- x, x --> z */
-int _meek2(struct cgraph *cg, int x, int y) {
-    struct ill  *xc = cg->children[x];
-    while (xc) {
-        int z = xc->key;
-        if (edge_directed_in_cgraph(cg, z, y))
-            return 1;
-        xc = xc->next;
-    }
-    return 0;
-}
-
-int _meek3(struct cgraph *cg, int x, int y) {
-    struct ill *yp = cg->parents[y];
-    while (yp) {
-        int z = yp->key;
-        if (!edge_undirected_in_cgraph(cg, z, x))
-            goto NEXT_Y_PARENT;
-        struct ill *yp_cpy = cg->parents[y];
-        while (yp_cpy) {
-            int w = yp_cpy->key;
-            if (w != z && edge_undirected_in_cgraph(cg, w, x) && !adjacent_in_cgraph(cg, z, w)) {
-                return 1;
-            }
-            yp_cpy = yp_cpy->next;
-        }
-        NEXT_Y_PARENT: ;
-        yp = yp->next;
-    }
-    return 0;
-}
-
-
-int _meek4(struct cgraph *cg, int x, int y)
-{
-    struct ill *yp = cg->parents[y];
-    while(yp) {
-        int z = yp->key;
-        if(adjacent_in_cgraph(cg, x, z)) {
-            struct ill *zp = cg->parents[z];
-            while(zp) {
-                int w = zp->key;
-                if(edge_undirected_in_cgraph(cg, w, x) && !adjacent_in_cgraph(cg, y, w)) {
-                    return 1;
-                }
-                zp = zp->next;
-            }
-        }
-        yp = yp->next;
-    }
-    return 0;
-}
-
-
 
 void meek_rules(struct cgraph *cg, int x, struct ill **stack,
                                      struct pll **compelled, int *visited,
