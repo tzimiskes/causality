@@ -246,7 +246,8 @@ void print_cgraph(struct cgraph *cg)
         }
         p = cg->spouses[i];
         while (p) {
-            Rprintf("%i --- %i, %i\n", p->key, i, p->value);
+            if (p->key < i)
+                Rprintf("%i --- %i, %i\n", p->key, i, p->value);
             p = p->next;
         }
     }

@@ -4,7 +4,7 @@
 #include <edgetypes.h>
 #include <pdx.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 #ifndef DEBUG
 #define DEBUG 0
