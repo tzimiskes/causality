@@ -9,6 +9,14 @@
 #include <edgetypes.h>
 #include <stdint.h>
 
+#define MAGIX 8.1f
+#define DEBUG 0
+
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
+
 struct gesrec {
     int   x;
     int   y;
@@ -146,7 +154,7 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
                                                 score_func score, double *fargs,
                                                 int *iargs)
 {
-    double min_ds = DBL_MAX;
+    double min_ds = 1.0f;
     struct gesrec min_g;
     min_g.x         = g.x;
     min_g.y         = g.y;
@@ -158,11 +166,11 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
         error("failed to allocate memory for naxy in fges!\n");
     memcpy(min_g.naxy, g.naxy, min_g.naxy_size * sizeof(int));
 
-    // if (!is_clique(cg, min_g.naxy, min_g.naxy_size)) {
-    //     Rprintf("got ya!\n");
-    //     *dscore = min_ds;
-    //     return min_g;
-    // }
+    if (!is_clique(cg, min_g.naxy, min_g.naxy_size)) {
+        Rprintf("got ya!\n");
+        *dscore = min_ds;
+        return min_g;
+    }
 
     /* saute in butter for best results */
     int *onion = malloc((g.naxy_size + g.set_size) * sizeof(int));
@@ -176,11 +184,16 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
         int onion_size = 0;
         for (uint32_t j = 0; j <  (uint32_t) g.set_size; ++j) {
             if ((i & (1 << j)) == (1 << j)) {
-                onion[g.naxy_size + onion_size] = g.set[onion_size];
+                onion[g.naxy_size + onion_size] = g.set[j];
                 onion_size++;
             }
         }
         onion_size += g.naxy_size;
+        if (DEBUG && g.x == 0) {
+            for (int i = 0; i < onion_size; ++i)
+                Rprintf("%i ", onion[i]);
+            Rprintf("\n");
+        }
         if (is_valid_insertion(cg, g, onion, onion_size)) {
             struct ill *parents = cg->parents[g.y];
             int new_npar = onion_size + ill_size(parents) + 1;
@@ -219,48 +232,23 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
 
  void insert(struct cgraph *cg, struct gesrec g)
 {
-    Rprintf("insert %i -- > %i\n", g.x, g.y);
+    if (DEBUG)
+        Rprintf("insert %i -- > %i\n", g.x, g.y);
     add_edge_to_cgraph(cg, g.x, g.y, DIRECTED);
     for (int i = 0; i < g.set_size; ++i) {
-        Rprintf("orient %i -- > %i\n", g.set[i], g.y);
+        if (DEBUG)
+            Rprintf("orient %i -- > %i\n", g.set[i], g.y);
         orient_undirected_edge(cg, g.set[i], g.y);
     }
 }
-
-
- void connected_nodes(int node, int *marked, int *nodes, int *n_nodes,
-                            struct cgraph *cg)
-{
-    if (marked[node] == 0) {
-        marked[node]  = 1;
-        struct ill *p = cg->children[node];
-        while(p) {
-            connected_nodes(p->key, marked, nodes, n_nodes, cg);
-            p = p->next;
-        }
-        p = cg->spouses[node];
-        while(p) {
-            connected_nodes(p->key, marked, nodes, n_nodes, cg);
-            p = p->next;
-        }
-        p = cg->parents[node];
-        while(p) {
-            connected_nodes(p->key, marked, nodes, n_nodes, cg);
-            p = p->next;
-        }
-        nodes[*n_nodes] = node;
-        *n_nodes       += 1;
-    }
-}
-
 
 double recalcluate_node(struct dataframe df, struct cgraph *cg,
                                              struct gesrec *gesrecp,
                                              score_func score, double *fargs,
                                              int *iargs)
 {
-    double     dscore = DBL_MAX;
-    double min_dscore = DBL_MAX;
+    double     dscore = 1.0f;
+    double min_dscore = 1.0f;
     int y = gesrecp->y;
     for (int x = 0; x < df.nvar; ++x) {
         if ((x == y) || adjacent_in_cgraph(cg, x, y))
@@ -317,9 +305,9 @@ double recalcluate_node(struct dataframe df, struct cgraph *cg,
 {
     delete_edge_from_cgraph(cg, g.x, g.y, DIRECTED);
     for (int i = 0; i < g.set_size; ++i) {
-
-        orient_undirected_edge(cg, g.x, g.set[i]);
-        orient_undirected_edge(cg, g.y, g.set[i]);
+        //
+        // orient_undirected_edge(cg, g.x, g.set[i]);
+        // orient_undirected_edge(cg, g.y, g.set[i]);
     }
 }
 
@@ -365,31 +353,28 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
     build_heap(heap);
 
 
-    //int *marked = calloc(df.nvar, sizeof(int));
-    //int *nodes  = calloc(df.nvar, sizeof(int));
-    //int n_nodes = 0;
     /* FORWARD EQUIVALENCE SEARCH (FES) */
     struct gesrec *gesrecp;
     /* extract the smallest gesrec from the heap and check to see if positive */
     while ((gesrecp = extract_heap(heap, &dscore)) && dscore <= 0) {
         graph_score += dscore;
         insert(cg, *gesrecp);
-        //ccf_chickering(cg = ccf_pdx(cg));
-        //Rprintf("CHICK PDAG\n");
-        //print_cgraph(cg);
-        // for (int i = 0; i < df.nvar; ++i) {
-        //     gesrecp =  gesrecords + i;
-        //     gesrecp->y = i;
-        //     dscore = recalcluate_node(df, cg, gesrecp, score, fargs, iargs);
-        //     heap->keys[i] = dscore;
-        //     heap->data[i] = gesrecp;
-        //     heap->indices[i] = i;
-        // }
-        // build_heap(heap);
-        Rprintf("start\n");
+        // ccf_chickering(cg = ccf_pdx(cg));
+        //int *marked = calloc(df.nvar, sizeof(int));
+        // int *nodes  = calloc(df.nvar, sizeof(int));
         int n_nodes = 0;
         int y = gesrecp->y;
         int *visited = meek_local(cg, &y, 1, &n_nodes);
+        // if(!visited[gesrecp->x]) {
+        //     visited[gesrecp->x] = 1;
+        //     n_nodes++;
+        // }
+        for(int i = 0; i < gesrecp->set_size; ++i) {
+            if(!visited[gesrecp->set[i]]) {
+                visited[gesrecp->set[i]] = 1;
+                n_nodes++;
+            }
+        }
         int *nodes = calloc(n_nodes, sizeof(int));
         int j = 0;
         for(int i = 0; i < df.nvar; ++i) {
@@ -398,16 +383,17 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
                 j++;
             }
         }
-        Rprintf("done\n");
         free(visited);
-        //Rprintf("LOCAL_MEEK PDAG\n");
-        //print_cgraph(cg);
-        //connected_nodes(gesrecp->y, marked, nodes, &n_nodes, cg);
-        Rprintf("recalculate y\n");
+        // connected_nodes(gesrecp->y, marked, nodes, &n_nodes, cg);
+        if (DEBUG) {
+            // print_cgraph(cg);
+            for(int i = 0; i < n_nodes; ++i)
+                Rprintf("%i ", nodes[i]);
+            Rprintf("\n");
+        }
         double dscore = recalcluate_node(df, cg, gesrecp, score, fargs,
                                              iargs);
         insert_heap(heap, dscore, gesrecp);
-        Rprintf("recalculate x\n");
         for(int i = 0; i < n_nodes ; ++i) {
             if(nodes[i] == y)
                 continue;
@@ -417,15 +403,16 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
             insert_heap(heap, dscore, p);
 
         }
-        Rprintf("done\n");
-        /* reset the node recalculation stack */
-        //memset(marked, 0, df.nvar * sizeof(int));
-        //memset(nodes, 0, df.nvar * sizeof(int));
         n_nodes = 0;
         free(nodes);
+        if (DEBUG) {
+            for(int i = 0; i < df.nvar; ++i) {
+                gesrecp = heap->data[i];
+                Rprintf("%i --> %i, %f\n", gesrecp->x, gesrecp->y, heap->keys[i]);
+            }
+        }
+        //free(marked);
     }
-    //free(marked);
-    //free(nodes);
 
 
     /* BACKWARD EQUIVALENCE SEARCH (FES) */
@@ -441,7 +428,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         free(gesrecords[i].naxy);
     }
     free(gesrecords);
-    print_cgraph(cg);
+    //print_cgraph(cg);
     free_heap(heap);
     Rprintf("FES complete\n");
     return cg;

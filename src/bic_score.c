@@ -194,9 +194,9 @@ void fcov_xy(double *cov_xy, double **df, int npar, int nobs)
     case 3: psums[2] += x[q + 2] * y[q + 2];
     case 2: psums[1] += x[q + 1] * y[q + 1];
     case 1: psums[0] += x[q + 0] * y[q + 0];
-    case 0:
-        psums[0] += psums[1] + psums[2] + psums[3] + psums[4]
-                             + psums[5] + psums[6] + psums[7];
+    case 0: ;
     }
-    return psums[0];
+    return psums[0] + psums[1] + psums[2] + psums[3] + psums[4] + psums[5] +
+            psums[6] + psums[7];
+
 }

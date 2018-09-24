@@ -4,6 +4,13 @@
 #include <cgraph.h>
 #include <meek.h>
 
+
+#define DEBUG 0
+
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
 struct pll {
     struct ill *p;
     struct pll *next;
@@ -16,7 +23,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
 
 static void push_adjacents(int node, struct cgraph *cg, struct ill **stack);
 
-void apply_rule(struct cgraph *cg, int x, struct ill **stack,
+void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
                                    struct pll **compelled, int *visited,
                                    int *n_visited, meek_rule _meek_rule);
 
@@ -48,6 +55,8 @@ int * meek_local(struct cgraph *cg, int *nodes, int n_nodes, int * n_visited)
        undirect_reversible_parents(nodes[i], cg, &stack, &compelled, visited,
                                            n_visited);
        stack = ill_insert_front(stack, nodes[i], 0);
+       if (DEBUG)
+           Rprintf("Push %i\n", nodes[i]);
     }
     for (int i = 0; i < n_nodes; ++i) {
         meek_rules(cg, nodes[i], &stack ,&compelled, visited, n_visited);
@@ -56,11 +65,11 @@ int * meek_local(struct cgraph *cg, int *nodes, int n_nodes, int * n_visited)
         /* pop the top */
         int node = stack->key;
         struct ill *p = stack;
+        stack = stack->next;
+        free(p);
         undirect_reversible_parents(node, cg, &stack, &compelled, visited,
                                           n_visited);
         meek_rules(cg, node, &stack, &compelled, visited, n_visited);
-        stack = stack->next;
-        free(p);
     }
     /*
      * now that we've completed the pdag, we need to clean up the mess we made
@@ -123,7 +132,8 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
         p = ill_search(cg->parents[node], parent);
         /* if the value is positive, the edge isn't compelled */
         if (p->value > 0) {
-            Rprintf("undirect %i --> %i\n", parent, node);
+            if (DEBUG)
+                Rprintf("undirect %i --> %i\n", parent, node);
             node_modified = 1;
             unorient_directed_edge(cg, parent, node);
 
@@ -171,7 +181,8 @@ void orient(struct cgraph *cg, int x, int y, struct ill **stack,
                                      struct pll **compelled, int *visited,
                                      int *n_visited)
 {
-    Rprintf("direct %i --> %i\n", x, y);
+    if (DEBUG)
+        Rprintf("direct %i --> %i\n", x, y);
     orient_undirected_edge(cg, x, y);
     /* get the newly created edge. add it to complled, and mark it compelled */
     struct ill *p = ill_search(cg->parents[y], x);
@@ -187,6 +198,8 @@ void orient(struct cgraph *cg, int x, int y, struct ill **stack,
         *n_visited   += 1;
     }
     /* we need to look at y (again) now that we added a new compelled edge */
+    if (DEBUG)
+        Rprintf("Push %i\n",y);
     *stack = ill_insert_front(*stack, y, 0);
 }
 
@@ -217,8 +230,8 @@ void meek_rules(struct cgraph *cg, int x, struct ill **stack,
                                      struct pll **compelled, int *visited,
                                      int *n_visited)
 {
-    apply_rule(cg, x, stack, compelled, visited, n_visited, _meek1);
-    apply_rule(cg, x, stack, compelled, visited, n_visited, _meek2);
-    apply_rule(cg, x, stack, compelled, visited, n_visited, _meek3);
-    apply_rule(cg, x, stack, compelled, visited, n_visited, _meek4);
+    apply_rule_local(cg, x, stack, compelled, visited, n_visited, _meek1);
+    apply_rule_local(cg, x, stack, compelled, visited, n_visited, _meek2);
+    apply_rule_local(cg, x, stack, compelled, visited, n_visited, _meek3);
+    apply_rule_local(cg, x, stack, compelled, visited, n_visited, _meek4);
 }
