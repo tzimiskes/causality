@@ -9,13 +9,12 @@
 #include <edgetypes.h>
 #include <stdint.h>
 
-#define MAGIX 8.1f
+#define BIC_MIN_DEFAULT 1.0f
 #define DEBUG 0
 
 #ifndef DEBUG
 #define DEBUG 0
 #endif
-
 
 struct gesrec {
     int   x;
@@ -154,7 +153,7 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
                                                 score_func score, double *fargs,
                                                 int *iargs)
 {
-    double min_ds = 1.0f;
+    double min_ds = BIC_MIN_DEFAULT;
     struct gesrec min_g;
     min_g.x         = g.x;
     min_g.y         = g.y;
@@ -165,12 +164,6 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
     if (min_g.naxy == NULL)
         error("failed to allocate memory for naxy in fges!\n");
     memcpy(min_g.naxy, g.naxy, min_g.naxy_size * sizeof(int));
-
-    if (!is_clique(cg, min_g.naxy, min_g.naxy_size)) {
-        Rprintf("got ya!\n");
-        *dscore = min_ds;
-        return min_g;
-    }
 
     /* saute in butter for best results */
     int *onion = malloc((g.naxy_size + g.set_size) * sizeof(int));
@@ -189,7 +182,7 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
             }
         }
         onion_size += g.naxy_size;
-        if (DEBUG && g.x == 0) {
+        if (DEBUG > 2) {
             for (int i = 0; i < onion_size; ++i)
                 Rprintf("%i ", onion[i]);
             Rprintf("\n");
@@ -228,15 +221,13 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
     return min_g;
 }
 
-
-
  void insert(struct cgraph *cg, struct gesrec g)
 {
-    if (DEBUG)
+    if (DEBUG > 0)
         Rprintf("insert %i -- > %i\n", g.x, g.y);
     add_edge_to_cgraph(cg, g.x, g.y, DIRECTED);
     for (int i = 0; i < g.set_size; ++i) {
-        if (DEBUG)
+        if (DEBUG > 0)
             Rprintf("orient %i -- > %i\n", g.set[i], g.y);
         orient_undirected_edge(cg, g.set[i], g.y);
     }
@@ -247,8 +238,8 @@ double recalcluate_node(struct dataframe df, struct cgraph *cg,
                                              score_func score, double *fargs,
                                              int *iargs)
 {
-    double     dscore = 1.0f;
-    double min_dscore = 1.0f;
+    double     dscore = BIC_MIN_DEFAULT;
+    double min_dscore = BIC_MIN_DEFAULT;
     int y = gesrecp->y;
     for (int x = 0; x < df.nvar; ++x) {
         if ((x == y) || adjacent_in_cgraph(cg, x, y))
@@ -336,7 +327,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
     }
     /* STEP 0: score x --> y */
     for (int j = 0; j < df.nvar; ++j) {
-        double min     = DBL_MAX;
+        double min     = BIC_MIN_DEFAULT;
         int    arg_min = -1;
         for (int i = 0; i < j; ++i) {
             int    xy[2] = {i, j};
@@ -364,11 +355,16 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         // int *nodes  = calloc(df.nvar, sizeof(int));
         int n_nodes = 0;
         int y = gesrecp->y;
+        int x = gesrecp->x;
         int *visited = meek_local(cg, &y, 1, &n_nodes);
-        // if(!visited[gesrecp->x]) {
-        //     visited[gesrecp->x] = 1;
-        //     n_nodes++;
-        // }
+        if(!visited[x] && gesrecords[x].y == y) {
+            visited[x] = 1;
+            n_nodes++;
+        }
+        if(!visited[y]) {
+            visited[y] = 1;
+            n_nodes++;
+        }
         for(int i = 0; i < gesrecp->set_size; ++i) {
             if(!visited[gesrecp->set[i]]) {
                 visited[gesrecp->set[i]] = 1;
@@ -385,8 +381,9 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         }
         free(visited);
         // connected_nodes(gesrecp->y, marked, nodes, &n_nodes, cg);
-        if (DEBUG) {
-            // print_cgraph(cg);
+        if (DEBUG > 1) {
+            print_cgraph(cg);
+            Rprintf("Recalculate ");
             for(int i = 0; i < n_nodes; ++i)
                 Rprintf("%i ", nodes[i]);
             Rprintf("\n");
@@ -405,7 +402,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         }
         n_nodes = 0;
         free(nodes);
-        if (DEBUG) {
+        if (DEBUG > 0) {
             for(int i = 0; i < df.nvar; ++i) {
                 gesrecp = heap->data[i];
                 Rprintf("%i --> %i, %f\n", gesrecp->x, gesrecp->y, heap->keys[i]);
