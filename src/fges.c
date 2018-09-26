@@ -9,8 +9,7 @@
 #include <edgetypes.h>
 #include <stdint.h>
 
-#define MAGIX 8.1f
-#define DEBUG 0
+#define DEBUG 1
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -189,7 +188,7 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
             }
         }
         onion_size += g.naxy_size;
-        if (DEBUG && g.x == 0) {
+        if (DEBUG > 2) {
             for (int i = 0; i < onion_size; ++i)
                 Rprintf("%i ", onion[i]);
             Rprintf("\n");
@@ -232,11 +231,11 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
 
  void insert(struct cgraph *cg, struct gesrec g)
 {
-    if (DEBUG)
+    if (DEBUG > 0 )
         Rprintf("insert %i -- > %i\n", g.x, g.y);
     add_edge_to_cgraph(cg, g.x, g.y, DIRECTED);
     for (int i = 0; i < g.set_size; ++i) {
-        if (DEBUG)
+        if (DEBUG > 0)
             Rprintf("orient %i -- > %i\n", g.set[i], g.y);
         orient_undirected_edge(cg, g.set[i], g.y);
     }
@@ -405,7 +404,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         }
         n_nodes = 0;
         free(nodes);
-        if (DEBUG) {
+        if (DEBUG > 0) {
             for(int i = 0; i < df.nvar; ++i) {
                 gesrecp = heap->data[i];
                 Rprintf("%i --> %i, %f\n", gesrecp->x, gesrecp->y, heap->keys[i]);
