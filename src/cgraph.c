@@ -41,7 +41,7 @@ void fill_in_cgraph(struct cgraph *cg, int n_edges, int *edges)
     cg->n_edges = n_edges;
 }
 
-struct cgraph *copy_cgraph(struct cgraph *cg)
+struct cgraph * copy_cgraph(struct cgraph *cg)
 {
     struct cgraph  *copy          = create_cgraph(cg->n_nodes);
     struct ill    **parents       = cg->parents;
@@ -150,6 +150,60 @@ int edge_directed_in_cgraph(struct cgraph *cg, int parent, int child)
         p = p->next;
     }
     return 0;
+}
+
+
+int identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2, int node)
+{
+    struct ill *s1 = cg1->spouses[node];
+    struct ill *s2 = cg2->spouses[node];
+    while (s1) {
+        struct ill *p = s2;
+        while(p) {
+            if(s1->key == p->key)
+                goto S1_NEXT;
+            p = p->next;
+        }
+        return 0;
+        S1_NEXT: ;
+        s1 = s1->next;
+    }
+    while (s2) {
+        struct ill *p = s1;
+        while(p) {
+            if(s2->key == p->key)
+                goto S2_NEXT;
+            p = p->next;
+        }
+        return 0;
+        S2_NEXT: ;
+        s2 = s2->next;
+    }
+    struct ill *p1 = cg1->parents[node];
+    struct ill *p2 = cg2->parents[node];
+    while (p1) {
+        struct ill *p = p2;
+        while(p) {
+            if(p1->key == p->key)
+                goto P1_NEXT;
+            p = p->next;
+        }
+        return 0;
+        P1_NEXT: ;
+        p1 = p1->next;
+    }
+    while (p2) {
+        struct ill *p = p1;
+        while(p) {
+            if(p2->key == p->key)
+                goto P2_NEXT;
+            p = p->next;
+        }
+        return 0;
+        P2_NEXT: ;
+        p2 = p2->next;
+    }
+    return 1;
 }
 
 void orient_undirected_edge(struct cgraph *cg, int parent, int child)

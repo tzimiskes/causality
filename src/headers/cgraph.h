@@ -24,6 +24,9 @@ struct cgraph * copy_cgraph(struct cgraph *cg);
 void            print_cgraph(struct cgraph *cg);
 int             edge_undirected_in_cgraph(struct cgraph *cg, int node1,
                                                              int node2);
+
+int             identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2,
+                                                         int node);
 int             adjacent_in_cgraph(struct cgraph *cg, int node1, int node2);
 int             edge_directed_in_cgraph(struct cgraph *cg, int parent,
                                                            int child);
