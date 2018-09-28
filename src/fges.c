@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #define BIC_MIN_DEFAULT 1.0f
-#define DEBUG 0
+#define DEBUG 1
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -402,7 +402,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         }
         n_nodes = 0;
         free(nodes);
-        if (DEBUG > 0) {
+        if (DEBUG > 1) {
             for(int i = 0; i < df.nvar; ++i) {
                 gesrecp = heap->data[i];
                 Rprintf("%i --> %i, %f\n", gesrecp->x, gesrecp->y, heap->keys[i]);
