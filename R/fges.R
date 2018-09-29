@@ -48,6 +48,6 @@ fges <- function(df,
   }
   else if (score == "CG")
     stop("not implemented")
-  .Call("ccf_fges_wrapper", df, score ,dimensions, floating.args, integer.args)
-  return()
+  
+  system.time(.Call("ccf_fges_wrapper", df, score ,dimensions, floating.args, integer.args))
 }

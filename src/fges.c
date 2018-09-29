@@ -9,12 +9,12 @@
 #include <edgetypes.h>
 #include <stdint.h>
 
+#define BIC_MIN_DEFAULT 1.0f
 #define DEBUG 1
 
 #ifndef DEBUG
 #define DEBUG 0
 #endif
-
 
 struct gesrec {
     int   x;
@@ -153,7 +153,7 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
                                                 score_func score, double *fargs,
                                                 int *iargs)
 {
-    double min_ds = 1.0f;
+    double min_ds = BIC_MIN_DEFAULT;
     struct gesrec min_g;
     min_g.x         = g.x;
     min_g.y         = g.y;
@@ -164,12 +164,6 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
     if (min_g.naxy == NULL)
         error("failed to allocate memory for naxy in fges!\n");
     memcpy(min_g.naxy, g.naxy, min_g.naxy_size * sizeof(int));
-
-    if (!is_clique(cg, min_g.naxy, min_g.naxy_size)) {
-        Rprintf("got ya!\n");
-        *dscore = min_ds;
-        return min_g;
-    }
 
     /* saute in butter for best results */
     int *onion = malloc((g.naxy_size + g.set_size) * sizeof(int));
@@ -227,11 +221,9 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
     return min_g;
 }
 
-
-
  void insert(struct cgraph *cg, struct gesrec g)
 {
-    if (DEBUG > 0 )
+    if (DEBUG > 0)
         Rprintf("insert %i -- > %i\n", g.x, g.y);
     add_edge_to_cgraph(cg, g.x, g.y, DIRECTED);
     for (int i = 0; i < g.set_size; ++i) {
@@ -241,13 +233,58 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
     }
 }
 
+
+int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
+                                                     struct gesrec *gesrecp,
+                                                     struct gesrec *gesrecs,
+                                                     int *visited,
+                                                     int n_visited,
+                                                     int *n_nodes)
+{
+    int x = gesrecp->x;
+    int y = gesrecp->y;
+
+    if(!visited[y])
+        visited[y] = 1;
+    for(int i = 0; i < gesrecp->set_size; ++i) {
+        if(!visited[gesrecp->set[i]])
+            visited[gesrecp->set[i]] = 1;
+    }
+    for(int i = 0; i < cg->n_nodes; ++i) {
+        if (visited[i] && !identical_in_cgraphs(cg, cpy, i)) {
+            ill_free(cpy->parents[i]);
+            cpy->parents[i] = copy_ill(cg->parents[i]);
+            ill_free(cpy->spouses[i]);
+            cpy->spouses[i] = copy_ill(cg->spouses[i]);
+            *n_nodes += 1;
+        }
+        else {
+            if(visited[i])
+                Rprintf("save %i\n", i);
+            visited[i] = 0;
+        }
+    }
+    if(!visited[x] &&  gesrecs[x].y == y)
+        visited[x] = 1;
+    int *nodes = calloc(*n_nodes, sizeof(int));
+    int j = 0;
+    for(int i = 0; i < cg->n_nodes; ++i) {
+        if(visited[i]) {
+            nodes[j] = i;
+            j++;
+        }
+    }
+    free(visited);
+    return nodes;
+}
+
 double recalcluate_node(struct dataframe df, struct cgraph *cg,
                                              struct gesrec *gesrecp,
                                              score_func score, double *fargs,
                                              int *iargs)
 {
-    double     dscore = 1.0f;
-    double min_dscore = 1.0f;
+    double     dscore = BIC_MIN_DEFAULT;
+    double min_dscore = BIC_MIN_DEFAULT;
     int y = gesrecp->y;
     for (int x = 0; x < df.nvar; ++x) {
         if ((x == y) || adjacent_in_cgraph(cg, x, y))
@@ -335,7 +372,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
     }
     /* STEP 0: score x --> y */
     for (int j = 0; j < df.nvar; ++j) {
-        double min     = DBL_MAX;
+        double min     = BIC_MIN_DEFAULT;
         int    arg_min = -1;
         for (int i = 0; i < j; ++i) {
             int    xy[2] = {i, j};
@@ -353,39 +390,26 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
 
 
     /* FORWARD EQUIVALENCE SEARCH (FES) */
+    struct cgraph *cpy = copy_cgraph(cg);
     struct gesrec *gesrecp;
     /* extract the smallest gesrec from the heap and check to see if positive */
     while ((gesrecp = extract_heap(heap, &dscore)) && dscore <= 0) {
         graph_score += dscore;
+
         insert(cg, *gesrecp);
-        // ccf_chickering(cg = ccf_pdx(cg));
-        //int *marked = calloc(df.nvar, sizeof(int));
-        // int *nodes  = calloc(df.nvar, sizeof(int));
+
+        int  n_visited = 0;
+        int  y         = gesrecp->y;
+        int *visited   = meek_local(cg, &y, 1, &n_visited);
         int n_nodes = 0;
-        int y = gesrecp->y;
-        int *visited = meek_local(cg, &y, 1, &n_nodes);
-        // if(!visited[gesrecp->x]) {
-        //     visited[gesrecp->x] = 1;
-        //     n_nodes++;
-        // }
-        for(int i = 0; i < gesrecp->set_size; ++i) {
-            if(!visited[gesrecp->set[i]]) {
-                visited[gesrecp->set[i]] = 1;
-                n_nodes++;
-            }
-        }
-        int *nodes = calloc(n_nodes, sizeof(int));
-        int j = 0;
-        for(int i = 0; i < df.nvar; ++i) {
-            if(visited[i]) {
-                nodes[j] = i;
-                j++;
-            }
-        }
-        free(visited);
+        int *nodes  =  deterimine_nodes_to_recalc(cpy, cg, gesrecp, gesrecords,
+                                                        visited, n_visited,
+                                                        &n_nodes);
+
         // connected_nodes(gesrecp->y, marked, nodes, &n_nodes, cg);
-        if (DEBUG) {
-            // print_cgraph(cg);
+        if (DEBUG > 0) {
+            //print_cgraph(cg);
+            Rprintf("Recalculate ");
             for(int i = 0; i < n_nodes; ++i)
                 Rprintf("%i ", nodes[i]);
             Rprintf("\n");
@@ -404,7 +428,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         }
         n_nodes = 0;
         free(nodes);
-        if (DEBUG > 0) {
+        if (DEBUG > 1) {
             for(int i = 0; i < df.nvar; ++i) {
                 gesrecp = heap->data[i];
                 Rprintf("%i --> %i, %f\n", gesrecp->x, gesrecp->y, heap->keys[i]);
@@ -412,6 +436,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         }
         //free(marked);
     }
+    free_cgraph(cpy);
 
 
     /* BACKWARD EQUIVALENCE SEARCH (FES) */
