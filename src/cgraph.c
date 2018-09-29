@@ -168,6 +168,7 @@ int identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2, int node)
         S1_NEXT: ;
         s1 = s1->next;
     }
+    s1 = cg1->spouses[node];
     while (s2) {
         struct ill *p = s1;
         while(p) {
@@ -192,6 +193,7 @@ int identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2, int node)
         P1_NEXT: ;
         p1 = p1->next;
     }
+    p1 = cg1->parents[node];
     while (p2) {
         struct ill *p = p1;
         while(p) {
