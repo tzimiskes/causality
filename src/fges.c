@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #define BIC_MIN_DEFAULT 1.0f
+
 #define DEBUG 0
 
 #ifndef DEBUG
@@ -25,8 +26,13 @@ struct gesrec {
     int  *naxy;
 }; /*  32 bytes */
 
-struct cgraph * ccf_fges(struct dataframe df, score_func score, double *fargs,
-                                              int *iargs);
+struct score {
+    score_func score;
+    double    *fargs;
+    int       *iargs;
+};
+
+struct cgraph * ccf_fges(struct dataframe df, struct score score);
 
 SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
                                SEXP FloatingArgs, SEXP IntegerArgs)
@@ -54,18 +60,19 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
         else
             df.df[i] = REAL(VECTOR_ELT(Df, i));
     }
-    score_func score;
+    score_func score_func;
     if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
-        score = bic_score;
+        score_func = bic_score;
     else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
-        score = bdeu_score;
+        score_func = bdeu_score;
     else
         error("nope\n");
     /*
      * All the preprocessing work has now been done, so lets instantiate
      * an empty graph and run FGES
      */
-    struct cgraph *cg = ccf_fges(df, score, fargs, iargs);
+    struct score score = {score_func, fargs, iargs};
+    struct cgraph *cg = ccf_fges(df, score);
 
 
     /* POST PROCESSING */
@@ -149,8 +156,7 @@ int is_valid_insertion(struct cgraph *cg, struct gesrec g, int *onion,
 
 struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
                                                 struct gesrec g, double *dscore,
-                                                score_func score, double *fargs,
-                                                int *iargs)
+                                                struct score score)
 {
     double min_ds = BIC_MIN_DEFAULT;
     struct gesrec min_g;
@@ -204,7 +210,7 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
             j++;
         }
         double ds = score_diff(df, xy, xy + 1, new_npar, new_npar - 1,
-                                         fargs, iargs, score);
+                                         score.fargs, score.iargs, score.score);
         free(xy);
         if (ds < min_ds) {
             min_ds = ds;
@@ -282,8 +288,7 @@ int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
 
 double recalcluate_node(struct dataframe df, struct cgraph *cg,
                                              struct gesrec *gesrecp,
-                                             score_func score, double *fargs,
-                                             int *iargs)
+                                             struct score score)
 {
     double     dscore = BIC_MIN_DEFAULT;
     double min_dscore = BIC_MIN_DEFAULT;
@@ -320,8 +325,7 @@ double recalcluate_node(struct dataframe df, struct cgraph *cg,
             }
             l = l->next;
         }
-        struct gesrec min_g = score_powerset(cg, df, g, &dscore, score,
-                                                 fargs, iargs);
+        struct gesrec min_g = score_powerset(cg, df, g, &dscore, score);
         free(g.set);
         free(g.naxy);
         if (dscore < min_dscore) {
@@ -348,8 +352,7 @@ double recalcluate_node(struct dataframe df, struct cgraph *cg,
     }
 }
 
-struct cgraph *ccf_fges(struct dataframe df, score_func score,
-                                        double *fargs, int *iargs)
+struct cgraph *ccf_fges(struct dataframe df, struct score score)
 {
     struct cgraph *cg          = create_cgraph(df.nvar);
     double         graph_score = 0.0f;
@@ -377,7 +380,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         int    arg_min = -1;
         for (int i = 0; i < j; ++i) {
             int    xy[2] = {i, j};
-            double ds = score_diff(df, xy, NULL, 1, 0, fargs, iargs, score);
+            double ds = score_diff(df, xy, NULL, 1, 0, score.fargs, score.iargs, score.score);
             if (ds < min) {
                 min     = ds;
                 arg_min = i;
@@ -405,7 +408,6 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         int *nodes     = deterimine_nodes_to_recalc(cpy, cg, gesrecp,
                                                          gesrecords, visited,
                                                          n_visited, &n_nodes);
-
         if (DEBUG > 2)
             print_cgraph(cg);
         if (DEBUG > 0) {
@@ -417,7 +419,7 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         for(int i = 0; i < n_nodes; ++i) {
             struct gesrec *p = gesrecords + nodes[i];
             remove_heap(heap, nodes[i]);
-            double dscore = recalcluate_node(df, cg, p, score, fargs, iargs);
+            double dscore = recalcluate_node(df, cg, p, score);
             insert_heap(heap, dscore, p);
         }
         n_nodes = 0;
