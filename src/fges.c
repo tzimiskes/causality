@@ -336,7 +336,6 @@ double recalcluate_node(struct dataframe df, struct cgraph *cg,
     return min_dscore;
 }
 
-
  void delete(struct cgraph *cg, struct gesrec g)
 {
     delete_edge_from_cgraph(cg, g.x, g.y, DIRECTED);
@@ -388,12 +387,11 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
     }
     build_heap(heap);
 
-
     /* FORWARD EQUIVALENCE SEARCH (FES) */
     struct cgraph *cpy = copy_cgraph(cg);
     struct gesrec *gesrecp;
     /* extract the smallest gesrec from the heap and check to see if positive */
-    while ((gesrecp = extract_heap(heap, &dscore)) && dscore <= 0) {
+    while ((gesrecp = peek_heap(heap, &dscore)) && dscore <= 0) {
         graph_score += dscore;
 
         insert(cg, *gesrecp);
@@ -401,12 +399,11 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         int  n_visited = 0;
         int  y         = gesrecp->y;
         int *visited   = meek_local(cg, &y, 1, &n_visited);
-        int n_nodes = 0;
-        int *nodes  =  deterimine_nodes_to_recalc(cpy, cg, gesrecp, gesrecords,
-                                                        visited, n_visited,
-                                                        &n_nodes);
+        int  n_nodes   = 0;
+        int *nodes     = deterimine_nodes_to_recalc(cpy, cg, gesrecp,
+                                                         gesrecords, visited,
+                                                         n_visited, &n_nodes);
 
-        // connected_nodes(gesrecp->y, marked, nodes, &n_nodes, cg);
         if (DEBUG > 0) {
             //print_cgraph(cg);
             Rprintf("Recalculate ");
@@ -414,17 +411,11 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
                 Rprintf("%i ", nodes[i]);
             Rprintf("\n");
         }
-        double dscore = recalcluate_node(df, cg, gesrecp, score, fargs,
-                                             iargs);
-        insert_heap(heap, dscore, gesrecp);
-        for(int i = 0; i < n_nodes ; ++i) {
-            if(nodes[i] == y)
-                continue;
+        for(int i = 0; i < n_nodes; ++i) {
             struct gesrec *p = gesrecords + nodes[i];
             remove_heap(heap, nodes[i]);
             double dscore = recalcluate_node(df, cg, p, score, fargs, iargs);
             insert_heap(heap, dscore, p);
-
         }
         n_nodes = 0;
         free(nodes);
@@ -434,10 +425,8 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
                 Rprintf("%i --> %i, %f\n", gesrecp->x, gesrecp->y, heap->keys[i]);
             }
         }
-        //free(marked);
     }
     free_cgraph(cpy);
-
 
     /* BACKWARD EQUIVALENCE SEARCH (FES) */
     while (0) {

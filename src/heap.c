@@ -91,6 +91,14 @@ static inline void pop_heap(struct heap *hp)
     min_heapify(hp, 0);
 }
 
+void *peek_heap(struct heap *hp, double *ds)
+{
+    if (hp->size < 1)
+        return NULL;
+    *ds = hp->keys[0];
+    return  hp->data[0];
+}
+
 void *extract_heap(struct heap *hp, double *ds)
 {
     void *p;
