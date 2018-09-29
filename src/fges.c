@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #define BIC_MIN_DEFAULT 1.0f
-#define DEBUG 1
+#define DEBUG 0
 
 #ifndef DEBUG
 #define DEBUG 0
@@ -42,8 +42,8 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     if (!isNull(FloatingArgs))
         fargs = REAL(FloatingArgs);
     struct dataframe df;
-    df.nvar  = length(Df);
-    df.nobs  = length(VECTOR_ELT(Df, 0));
+    df.nvar   = length(Df);
+    df.nobs   = length(VECTOR_ELT(Df, 0));
     df.states = INTEGER(States);
     df.df     = malloc(df.nvar * sizeof(void *));
     /* populate df with the pointers to the columns of the R dataframe */
@@ -90,16 +90,15 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
 int unblocked_semidirected_path(struct cgraph *cg, int src, int dst, int *onion,
                                             int onion_size)
 {
-
-    int unblocked_path = 0;
     struct ill *stack  = ill_insert_front(NULL, src, 0);
     int *marked = calloc(cg->n_nodes, sizeof(int));
     if (marked == NULL)
         error("Failed to allocate memory for marked in fges!\n");
+    int unblocked_path = 0;
     while (stack) {
         /* pop */
-        int node = stack->key;
-        struct ill *tmp = stack->next;
+        int         node = stack->key;
+        struct ill *tmp  = stack->next;
         free(stack);
         stack = tmp;
         /* check to if T \cup NAXY block the path. */
@@ -182,37 +181,37 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
             }
         }
         onion_size += g.naxy_size;
-        if (DEBUG > 2) {
-            for (int i = 0; i < onion_size; ++i)
-                Rprintf("%i ", onion[i]);
-            Rprintf("\n");
+        // if (DEBUG > 2) {
+        //     for (int i = 0; i < onion_size; ++i)
+        //         Rprintf("%i ", onion[i]);
+        //     Rprintf("\n");
+        // }
+        if (!is_valid_insertion(cg, g, onion, onion_size))
+            continue;
+        struct ill *parents = cg->parents[g.y];
+        int         new_npar = onion_size + ill_size(parents) + 1;
+        int        *xy = malloc((new_npar + 1) * sizeof(int));
+        if (xy == NULL)
+            error("failed to allocate memory for xy in fges!\n");
+        xy[0]        = g.x;
+        xy[new_npar] = g.y;
+        for (int j = 0; j < onion_size; ++j)
+            xy[1 + j] = onion[j];
+        int j = onion_size + 1;
+        while (parents) {
+            xy[j]   = parents->key;
+            parents = parents->next;
+            j++;
         }
-        if (is_valid_insertion(cg, g, onion, onion_size)) {
-            struct ill *parents = cg->parents[g.y];
-            int new_npar = onion_size + ill_size(parents) + 1;
-            int *xy = malloc((new_npar + 1) * sizeof(int));
-            if (xy == NULL)
-                error("failed to allocate memory for xy in fges!\n");
-            xy[0]        = g.x;
-            xy[new_npar] = g.y;
-            for (int j = 0; j < onion_size; ++j)
-                xy[1 + j] = onion[j];
-            int j = onion_size + 1;
-            while (parents) {
-                xy[j]   = parents->key;
-                parents = parents->next;
-                j++;
-            }
-            double ds = score_diff(df, xy, xy + 1, new_npar, new_npar - 1,
-                                             fargs, iargs, score);
-            free(xy);
-            if (ds < min_ds) {
-                min_ds = ds;
-                min_g.set_size = onion_size - g.naxy_size;
-                min_g.set = malloc(min_g.set_size * sizeof(int));
-                for (int j = 0; j < min_g.set_size; ++j) {
-                    min_g.set[j] = onion[j + min_g.naxy_size];
-                }
+        double ds = score_diff(df, xy, xy + 1, new_npar, new_npar - 1,
+                                         fargs, iargs, score);
+        free(xy);
+        if (ds < min_ds) {
+            min_ds = ds;
+            min_g.set_size = onion_size - g.naxy_size;
+            min_g.set = malloc(min_g.set_size * sizeof(int));
+            for (int j = 0; j < min_g.set_size; ++j) {
+                min_g.set[j] = onion[j + min_g.naxy_size];
             }
         }
     }
@@ -251,21 +250,24 @@ int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
             visited[gesrecp->set[i]] = 1;
     }
     for(int i = 0; i < cg->n_nodes; ++i) {
-        if (visited[i] && !identical_in_cgraphs(cg, cpy, i)) {
-            ill_free(cpy->parents[i]);
-            cpy->parents[i] = copy_ill(cg->parents[i]);
-            ill_free(cpy->spouses[i]);
-            cpy->spouses[i] = copy_ill(cg->spouses[i]);
-            *n_nodes += 1;
-        }
-        else {
-            if(visited[i])
+        if (visited[i]) {
+            if (!identical_in_cgraphs(cg, cpy, i)) {
+                ill_free(cpy->parents[i]);
+                cpy->parents[i] = copy_ill(cg->parents[i]);
+                ill_free(cpy->spouses[i]);
+                cpy->spouses[i] = copy_ill(cg->spouses[i]);
+                *n_nodes += 1;
+            }
+            else {
                 Rprintf("save %i\n", i);
-            visited[i] = 0;
+                visited[i] = 0;
+            }
         }
     }
-    if(!visited[x] &&  gesrecs[x].y == y)
+    if(!visited[x] &&  gesrecs[x].y == y) {
         visited[x] = 1;
+        *n_nodes  += 1;
+    }
     int *nodes = calloc(*n_nodes, sizeof(int));
     int j = 0;
     for(int i = 0; i < cg->n_nodes; ++i) {
@@ -404,8 +406,9 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
                                                          gesrecords, visited,
                                                          n_visited, &n_nodes);
 
+        if (DEBUG > 2)
+            print_cgraph(cg);
         if (DEBUG > 0) {
-            //print_cgraph(cg);
             Rprintf("Recalculate ");
             for(int i = 0; i < n_nodes; ++i)
                 Rprintf("%i ", nodes[i]);
@@ -441,7 +444,6 @@ struct cgraph *ccf_fges(struct dataframe df, score_func score,
         free(gesrecords[i].naxy);
     }
     free(gesrecords);
-    //print_cgraph(cg);
     free_heap(heap);
     Rprintf("FES complete\n");
     return cg;
