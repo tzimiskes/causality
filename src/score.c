@@ -3,7 +3,7 @@
 #include <scores.h>
 
 double score_graph(struct cgraph *cg, struct dataframe df, double *fargs,
-                                      int *iargs, score_func score);
+                                      int *iargs, score score);
 
 SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
                                          SEXP FloatingArgs, SEXP IntegerArgs)
@@ -45,7 +45,7 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
             df.df[i] = REAL(VECTOR_ELT(Df, i));
     }
 
-    score_func score;
+    score score;
     if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
         score = bic_score;
     else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
@@ -66,7 +66,7 @@ SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
  * the model given the data.
  */
 double score_graph(struct cgraph *cg, struct dataframe df, double *fargs,
-                                      int *iargs, score_func score)
+                                      int *iargs, score score)
 {
     double   graph_score = 0.0f;
     int      n_nodes     = cg->n_nodes;
@@ -85,19 +85,4 @@ double score_graph(struct cgraph *cg, struct dataframe df, double *fargs,
         }
     }
     return graph_score;
-}
-
-/*
- * score diff calculates the difference in BIC scores between two configurations
- * new and old
- */
-double score_diff(struct dataframe df, int *new_xy, int *old_xy, int new_npar,
-                                int old_npar, double *fargs, int *iargs,
-                                score_func score)
-{
-    if (old_npar == 0)
-        return score(df, new_xy, new_npar, fargs, iargs);
-    else
-        return score(df, new_xy, new_npar, fargs, iargs)
-               - score(df, old_xy, old_npar, fargs, iargs);
 }

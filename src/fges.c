@@ -11,8 +11,6 @@
 
 #define BIC_MIN_DEFAULT 1.0f
 
-#define DEBUG 0
-
 #ifndef DEBUG
 #define DEBUG 0
 #endif
@@ -27,7 +25,7 @@ struct gesrec {
 }; /*  32 bytes */
 
 struct score {
-    score_func score;
+    ges_score score;
     double    *fargs;
     int       *iargs;
 };
@@ -60,18 +58,16 @@ SEXP ccf_fges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
         else
             df.df[i] = REAL(VECTOR_ELT(Df, i));
     }
-    score_func score_func;
+    ges_score ges_score;
     if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
-        score_func = bic_score;
-    else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
-        score_func = bdeu_score;
+        ges_score = ges_bic_score;
     else
         error("nope\n");
     /*
      * All the preprocessing work has now been done, so lets instantiate
      * an empty graph and run FGES
      */
-    struct score score = {score_func, fargs, iargs};
+    struct score score = {ges_score, fargs, iargs};
     struct cgraph *cg = ccf_fges(df, score);
 
 
@@ -187,31 +183,24 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
             }
         }
         onion_size += g.naxy_size;
-        // if (DEBUG > 2) {
-        //     for (int i = 0; i < onion_size; ++i)
-        //         Rprintf("%i ", onion[i]);
-        //     Rprintf("\n");
-        // }
         if (!is_valid_insertion(cg, g, onion, onion_size))
             continue;
         struct ill *parents = cg->parents[g.y];
-        int         new_npar = onion_size + ill_size(parents) + 1;
-        int        *xy = malloc((new_npar + 1) * sizeof(int));
-        if (xy == NULL)
+        int         npar    = onion_size + ill_size(parents);
+        int        *ypar    = malloc(npar * sizeof(int));
+        if (ypar == NULL)
             error("failed to allocate memory for xy in fges!\n");
-        xy[0]        = g.x;
-        xy[new_npar] = g.y;
         for (int j = 0; j < onion_size; ++j)
-            xy[1 + j] = onion[j];
-        int j = onion_size + 1;
+            ypar[j] = onion[j];
+        int j = onion_size;
         while (parents) {
-            xy[j]   = parents->key;
+            ypar[j] = parents->key;
             parents = parents->next;
             j++;
         }
-        double ds = score_diff(df, xy, xy + 1, new_npar, new_npar - 1,
-                                         score.fargs, score.iargs, score.score);
-        free(xy);
+        double ds = ges_bic_score(df, g.x, g.y, ypar, npar, score.fargs,
+                                         score.iargs);
+        free(ypar);
         if (ds < min_ds) {
             min_ds = ds;
             min_g.set_size = onion_size - g.naxy_size;
@@ -226,7 +215,7 @@ struct gesrec score_powerset(struct cgraph *cg, struct dataframe df,
     return min_g;
 }
 
- void insert(struct cgraph *cg, struct gesrec g)
+void insert(struct cgraph *cg, struct gesrec g)
 {
     if (DEBUG > 0)
         Rprintf("insert %i -- > %i\n", g.x, g.y);
@@ -375,12 +364,14 @@ struct cgraph *ccf_fges(struct dataframe df, struct score score)
         indices[i] = i;
     }
     /* STEP 0: score x --> y */
+    if(DEBUG)
+        Rprintf("Step 0\n");
     for (int j = 0; j < df.nvar; ++j) {
         double min     = BIC_MIN_DEFAULT;
         int    arg_min = -1;
         for (int i = 0; i < j; ++i) {
-            int    xy[2] = {i, j};
-            double ds = score_diff(df, xy, NULL, 1, 0, score.fargs, score.iargs, score.score);
+            double ds = ges_bic_score(df, i, j, NULL, 0, score.fargs,
+                                        score.iargs);
             if (ds < min) {
                 min     = ds;
                 arg_min = i;
@@ -390,6 +381,8 @@ struct cgraph *ccf_fges(struct dataframe df, struct score score)
         gesrecords[j].x = arg_min;
         gesrecords[j].y = j;
     }
+    if(DEBUG)
+        Rprintf("Step 0 Done\n");
     build_heap(heap);
 
     /* FORWARD EQUIVALENCE SEARCH (FES) */
@@ -398,7 +391,6 @@ struct cgraph *ccf_fges(struct dataframe df, struct score score)
     /* extract the smallest gesrec from the heap and check to see if positive */
     while ((gesrecp = peek_heap(heap, &dscore)) && dscore <= 0) {
         graph_score += dscore;
-
         insert(cg, *gesrecp);
 
         int  n_visited = 0;
@@ -408,14 +400,6 @@ struct cgraph *ccf_fges(struct dataframe df, struct score score)
         int *nodes     = deterimine_nodes_to_recalc(cpy, cg, gesrecp,
                                                          gesrecords, visited,
                                                          n_visited, &n_nodes);
-        if (DEBUG > 2)
-            print_cgraph(cg);
-        if (DEBUG > 0) {
-            Rprintf("Recalculate ");
-            for(int i = 0; i < n_nodes; ++i)
-                Rprintf("%i ", nodes[i]);
-            Rprintf("\n");
-        }
         for(int i = 0; i < n_nodes; ++i) {
             struct gesrec *p = gesrecords + nodes[i];
             remove_heap(heap, nodes[i]);
@@ -431,7 +415,6 @@ struct cgraph *ccf_fges(struct dataframe df, struct score score)
             }
         }
     }
-    free_cgraph(cpy);
 
     /* BACKWARD EQUIVALENCE SEARCH (FES) */
     while (0) {
@@ -447,6 +430,8 @@ struct cgraph *ccf_fges(struct dataframe df, struct score score)
     }
     free(gesrecords);
     free_heap(heap);
+    free_cgraph(cpy);
+    print_cgraph(cg);
     Rprintf("FES complete\n");
     return cg;
 }
