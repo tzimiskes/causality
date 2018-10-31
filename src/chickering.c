@@ -19,15 +19,12 @@
 #define COMPELLED  1 /* This means directed */
 #define REVERSABLE 2 /* This means undirected */
 
-#ifndef DEBUG
-#define DEBUG 0
-#endif
+static void order_edges(struct cgraph *cg, int *sort);
+static void insertion_sort(struct ill *list);
+static void find_compelled(struct cgraph *cg, int *sort);
 
-void order_edges(struct cgraph *cg, int *sort);
-void insertion_sort(struct ill *list);
-void find_compelled(struct cgraph *cg, int *sort);
-
-SEXP ccf_chickering_wrapper(SEXP Graph) {
+SEXP ccf_chickering_wrapper(SEXP Graph)
+{
     int           *edges   = calculate_edges_ptr(Graph);
     int            n_nodes = length(VECTOR_ELT(Graph, NODES));
     int            n_edges = nrows(VECTOR_ELT(Graph, EDGES));
@@ -45,14 +42,7 @@ SEXP ccf_chickering_wrapper(SEXP Graph) {
 void ccf_chickering(struct cgraph *cg)
 {
     int *sort = ccf_sort(cg);
-    if (DEBUG) {
-        for(int i = 0; i < cg->n_nodes; ++i)
-            Rprintf("%i ", sort[i]);
-        Rprintf("\n");
-    }
     order_edges(cg, sort);
-    if (DEBUG)
-        print_cgraph(cg);
     find_compelled(cg, sort);
     free(sort);
 }
@@ -61,7 +51,7 @@ void ccf_chickering(struct cgraph *cg)
  * order_edges orders the parents of cg such that the nodes are in descending
  * order according to the sort.
  */
- void order_edges(struct cgraph *cg, int *sort)
+static void order_edges(struct cgraph *cg, int *sort)
 {
     int  n_nodes  = cg->n_nodes;
     int *inv_sort = malloc(n_nodes * sizeof(int));
@@ -91,7 +81,7 @@ void ccf_chickering(struct cgraph *cg)
  * faster because the average degree of causal graphs is 2-5, and insertion sort
  * is faster than merge sort until we hit 10-50 elements.
  */
- void insertion_sort(struct ill *list)
+static void insertion_sort(struct ill *list)
 {
     while (list) {
         struct ill *top = list;
@@ -111,7 +101,7 @@ void ccf_chickering(struct cgraph *cg)
     }
 }
 
- void find_compelled(struct cgraph *cg, int *sort)
+static void find_compelled(struct cgraph *cg, int *sort)
 {
     struct ill **parents = cg->parents;
     int          n_nodes = cg->n_nodes;
@@ -153,15 +143,10 @@ void ccf_chickering(struct cgraph *cg)
             /* if true , w --> y , x;  x--> y form a shielded collider */
             if (edge_directed_in_cgraph(cg, w, y)) {
                 struct ill* p = ill_search(parents[y], w);
-                if(DEBUG)
-                    Rprintf("Shielded collider: %i --> %i\n", p->key, y);
                 p->value = COMPELLED;
             }
             /* otherwise it is a chain and parents of y are compelled */
             else {
-                if(DEBUG) {
-                    Rprintf("Chain : %i --> %i --> %i\n", w, x, y);
-                }
                 struct ill *p = parents[y];
                 while (p) {
                     p->value = COMPELLED;
@@ -181,8 +166,6 @@ void ccf_chickering(struct cgraph *cg)
         while (p) {
             int z = p->key;
             if (z != x && !adjacent_in_cgraph(cg, z, x)) {
-                if (DEBUG)
-                    Rprintf("Unshielded Collider: %i --> %i <-- %i\n", z, y, x);
                 unshielded_collider = 1;
                 break;
             }
