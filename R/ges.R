@@ -1,6 +1,6 @@
 #' @export
-#' @useDynLib causality ccf_fges_wrapper
-fges <- function(df,
+#' @useDynLib causality ccf_ges_wrapper
+ges <- function(df,
                   score = c("BIC", "BDue"),
                   penalty = 1.0,
                   sample_prior = 1.0,
@@ -15,8 +15,7 @@ fges <- function(df,
   for (j in 1:ncol) {
     col <- df[[j]]
     if (is.double(col)) {
-      col     <- col - mean(col)
-      df[[j]] <- col / sd(col)
+    # noop
     }
     else if (is.integer(col)) {
       dimensions[j] <- length(unique(col))
@@ -48,6 +47,7 @@ fges <- function(df,
   }
   else if (score == "CG")
     stop("not implemented")
-  
-  system.time(.Call("ccf_fges_wrapper", df, score ,dimensions, floating.args, integer.args))
+
+  system.time(.Call("ccf_ges_wrapper", df, score, dimensions, floating.args,
+                                           integer.args))
 }

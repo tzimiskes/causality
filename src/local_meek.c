@@ -3,7 +3,7 @@
 #include <int_linked_list.h>
 #include <cgraph.h>
 #include <meek.h>
-
+#include <local_meek.h>
 
 #define DEBUG 0
 
@@ -46,21 +46,26 @@ void insert_pll(struct pll **p, struct ill *l)
     *p = t;
 }
 
-int * meek_local(struct cgraph *cg, int *nodes, int n_nodes, int * n_visited)
+int * reorient(struct cgraph *cg, struct gesrec g, int stage, int *n_visited)
 {
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;
     int        *visited   = calloc(cg->n_nodes, sizeof(int));
-    for (int i = 0; i < n_nodes; ++i) {
-       undirect_reversible_parents(nodes[i], cg, &stack, &compelled, visited,
-                                           n_visited);
-       stack = ill_insert_front(stack, nodes[i], 0);
-       if (DEBUG)
-           Rprintf("Push %i\n", nodes[i]);
+    undirect_reversible_parents(g.y, cg, &stack, &compelled, visited,
+                                     n_visited);
+    stack = ill_insert_front(stack, g.y, 0);
+    if (stage == BES) {
+        for (int i = 0; i < g.set_size; ++i) {
+            undirect_reversible_parents(g.set[i], cg, &stack, &compelled,
+                                                  visited, n_visited);
+            stack = ill_insert_front(stack, g.set[i], 0);
+        }
+        meek_rules(cg, g.y, &stack, &compelled, visited, n_visited);
+        for (int i = 0; i < g.set_size; ++i)
+            meek_rules(cg, g.set[i], &stack, &compelled, visited, n_visited);
     }
-    for (int i = 0; i < n_nodes; ++i) {
-        meek_rules(cg, nodes[i], &stack ,&compelled, visited, n_visited);
-    }
+    else if (stage == FES)
+        meek_rules(cg, g.y, &stack, &compelled, visited, n_visited);
     while (stack) {
         /* pop the top */
         int node = stack->key;

@@ -1,5 +1,8 @@
-#include<cgraph.h>
-#ifndef _LOCAL_MEEK_H
-#define _LOCAL_MEEK_H
-int * meek_local(struct cgraph *cg, int *nodes, int n_nodes, int * n_visited);
+#include <cgraph.h>
+#include <ges_utils.h>
+#ifndef LOCAL_MEEK_H
+#define LOCAL_MEEK_H
+#define FES 1
+#define BES 0
+int * reorient(struct cgraph *cg, struct gesrec g, int stage, int *n_visited);
 #endif
