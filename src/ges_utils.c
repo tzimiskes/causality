@@ -2,10 +2,13 @@
 #include <cgraph.h>
 #include <ges_utils.h>
 
+#define INSERTION 1
+
 void free_gesrec(struct gesrec g)
 {
     free(g.naxy);
     free(g.set);
+    free(g.parents);
 }
 
 /*
@@ -13,17 +16,42 @@ void free_gesrec(struct gesrec g)
  * validity test for the forward equivalence search of GES, and the validity
  * test for the backward equivalence search of GES.
  */
-int forms_clique(struct cgraph *cg, int *s_u_naxy, int s_u_naxy_size)
+int forms_clique(struct cgraph *cg, struct gesrec g)
 {
-    for (int i = 0; i < s_u_naxy_size; ++i) {
-        /*
-         * Checking if nodes are adjacent in a graph is a symmetric operation,
-         * so we only need j to iterate up to i - 1. adjacent_in_cgraph returns
-         * 0 if the nodes are identical
-         */
-        for (int j = 0; j < i; ++j) {
-            if (!adjacent_in_cgraph(cg, s_u_naxy[i], s_u_naxy[j])) {
-                return 0;
+    if (g.type == INSERTION) {
+        for (int i = 0; i < g.naxy_size; ++i) {
+            for (int j = 0; j < i; ++j) {
+                if (!adjacent_in_cgraph(cg, g.naxy[i], g.naxy[j]))
+                    return 0;
+            }
+            for (int j = 0; j < g.set_size; ++j) {
+                if ((g.t & 1 << j) == 0)
+                    continue;
+                if (!adjacent_in_cgraph(cg, g.naxy[i], g.set[j]))
+                    return 0;
+            }
+        }
+        for (int i = 0; i < g.set_size; ++i) {
+            if ((g.t & 1 << i) == 0)
+                continue;
+            for (int j = 0; j < i; ++j) {
+                if ((g.t & 1 << j) == 0)
+                    continue;
+                if (!adjacent_in_cgraph(cg, g.set[i], g.set[j]))
+                    return 0;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < g.naxy_size; ++i) {
+            if ((g.h & 1 << i) == 1 << i)
+                continue;
+            for (int j = 0; j < i; ++j) {
+                if ((g.h & 1 << j) == 1 << j)
+                    continue;
+                if (!adjacent_in_cgraph(cg, g.naxy[i], g.naxy[j])) {
+                    return 0;
+                }
             }
         }
     }
@@ -49,8 +77,7 @@ static inline void mark(int i, unsigned char *marked)
  * would create a cycle in cg. This is the second validity test for the
  * forward equivalence search of GES.
  */
-int cycle_created(struct cgraph *cg, int y, int x, int *s_u_naxy,
-                                     int s_u_naxy_size, int *mem)
+int cycle_created(struct cgraph *cg, struct gesrec g, int *mem)
 {
     /*
      * First, we grab memory from mem and use it for recording whether or not
@@ -63,19 +90,23 @@ int cycle_created(struct cgraph *cg, int y, int x, int *s_u_naxy,
      * if they are unmarked, so marking every node in s_u_naxy accomplishes
      * this (ie ignores the path becuase it goes into s_u_naxy).
      */
-    for (int i = 0; i < s_u_naxy_size; ++i)
-        mark(s_u_naxy[i], marked);
+    for (int i = 0; i < g.naxy_size; ++i)
+        mark(g.naxy[i], marked);
+    for (int i = 0; i < g.set_size; ++i) {
+        if ((g.t & 1 << i)== 1 << i)
+            mark(g.set[i], marked);
+    }
     /* Grab memory from mem to use as a queue. We don't need to zero this. */
     int *queue      = mem + cg->n_nodes;
     int  queue_size = 1;
-    queue[0] = y;
+    queue[0] = g.y;
     for (int i = 0; i < queue_size; ++i) {
         int node = queue[i];
         /* Add the node's unmarked spouses and children to the queue */
         struct ill *p = cg->children[node];
         while (p) {
             /* If the next node is x we have found a cycle and can return 1 */
-            if (p->key == x)
+            if (p->key == g.x)
                 return 1;
             if (!is_marked(p->key, marked)) {
                 mark(p->key, marked);
@@ -85,7 +116,7 @@ int cycle_created(struct cgraph *cg, int y, int x, int *s_u_naxy,
         }
         p = cg->spouses[node];
         while (p) {
-            if (p->key == x)
+            if (p->key == g.x)
                 return 1;
             if (!is_marked(p->key, marked)) {
                 mark(p->key, marked);
@@ -99,42 +130,57 @@ int cycle_created(struct cgraph *cg, int y, int x, int *s_u_naxy,
 
 void partition_neighbors(struct cgraph *cg, struct gesrec *g)
 {
-    struct ill *l = cg->spouses[g->y];
-    while (l) {
-        if (adjacent_in_cgraph(cg, g->x, l->key))
-            g->naxy_size += 1;
+    struct gesrec t = *g;
+    struct ill   *s = cg->spouses[t.y];
+    int           n = ill_size(s);
+    g->naxy = malloc(n * sizeof(int));
+    g->set  = malloc(n * sizeof(int));
+    while (s) {
+        if (adjacent_in_cgraph(cg, t.x, s->key))
+            t.naxy[t.naxy_size++] = s->key;
         else
-            g->set_size += 1;
-        l = l->next;
+            t.set[t.set_size++] = s->key;
+        s = s->next;
     }
-    g->naxy = malloc(g->naxy_size * sizeof(int));
-    g->set  = malloc(g->set_size * sizeof(int));
-    /* we have to reiterate through the list */
-    l = cg->spouses[g->y];
-    int j = 0;
-    int k = 0;
-    while (l) {
-        int z = l->key;
-        if (adjacent_in_cgraph(cg, g->x, z))
-            g->naxy[j++] = z;
-        else
-            g->set[k++] = z;
-        l = l->next;
+    *g = t;
+}
+
+void calculate_naxy(struct cgraph *cg, struct gesrec *g)
+{
+    struct gesrec t = *g;
+    struct ill   *s = cg->spouses[t.y];
+    int           n = ill_size(s);
+    g->naxy = malloc(n * sizeof(int));
+    while (s) {
+        if (adjacent_in_cgraph(cg, t.x, s->key))
+            t.naxy[t.naxy_size++] = s->key;
+        s = s->next;
     }
+    *g = t;
 }
 
 int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
-                                                     struct gesrec *gesrecp,
+                                                     struct gesrec g,
                                                      int *visited,
                                                      int n_visited,
                                                      int *n_nodes)
 {
     int n = 0;
-    // int x = gesrecp->x;
-    int y = gesrecp->y;
+    // int x = g->x;
+    int y = g.y;
     visited[y] = 1;
-    for (int i = 0; i < gesrecp->set_size; ++i)
-        visited[gesrecp->set[i]] = 1;
+    if (g.type == INSERTION) {
+        for (int i = 0; i < g.set_size; ++i) {
+            if ((g.t & 1 << i) == 1 << i)
+                visited[g.set[i]] = 1;
+        }
+    }
+    else {
+        for (int i = 0; i < g.naxy_size; ++i) {
+            if ((g.h & 1 << i) == 1 << i)
+                visited[g.naxy[i]] = 1;
+        }
+    }
     for (int i = 0; i < cg->n_nodes; ++i) {
         if (!visited[i])
             continue;
@@ -151,10 +197,8 @@ int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
     int *nodes = calloc(n, sizeof(int));
     int  j     = 0;
     for (int i = 0; i < cg->n_nodes; ++i) {
-        if (visited[i]) {
-            nodes[j] = i;
-            j++;
-        }
+        if (visited[i])
+            nodes[j++] = i;
     }
     *n_nodes = n;
     free(visited);
