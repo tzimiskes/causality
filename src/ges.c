@@ -32,65 +32,49 @@ static int is_valid_insertion(struct cgraph *cg, struct gesrec g, int *mem)
         return 0;
 }
 
-int is_valid_deletion(struct cgraph *cg, struct gesrec g)
+static int is_valid_deletion(struct cgraph *cg, struct gesrec g)
 {
     return forms_clique(cg, g);
 }
 
-struct gesrec score_insertion(struct cgraph *cg, struct dataframe df,
-                                                struct gesrec g,
-                                                double *score_diff,
-                                                struct score score,
-                                                int *mem)
+void score_insertion(struct cgraph *cg, struct dataframe df, struct gesrec *g,
+                                        struct score score, int *mem)
 {
-    double min_score_diff = DEFAULT_SCORE;
-    /* og stores the S with the optimal (ie min) score */
-    struct gesrec og = g;
-    og.naxy = malloc(og.naxy_size * sizeof(int));
-    memcpy(og.naxy, g.naxy, g.naxy_size * sizeof(int));
-    int *s_u_naxy = malloc((g.naxy_size + g.set_size) * sizeof(int));
-    memcpy(s_u_naxy, g.naxy, g.naxy_size * sizeof(int));
+    struct gesrec t = *g;
+    /* pronounced pun axy c zey */
+    int  py_u_naxy_size = t.naxy_size  + t.parents_size;
+    int *py_u_naxy_u_s  = malloc((py_u_naxy_size + t.set_size) * sizeof(int));
+    memcpy(py_u_naxy_u_s, t.parents, t.parents_size * sizeof(int));
+    memcpy(py_u_naxy_u_s, t.naxy   , t.naxy_size * sizeof(int));
     /*
      * we need to iterate over the power set of S, and we do this by
      * calculating the powerset size and then iterating through that, using bit
      * operations to construct the subset
      */
-    uint64_t powerset_size = 1 << g.set_size;
+    uint64_t powerset_size = 1 << t.set_size;
     for (uint64_t i = 0; i < powerset_size; ++i) {
-        int s_u_naxy_size = g.naxy_size;
+        t.t = i;
+        if (!is_valid_insertion(cg, t, mem))
+            continue;
+        int py_u_naxy_u_s_size = py_u_naxy_size;
         /*
          * constructs the subset of P(S) we are using for this iteration using
          * bitwise operations
          */
-        for (uint32_t j = 0; j < (uint32_t) g.set_size; ++j) {
+        for (uint32_t j = 0; j < (uint32_t) t.set_size; ++j) {
             if ((i & (1 << j)) == (1 << j))
-                s_u_naxy[s_u_naxy_size++] = g.set[j];
+                py_u_naxy_u_s[py_u_naxy_u_s_size++] = t.set[j];
         }
-        if (!is_valid_insertion(cg, g, mem))
-            continue;
-        struct ill *parents = cg->parents[g.y];
-        int         npar    = s_u_naxy_size + ill_size(parents);
-        int        *ypar    = malloc(npar * sizeof(int));
-        memcpy(ypar, s_u_naxy, s_u_naxy_size * sizeof(int));
-        int j = s_u_naxy_size;
-        while (parents) {
-            ypar[j++] = parents->key;
-            parents   = parents->next;
-        }
-        double ds = score.score(df, g.x, g.y, ypar, npar, score.fargs,
-                                    score.iargs, score.fmem, score.imem);
-        free(ypar);
-        if (ds < min_score_diff) {
-            min_score_diff = ds;
-            free(og.set);
-            og.set_size = s_u_naxy_size - g.naxy_size;
-            og.set      = malloc(og.set_size * sizeof(int));
-            memcpy(og.set, s_u_naxy + og.naxy_size, og.set_size * sizeof(int));
+        double score_diff = score.score(df, t.x, t.y, py_u_naxy_u_s,
+                                            py_u_naxy_u_s_size, score.fargs,
+                                            score.iargs, score.fmem,
+                                            score.imem);
+        if (score_diff < g->score_diff) {
+            g->score_diff = score_diff;
+            g->t = i;
         }
     }
-    free(s_u_naxy);
-    *score_diff = min_score_diff;
-    return og;
+    free(py_u_naxy_u_s);
 }
 
 void compute_common_covariances(struct cgraph *cg, struct dataframe data,
@@ -147,11 +131,10 @@ void compute_xgroup_covariances(struct dataframe data, int _x,
     free(x);
 }
 
-double recalcluate_node(struct dataframe df, struct cgraph *cg,
+double recalculate_fes(struct dataframe df,  struct cgraph *cg,
                                              struct gesrec *gesrecp,
                                              struct score score)
 {
-    double score_diff     = DEFAULT_SCORE;
     double min_score_diff = DEFAULT_SCORE;
     int    y              = gesrecp->y;
     /* preallocate memory for validity testing in FES */
@@ -161,25 +144,25 @@ double recalcluate_node(struct dataframe df, struct cgraph *cg,
     for (int x = 0; x < df.nvar; ++x) {
         if (x == y || adjacent_in_cgraph(cg, x, y))
             continue;
-        struct gesrec g = {0};
-        g.x = x;
-        g.y = y;
+        struct gesrec g;
+        g.x          = x;
+        g.y          = y;
+        g.type       = 1;
+        g.score_diff = DEFAULT_SCORE;
+        calculate_parents(cg, &g);
         /*
          * Partition the neighbors of y into those adjacent to x (naxy), and
-         * those who are not (set). partition_neighbors fills in g.naxy
-         * and g.set.
+         * those who are not (set).
          */
         partition_neighbors(cg, &g);
-        struct gesrec min_g = score_insertion(cg, df, g, &score_diff, score,
-                                                 mem);
-        free_gesrec(g);
-        if (score_diff < min_score_diff) {
-            min_score_diff = score_diff;
+        score_insertion(cg, df, &g, score, mem);
+
+        if (g.score_diff < gesrecp->score_diff) {
             free_gesrec(*gesrecp);
-            *gesrecp = min_g;
+            *gesrecp = g;
         }
         else
-            free_gesrec(min_g);
+            free_gesrec(g);;
     }
     free(mem);
     free(score.fmem);
@@ -227,16 +210,15 @@ double recalculate_bes(struct dataframe df, struct cgraph *cg,
          */
         partition_neighbors(cg, &g);
 
-        struct gesrec min_g = score_insertion(cg, df, g, &score_diff, score,
-                                                 nodes);
-        free_gesrec(g);
-        if (score_diff < min_score_diff) {
+        score_insertion(cg, df, &g, score, nodes);
+
+        if (g.score_diff < min_score_diff) {
             min_score_diff = score_diff;
             free_gesrec(*gesrecp);
-            *gesrecp = min_g;
+            *gesrecp = g;
         }
         else
-            free_gesrec(min_g);
+            free_gesrec(g);
     }
     free(nodes);
     free(score.fmem);
@@ -288,14 +270,13 @@ struct cgraph *ccf_ges(struct dataframe df, struct score score)
     * recorded and then we find the highest scoring edge of all of those by
     * extracting the top of the heap.
     */
-    struct gesrec *gesrecords = calloc(df.nvar, sizeof(struct gesrec));
-    struct heap   *heap       = create_heap(df.nvar, gesrecords,
-                                                     sizeof(struct gesrec));
+    struct gesrec *ops  = calloc(df.nvar, sizeof(struct gesrec));
+    struct heap   *heap = create_heap(df.nvar, ops, sizeof(struct gesrec));
     double        *dscores    = heap->keys;
     void         **records    = heap->data;
     int           *indices    = heap->indices;
     for (int i = 0; i < df.nvar; ++i) {
-        records[i] = gesrecords + i;
+        records[i] = ops + i;
         indices[i] = i;
     }
     /* FES STEP 0: For all x,y score x --> y */
@@ -314,8 +295,8 @@ struct cgraph *ccf_ges(struct dataframe df, struct score score)
         free(score.fmem);
         free(score.imem);
         dscores[j]      = min;
-        gesrecords[j].x = arg_min;
-        gesrecords[j].y = j;
+        ops[j].x = arg_min;
+        ops[j].y = j;
     }
     build_heap(heap);
     /* FORWARD EQUIVALENCE SEARCH (FES) */
@@ -326,7 +307,7 @@ struct cgraph *ccf_ges(struct dataframe df, struct score score)
     while ((gesrecp = peek_heap(heap, &score_diff)) && score_diff <= 0.0f) {
         if (!is_valid_insertion(cg, *gesrecp, mem)) {
             remove_heap(heap, gesrecp->y);
-            score_diff = recalcluate_node(df, cg, gesrecp, score);
+            score_diff = recalculate_fes(df, cg, gesrecp, score);
             insert_heap(heap, score_diff, gesrecp);
             continue;
         }
@@ -338,9 +319,9 @@ struct cgraph *ccf_ges(struct dataframe df, struct score score)
         int *nodes     = deterimine_nodes_to_recalc(cpy, cg, *gesrecp, visited,
                                                          n_visited, &n_nodes);
         for(int i = 0; i < n_nodes; ++i) {
-            gesrecp    = gesrecords + nodes[i];
+            gesrecp    = ops + nodes[i];
             remove_heap(heap, nodes[i]);
-            score_diff = recalcluate_node(df, cg, gesrecp, score);
+            score_diff = recalculate_fes (df, cg, gesrecp, score);
             insert_heap(heap, score_diff, gesrecp);
         }
         free(nodes);
@@ -351,7 +332,7 @@ struct cgraph *ccf_ges(struct dataframe df, struct score score)
     /* BES STEP 0 */
     if (0) {
         for (int i = 0; i < df.nvar; ++i) {
-            gesrecp = gesrecords + i;
+            gesrecp = ops + i;
             records[i]      = gesrecp;
             indices[i]      = i;
             gesrecp->y      = i;
@@ -375,7 +356,7 @@ struct cgraph *ccf_ges(struct dataframe df, struct score score)
         int *nodes     = deterimine_nodes_to_recalc(cpy, cg, *gesrecp, visited,
                                                          n_visited, &n_nodes);
         for (int i = 0; i < n_nodes; ++i) {
-            gesrecp    = gesrecords + nodes[i];
+            gesrecp    = ops + nodes[i];
             remove_heap(heap, nodes[i]);
             /* broken */
             score_diff = recalculate_bes(df, cg, gesrecp, score);
@@ -386,8 +367,8 @@ struct cgraph *ccf_ges(struct dataframe df, struct score score)
     Rprintf("BES complete\n");
     /* Memory cleanup */
     for (int i = 0; i < df.nvar; ++i)
-        free_gesrec(gesrecords[i]);
-    free(gesrecords);
+        free_gesrec(ops[i]);
+    free(ops);
     free_heap(heap);
     free_cgraph(cpy);
     print_cgraph(cg);

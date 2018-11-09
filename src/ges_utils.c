@@ -159,6 +159,17 @@ void calculate_naxy(struct cgraph *cg, struct gesrec *g)
     *g = t;
 }
 
+void calculate_parents(struct cgraph *cg, struct gesrec *g) {
+    struct ill   *p = cg->parents[g->y];
+    g->parents_size = ill_size(p);
+    g->parents      = malloc(g->parents_size * sizeof(int));
+    int i = 0;
+    while (p) {
+        g->parents[i++] = p->key;
+        p = p->next;
+    }
+}
+
 int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
                                                      struct gesrec g,
                                                      int *visited,

@@ -24,6 +24,7 @@ int    forms_clique(struct cgraph *cg, struct gesrec g);
 int    cycle_created(struct cgraph *cg, struct gesrec g, int *mem);
 void   partition_neighbors(struct cgraph *cg, struct gesrec *g);
 void   calculate_naxy(struct cgraph *cg, struct gesrec *g);
+void   calculate_parents(struct cgraph *cg, struct gesrec *g);
 int  * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
                                                       struct gesrec g,
                                                       int *visited,
