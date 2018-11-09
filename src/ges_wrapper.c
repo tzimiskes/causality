@@ -5,6 +5,7 @@
 
 struct score {
     ges_score score;
+    struct dataframe df;
     double    *fargs;
     int       *iargs;
     double    *fmem;
@@ -12,7 +13,7 @@ struct score {
 };
 
 
-struct cgraph * ccf_ges(struct dataframe df, struct score score);
+struct cgraph * ccf_ges(struct score score);
 
 void normalize(double * x, int n) {
     double mu  = 0.0f;
@@ -74,8 +75,8 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
      * All the preprocessing work has now been done, so lets instantiate
      * an empty graph and run FGES
      */
-    struct score score = {ges_score, fargs, iargs, NULL};
-    struct cgraph *cg  = ccf_ges(data, score);
+    struct score score = {ges_score, data, fargs, iargs, NULL, NULL};
+    struct cgraph *cg  = ccf_ges(score);
     /* POST PROCESSING */
     free_cgraph(cg);
     for(int i = 0; i < data.nvar; ++i)

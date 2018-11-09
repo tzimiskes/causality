@@ -2,13 +2,11 @@
 #include <cgraph.h>
 #include <ges_utils.h>
 
-#define INSERTION 1
-
-void free_gesrec(struct gesrec g)
+void free_ges_op(struct ges_op op)
 {
-    free(g.naxy);
-    free(g.set);
-    free(g.parents);
+    free(op.naxy);
+    free(op.set);
+    free(op.parents);
 }
 
 /*
@@ -16,40 +14,40 @@ void free_gesrec(struct gesrec g)
  * validity test for the forward equivalence search of GES, and the validity
  * test for the backward equivalence search of GES.
  */
-int forms_clique(struct cgraph *cg, struct gesrec g)
+int forms_clique(struct cgraph *cg, struct ges_op op)
 {
-    if (g.type == INSERTION) {
-        for (int i = 0; i < g.naxy_size; ++i) {
+    if (op.type == INSERTION) {
+        for (int i = 0; i < op.naxy_size; ++i) {
             for (int j = 0; j < i; ++j) {
-                if (!adjacent_in_cgraph(cg, g.naxy[i], g.naxy[j]))
+                if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j]))
                     return 0;
             }
-            for (int j = 0; j < g.set_size; ++j) {
-                if ((g.t & 1 << j) == 0)
+            for (int j = 0; j < op.set_size; ++j) {
+                if ((op.t & 1 << j) == 0)
                     continue;
-                if (!adjacent_in_cgraph(cg, g.naxy[i], g.set[j]))
+                if (!adjacent_in_cgraph(cg, op.naxy[i], op.set[j]))
                     return 0;
             }
         }
-        for (int i = 0; i < g.set_size; ++i) {
-            if ((g.t & 1 << i) == 0)
+        for (int i = 0; i < op.set_size; ++i) {
+            if ((op.t & 1 << i) == 0)
                 continue;
             for (int j = 0; j < i; ++j) {
-                if ((g.t & 1 << j) == 0)
+                if ((op.t & 1 << j) == 0)
                     continue;
-                if (!adjacent_in_cgraph(cg, g.set[i], g.set[j]))
+                if (!adjacent_in_cgraph(cg, op.set[i], op.set[j]))
                     return 0;
             }
         }
     }
-    else {
-        for (int i = 0; i < g.naxy_size; ++i) {
-            if ((g.h & 1 << i) == 1 << i)
+    else if (op.type == DELETION) {
+        for (int i = 0; i < op.naxy_size; ++i) {
+            if ((op.h & 1 << i) == 1 << i)
                 continue;
             for (int j = 0; j < i; ++j) {
-                if ((g.h & 1 << j) == 1 << j)
+                if ((op.h & 1 << j) == 1 << j)
                     continue;
-                if (!adjacent_in_cgraph(cg, g.naxy[i], g.naxy[j])) {
+                if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j])) {
                     return 0;
                 }
             }
@@ -74,10 +72,10 @@ static inline void mark(int i, unsigned char *marked)
 }
 /*
  * cycle_created returns whether or not the adding the edge x --> y
- * would create a cycle in cg. This is the second validity test for the
+ * would create a cycle in cop. This is the second validity test for the
  * forward equivalence search of GES.
  */
-int cycle_created(struct cgraph *cg, struct gesrec g, int *mem)
+int cycle_created(struct cgraph *cg, struct ges_op op, int *mem)
 {
     /*
      * First, we grab memory from mem and use it for recording whether or not
@@ -88,25 +86,25 @@ int cycle_created(struct cgraph *cg, struct gesrec g, int *mem)
     /*
      * If a path goes into s_u_naxy, it is ignored. Nodes will only be enqueued
      * if they are unmarked, so marking every node in s_u_naxy accomplishes
-     * this (ie ignores the path becuase it goes into s_u_naxy).
+     * this (ie ignores the path because it goes into s_u_naxy).
      */
-    for (int i = 0; i < g.naxy_size; ++i)
-        mark(g.naxy[i], marked);
-    for (int i = 0; i < g.set_size; ++i) {
-        if ((g.t & 1 << i)== 1 << i)
-            mark(g.set[i], marked);
+    for (int i = 0; i < op.naxy_size; ++i)
+        mark(op.naxy[i], marked);
+    for (int i = 0; i < op.set_size; ++i) {
+        if ((op.t & 1 << i)== 1 << i)
+            mark(op.set[i], marked);
     }
     /* Grab memory from mem to use as a queue. We don't need to zero this. */
     int *queue      = mem + cg->n_nodes;
     int  queue_size = 1;
-    queue[0] = g.y;
+    queue[0] = op.y;
     for (int i = 0; i < queue_size; ++i) {
         int node = queue[i];
         /* Add the node's unmarked spouses and children to the queue */
         struct ill *p = cg->children[node];
         while (p) {
             /* If the next node is x we have found a cycle and can return 1 */
-            if (p->key == g.x)
+            if (p->key == op.x)
                 return 1;
             if (!is_marked(p->key, marked)) {
                 mark(p->key, marked);
@@ -116,7 +114,7 @@ int cycle_created(struct cgraph *cg, struct gesrec g, int *mem)
         }
         p = cg->spouses[node];
         while (p) {
-            if (p->key == g.x)
+            if (p->key == op.x)
                 return 1;
             if (!is_marked(p->key, marked)) {
                 mark(p->key, marked);
@@ -128,68 +126,69 @@ int cycle_created(struct cgraph *cg, struct gesrec g, int *mem)
     return 0;
 }
 
-void partition_neighbors(struct cgraph *cg, struct gesrec *g)
+void partition_neighbors(struct cgraph *cg, struct ges_op *op)
 {
-    struct gesrec t = *g;
-    struct ill   *s = cg->spouses[t.y];
+    struct ges_op o = *op;
+    struct ill   *s = cg->spouses[o.y];
     int           n = ill_size(s);
-    g->naxy = malloc(n * sizeof(int));
-    g->set  = malloc(n * sizeof(int));
+    op->naxy = malloc(n * sizeof(int));
+    op->set  = malloc(n * sizeof(int));
     while (s) {
-        if (adjacent_in_cgraph(cg, t.x, s->key))
-            t.naxy[t.naxy_size++] = s->key;
+        if (adjacent_in_cgraph(cg, o.x, s->key))
+            o.naxy[o.naxy_size++] = s->key;
         else
-            t.set[t.set_size++] = s->key;
+            o.set[o.set_size++] = s->key;
         s = s->next;
     }
-    *g = t;
+    *op = o;
 }
 
-void calculate_naxy(struct cgraph *cg, struct gesrec *g)
+void calculate_naxy(struct cgraph *cg, struct ges_op *op)
 {
-    struct gesrec t = *g;
-    struct ill   *s = cg->spouses[t.y];
+    struct ges_op o = *op;
+    struct ill   *s = cg->spouses[o.y];
     int           n = ill_size(s);
-    g->naxy = malloc(n * sizeof(int));
+    op->naxy = malloc(n * sizeof(int));
+    op->set  = NULL;
     while (s) {
-        if (adjacent_in_cgraph(cg, t.x, s->key))
-            t.naxy[t.naxy_size++] = s->key;
+        if (adjacent_in_cgraph(cg, o.x, s->key))
+            o.naxy[o.naxy_size++] = s->key;
         s = s->next;
     }
-    *g = t;
+    *op = o;
 }
 
-void calculate_parents(struct cgraph *cg, struct gesrec *g) {
-    struct ill   *p = cg->parents[g->y];
-    g->parents_size = ill_size(p);
-    g->parents      = malloc(g->parents_size * sizeof(int));
+void calculate_parents(struct cgraph *cg, struct ges_op *op) {
+    struct ill *p = cg->parents[op->y];
+    op->parents_size = ill_size(p);
+    op->parents      = malloc(op->parents_size * sizeof(int));
     int i = 0;
     while (p) {
-        g->parents[i++] = p->key;
+        op->parents[i++] = p->key;
         p = p->next;
     }
 }
 
 int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
-                                                     struct gesrec g,
+                                                     struct ges_op op,
                                                      int *visited,
                                                      int n_visited,
                                                      int *n_nodes)
 {
     int n = 0;
-    // int x = g->x;
-    int y = g.y;
+    // int x = op->x;
+    int y = op.y;
     visited[y] = 1;
-    if (g.type == INSERTION) {
-        for (int i = 0; i < g.set_size; ++i) {
-            if ((g.t & 1 << i) == 1 << i)
-                visited[g.set[i]] = 1;
+    if (op.type == INSERTION) {
+        for (int i = 0; i < op.set_size; ++i) {
+            if ((op.t & 1 << i) == 1 << i)
+                visited[op.set[i]] = 1;
         }
     }
     else {
-        for (int i = 0; i < g.naxy_size; ++i) {
-            if ((g.h & 1 << i) == 1 << i)
-                visited[g.naxy[i]] = 1;
+        for (int i = 0; i < op.naxy_size; ++i) {
+            if ((op.h & 1 << i) == 1 << i)
+                visited[op.naxy[i]] = 1;
         }
     }
     for (int i = 0; i < cg->n_nodes; ++i) {

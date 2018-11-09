@@ -46,26 +46,29 @@ void insert_pll(struct pll **p, struct ill *l)
     *p = t;
 }
 
-int * reorient(struct cgraph *cg, struct gesrec g, int stage, int *n_visited)
+int * reorient(struct cgraph *cg, struct ges_op op, int *n_visited)
 {
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;
     int        *visited   = calloc(cg->n_nodes, sizeof(int));
-    undirect_reversible_parents(g.y, cg, &stack, &compelled, visited,
-                                     n_visited);
-    stack = ill_insert_front(stack, g.y, 0);
-    if (stage == BES) {
-        for (int i = 0; i < g.set_size; ++i) {
-            undirect_reversible_parents(g.set[i], cg, &stack, &compelled,
-                                                  visited, n_visited);
-            stack = ill_insert_front(stack, g.set[i], 0);
+    undirect_reversible_parents(op.y, cg, &stack, &compelled, visited, n_visited);
+    stack = ill_insert_front(stack, op.y, 0);
+    if (op.type == DELETION) {
+        for (int i = 0; i < op.naxy_size; ++i) {
+            if ((op.h & 1 << i) == 1 << i) {
+                undirect_reversible_parents(op.naxy[i], cg, &stack, &compelled,
+                                                        visited, n_visited);
+                stack = ill_insert_front(stack, op.naxy[i], 0);
+            }
         }
-        meek_rules(cg, g.y, &stack, &compelled, visited, n_visited);
-        for (int i = 0; i < g.set_size; ++i)
-            meek_rules(cg, g.set[i], &stack, &compelled, visited, n_visited);
+        meek_rules(cg, op.y, &stack, &compelled, visited, n_visited);
+        for (int i = 0; i < op.naxy_size; ++i) {
+            if ((op.h & 1 << i) == 1 << i)
+                meek_rules(cg, op.naxy[i], &stack, &compelled, visited, n_visited);
+        }
     }
-    else if (stage == FES)
-        meek_rules(cg, g.y, &stack, &compelled, visited, n_visited);
+    else if (op.type == INSERTION)
+        meek_rules(cg, op.y, &stack, &compelled, visited, n_visited);
     while (stack) {
         /* pop the top */
         int node = stack->key;
