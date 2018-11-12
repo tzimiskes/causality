@@ -15,7 +15,7 @@ struct heap * create_heap(const int max_size, const void *ext_data_loc,
                                          const int ext_data_size);
 void          free_heap(struct heap *hp);
 void          build_heap(struct heap *hp);
-void        * peek_heap(struct heap *hp, double *ds);
+void        * peek_heap(struct heap *hp);
 void        * extract_heap(struct heap *hp, double *ds);
 void          insert_heap(struct heap *hp, double ds, void *p);
 void          remove_heap(struct heap *hp, int node);

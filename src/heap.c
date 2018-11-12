@@ -50,8 +50,10 @@ static inline void swap(struct heap *hp, int i, int j)
     hp->keys[j]    = d;
     hp->data[j]    = p;
 
-    int ext_i = (hp->data[i] - hp->ext_data_loc)/hp->ext_data_size;
-    int ext_j = (hp->data[j] - hp->ext_data_loc)/hp->ext_data_size;
+    int ext_i = (char *) hp->data[i] - (char *) hp->ext_data_loc;
+    ext_i /= hp->ext_data_size;
+    int ext_j = (char *) hp->data[j] - (char *) hp->ext_data_loc;
+    ext_j /= hp->ext_data_size;
     int t = hp->indices[ext_i];
     hp->indices[ext_i] = hp->indices[ext_j];
     hp->indices[ext_j] = t;
@@ -85,18 +87,18 @@ static inline void pop_heap(struct heap *hp)
     hp->keys[0] = hp->keys[hp->size - 1];
     hp->data[0] = hp->data[hp->size - 1];
 
-    int ext_i = (hp->data[0] - hp->ext_data_loc)/hp->ext_data_size;
+    int ext_i = (char *) hp->data[0] - (char *) hp->ext_data_loc;
+    ext_i /= hp->ext_data_size;
     hp->indices[ext_i] = 0;
     hp->size      -= 1;
     min_heapify(hp, 0);
 }
 
-void *peek_heap(struct heap *hp, double *ds)
+void *peek_heap(struct heap *hp)
 {
     if (hp->size < 1)
         return NULL;
-    *ds = hp->keys[0];
-    return  hp->data[0];
+    return hp->data[0];
 }
 
 void *extract_heap(struct heap *hp, double *ds)
@@ -124,7 +126,8 @@ void insert_heap(struct heap *hp, double ds, void *p)
 {
     hp->keys[hp->size] = DBL_MAX;
     hp->data[hp->size] = p;
-    int ext_i = (p - hp->ext_data_loc)/hp->ext_data_size;
+    int ext_i = (char *) p - (char *) hp->ext_data_loc;
+    ext_i /= hp->ext_data_size;
     hp->indices[ext_i] = hp->size;
     decrease_key(hp, hp->size, ds);
     hp->size += 1;
