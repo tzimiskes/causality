@@ -111,27 +111,8 @@ double ges_bic_score(struct dataframe data, int x, int y, int *ypar, int npar,
         for (int j = 0; j < npar; ++j)
             cov_xx_p[j + 1 + (i + 1) * (npar + 1)] = m_mem[j + i * npar];
     }
+
     double rss_p = calculate_rss(p_mem, npar + 1);
-    if(rss_p == -1000) {
-        for (int i = 0; i < npar; ++i) {
-            for (int j = 0; j < npar; ++j)
-            Rprintf("%f ", m_mem[i + npar * j]);
-            Rprintf("\n");
-        }
-        Rprintf("precalc\n");
-        for (int i = 0; i < n_lbls; ++i) {
-            for (int j = 0; j < n_lbls; ++j)
-            Rprintf("%f ", pc_cov_xx[i + n_lbls * j]);
-            Rprintf("\n");
-        }
-        for(int i = 0; i < n_lbls; ++ i)
-            Rprintf("%i ", lbls[i]);
-        Rprintf("\n");
-        for(int i = 0; i < npar; ++i)
-            Rprintf("%i ", ypar[i]);
-        Rprintf("\n");
-        error("err\n");
-    }
     double rss_m = calculate_rss(m_mem, npar);
 
     free(p_mem);
@@ -198,15 +179,8 @@ double calculate_rss(double *cov, int m)
         else
             rss -= F77_CALL(ddot)(&m, cov_xy, &u, cov_xy_t, &u);
     }
-    if (rss < ERROR_THRESH) {
-        for (int i = 0; i < m; ++i) {
-            for (int j = 0; j < m; ++j)
-            Rprintf("%f ", cov_xx[i + m * j]);
-            Rprintf("\n");
-        }
-        return -1000;
+    if (rss < ERROR_THRESH)
         rss = DBL_MAX;
-    }
     return rss;
 }
 

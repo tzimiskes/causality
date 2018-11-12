@@ -76,13 +76,12 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
      * an empty graph and run FGES
      */
     struct score score = {ges_score, data, fargs, iargs, NULL, NULL};
-    Rprintf("Enter the dragon\n");
     struct cgraph *cg  = ccf_ges(score);
     /* POST PROCESSING */
     free_cgraph(cg);
     for(int i = 0; i < data.nvar; ++i)
         free(data.df[i]);
     free(data.df);
-    Rprintf("FES complete\n");
+    Rprintf("GES complete\n");
     return ScalarReal(0);
 }

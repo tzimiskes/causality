@@ -2,7 +2,6 @@
 #include <cgraph.h>
 #include <ges_utils.h>
 
-
 void free_ges_op(struct ges_op op)
 {
     free(op.naxy);
@@ -151,9 +150,10 @@ void calculate_naxy(struct cgraph *cg, struct ges_op *op)
 {
     struct ges_op o = *op;
     struct ill   *s = cg->spouses[o.y];
-    int           n = ill_size(s);
-    op->naxy = malloc(n * sizeof(int));
-    op->set  = NULL;
+    o.naxy      = malloc(ill_size(s) * sizeof(int));
+    o.naxy_size = 0;
+    o.set_size  = 0;
+    o.set       = NULL;
     while (s) {
         if (adjacent_in_cgraph(cg, o.x, s->key))
             o.naxy[o.naxy_size++] = s->key;
