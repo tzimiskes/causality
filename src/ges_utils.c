@@ -2,6 +2,7 @@
 #include <cgraph.h>
 #include <ges_utils.h>
 
+
 void free_ges_op(struct ges_op op)
 {
     free(op.naxy);
@@ -56,7 +57,8 @@ int forms_clique(struct cgraph *cg, struct ges_op op)
     return 1;
 }
 
-static inline int is_marked(int i, unsigned char *marked) {
+static inline int is_marked(int i, unsigned char *marked)
+{
     int q = i / 8;
     int r = i % 8;
 
@@ -131,8 +133,10 @@ void partition_neighbors(struct cgraph *cg, struct ges_op *op)
     struct ges_op o = *op;
     struct ill   *s = cg->spouses[o.y];
     int           n = ill_size(s);
-    op->naxy = malloc(n * sizeof(int));
-    op->set  = malloc(n * sizeof(int));
+    o.naxy      = malloc(n * sizeof(int));
+    o.naxy_size = 0;
+    o.set       = malloc(n * sizeof(int));
+    o.set_size  = 0;
     while (s) {
         if (adjacent_in_cgraph(cg, o.x, s->key))
             o.naxy[o.naxy_size++] = s->key;

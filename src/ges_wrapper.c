@@ -76,6 +76,7 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
      * an empty graph and run FGES
      */
     struct score score = {ges_score, data, fargs, iargs, NULL, NULL};
+    Rprintf("Enter the dragon\n");
     struct cgraph *cg  = ccf_ges(score);
     /* POST PROCESSING */
     free_cgraph(cg);

@@ -129,6 +129,7 @@ void recalculate_fes(struct cgraph *cg, struct ges_op *op, struct score score)
     /* precalculate the covariances common to all calculations */
     int y = op->y;
     compute_common_covariances(cg, y, cg->n_nodes, &score);
+    Rprintf("calculate_common\n");
     for (int x = 0; x < cg->n_nodes; ++x) {
         if (x == y || adjacent_in_cgraph(cg, x, y))
             continue;
@@ -137,14 +138,17 @@ void recalculate_fes(struct cgraph *cg, struct ges_op *op, struct score score)
         o.y          = y;
         o.type       = INSERTION;
         o.score_diff = DEFAULT_SCORE;
+        Rprintf("calculate_pars\n");
         calculate_parents(cg, &o);
         /*
          * Partition the neighbors of y into those adjacent to x (naxy), and
          * those who are not (set).
          */
+        Rprintf("calculate_negs\n");
         partition_neighbors(cg, &o);
+        Rprintf("score\n");
         score_insertion(cg, &o, score, mem);
-
+        Rprintf("better?\n");
         if (o.score_diff < op->score_diff) {
             free_ges_op(*op);
             *op = o;
@@ -213,7 +217,6 @@ static void insert(struct cgraph *cg, struct ges_op g)
     add_edge_to_cgraph(cg, g.x, g.y, DIRECTED);
     for (int i = 0; i < g.set_size; ++i) {
         if ((g.t & 1 << i) == 1 << i) {
-            // Rprintf("orient %i -- > %i\n", g.set[i], g.y);
             orient_undirected_edge(cg, g.set[i], g.y);
         }
     }
@@ -250,7 +253,7 @@ struct cgraph *ccf_ges(struct score score)
     * recorded and then we find the highest scoring edge of all of those by
     * extracting the top of the heap.
     */
-    struct ges_op *ops  = calloc(nvar, sizeof(struct ges_op));
+    struct ges_op *ops  = calloc(nvar, sizeof(struct ges_op)); /*OBP + SLG */
     struct heap   *heap = create_heap(nvar, ops, sizeof(struct ges_op));
     double        *dscores    = heap->keys;
     void         **records    = heap->data;
@@ -260,34 +263,37 @@ struct cgraph *ccf_ges(struct score score)
         indices[i] = i;
     }
     /* FES STEP 0: For all x,y score x --> y */
-    for (int j = 0; j < nvar; ++j) {
-        double min     = DEFAULT_SCORE;
-        int    arg_min = -1;
-        compute_common_covariances(cg, j, j, &score);
-        for (int i = 0; i < j; ++i) {
-            double ds = score.score(score.df, i, j, NULL, 0, score.fargs,
-                                        score.iargs, score.fmem, score.imem);
-            if (ds < min) {
-                min     = ds;
-                arg_min = i;
+    for (int y = 0; y < nvar; ++y) {
+        double min_score = DEFAULT_SCORE;
+        int    x         = -1;
+        compute_common_covariances(cg, y, y, &score);
+        for (int i = 0; i < y; ++i) {
+            double score_diff = score.score(score.df, i, y, NULL, 0,
+                                                      score.fargs, score.iargs,
+                                                      score.fmem, score.imem);
+            if (score_diff < min_score) {
+                min_score = score_diff;
+                x         = i;
             }
         }
         free(score.fmem);
         free(score.imem);
-        dscores[j]      = min;
-        ops[j].score_diff = min;
-        ops[j].x = arg_min;
-        ops[j].y = j;
-        ops[j].type = INSERTION;
+        dscores[y]        = min_score;
+        ops[y].x          = x;
+        ops[y].y          = y;
+        ops[y].score_diff = min_score;
+        ops[y].type       = INSERTION;
     }
     build_heap(heap);
     /* FORWARD EQUIVALENCE SEARCH (FES) */
+    Rprintf("Begin FES\n");
     struct cgraph *cpy = copy_cgraph(cg);
     struct ges_op *op;
     int *mem = malloc(nvar * 2 * sizeof(int));
     /* extract the smallest ges_op from the heap and check to see if positive */
-    while ((op = peek_heap(heap, NULL)) && op->score_diff <= 0.0f) {
+    while ((op = peek_heap(heap)) && op->score_diff <= 0.0f) {
         if (!is_valid_insertion(cg, *op, mem)) {
+            Rprintf("here\n");
             remove_heap(heap, op->y);
             recalculate_fes(cg, op, score);
             insert_heap(heap, op->score_diff, op);
@@ -303,7 +309,9 @@ struct cgraph *ccf_ges(struct score score)
         for(int i = 0; i < n_nodes; ++i) {
             op    = ops + nodes[i];
             remove_heap(heap, nodes[i]);
+            Rprintf("here\n");
             recalculate_fes(cg, op, score);
+            Rprintf("here2\n");
             insert_heap(heap, op->score_diff, op);
         }
         free(nodes);
@@ -324,7 +332,7 @@ struct cgraph *ccf_ges(struct score score)
     }
     build_heap(heap);
     /* BACKWARD EQUIVALENCE SEARCH (FES) */
-    while (0 && (op = peek_heap(heap, NULL)) && op->score_diff <= 0.0f) {
+    while (0 && (op = peek_heap(heap)) && op->score_diff <= 0.0f) {
         if (!is_valid_deletion(cg, *op)) {
             remove_heap(heap, op->y);
             recalculate_bes(cg, op, score);
