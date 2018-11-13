@@ -8,7 +8,7 @@ double score_graph(struct cgraph *cg, struct dataframe df, double *fargs,
 SEXP ccf_score_graph_wrapper(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
                                          SEXP FloatingArgs, SEXP IntegerArgs)
 {
-    int    *edges   = calculate_edges_ptr(Graph);
+    int    *edges   = calculateEdgesPtr(Graph);
     int     n_nodes = length(VECTOR_ELT(Graph, NODES));
     int     n_edges = nrows(VECTOR_ELT(Graph, EDGES));
     struct cgraph *cg      = create_cgraph(n_nodes);

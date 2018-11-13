@@ -173,7 +173,7 @@ double calculate_rss(double *cov, int m)
          */
         F77_CALL(dposv)("L", &m, &u, cov_xx, &m, cov_xy, &m, &err);
         if (err) {
-            warning("The leading minor of order %i is not positive definite!\n", err);
+            warning("Error in LAPACK routine dposv. code: %i!\n", err);
             rss = DBL_MAX;
         }
         else

@@ -13,18 +13,17 @@ struct cll {
 
 SEXP ccf_pdx_wrapper(SEXP Pdag)
 {
-    int           *edges_ptr = calculate_edges_ptr(Pdag);
-    int            n_nodes   = length(VECTOR_ELT(Pdag,NODES));
-    int            n_edges   = nrows(VECTOR_ELT(Pdag, EDGES));
-    struct cgraph *cg        = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges_ptr);
-    free(edges_ptr);
+    int           *edges   = calculateEdgesPtr(Pdag);
+    int            n_nodes = length(VECTOR_ELT(Pdag,NODES));
+    int            n_edges = nrows(VECTOR_ELT(Pdag, EDGES));
+    struct cgraph *cg      = create_cgraph(n_nodes);
+    fill_in_cgraph(cg, n_edges, edges);
+    free(edges);
     cg = ccf_pdx(cg);
-    if (cg == NULL) {
+    if (cg == NULL)
         return R_NilValue;
-    }
     SEXP Dag = PROTECT(duplicate(Pdag));
-    recalculate_edges_from_cgraph(cg, Dag);
+    calcluateEdgesFromCgraph(cg, Dag);
     free_cgraph(cg);
     UNPROTECT(1);
     return Dag;

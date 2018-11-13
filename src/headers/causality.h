@@ -26,11 +26,8 @@
 #define NODES       0
 #define ADJACENCIES 1
 #define EDGES       2
-#define NCOL_EDGES  3
 
-int * calculate_edges_ptr(SEXP Graph);
-SEXP  calculate_edges_from_ptr(int *edges_ptr, SEXP Graph);
-void  recalculate_edges_from_cgraph(struct cgraph *cg, SEXP Graph);
+int * calculateEdgesPtr(SEXP Graph);
+void calcluateEdgesFromCgraph(struct cgraph *cgPtr, SEXP Graph);
 int   is_directed(int edge);
-int * calculate_edges_ptr(SEXP Graph);
 #endif

@@ -38,7 +38,7 @@ static jmp_buf FAIL_STATE;
  */
 SEXP ccf_sort_wrapper(SEXP Graph)
 {
-    int *edges   = calculate_edges_ptr(Graph);
+    int *edges   = calculateEdgesPtr(Graph);
     int  n_nodes = length(VECTOR_ELT(Graph, NODES));
     int  n_edges = nrows(VECTOR_ELT(Graph, EDGES));
     struct cgraph *cg = create_cgraph(n_nodes);

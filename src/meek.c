@@ -24,16 +24,15 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
 
 SEXP ccf_meek_wrapper(SEXP Graph)
 {
-     int * edges_ptr   = calculate_edges_ptr(Graph);
-     int n_nodes       = length(VECTOR_ELT(Graph, NODES));
-     int n_edges       = nrows(VECTOR_ELT(Graph, EDGES));
-     /* create an empty cgraph and fill it in */
-     struct cgraph *cg = create_cgraph(n_nodes);
-     fill_in_cgraph(cg, n_edges, edges_ptr);
-     free(edges_ptr);
+     int           *edges   = calculateEdgesPtr(Graph);
+     int            n_nodes = length(VECTOR_ELT(Graph, NODES));
+     int            n_edges = nrows(VECTOR_ELT(Graph, EDGES));
+     struct cgraph *cg      = create_cgraph(n_nodes);
+     fill_in_cgraph(cg, n_edges, edges);
+     free(edges);
      ccf_meek(cg);
      SEXP Pattern = PROTECT(duplicate(Graph));
-     recalculate_edges_from_cgraph(cg, Pattern);
+     calcluateEdgesFromCgraph(cg, Pattern);
      free_cgraph(cg);
      UNPROTECT(1);
      return Pattern;

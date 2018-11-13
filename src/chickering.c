@@ -25,7 +25,7 @@ static void find_compelled(struct cgraph *cg, int *sort);
 
 SEXP ccf_chickering_wrapper(SEXP Graph)
 {
-    int           *edges   = calculate_edges_ptr(Graph);
+    int           *edges   = calculateEdgesPtr(Graph);
     int            n_nodes = length(VECTOR_ELT(Graph, NODES));
     int            n_edges = nrows(VECTOR_ELT(Graph, EDGES));
     struct cgraph *cg      = create_cgraph(n_nodes);
@@ -33,7 +33,7 @@ SEXP ccf_chickering_wrapper(SEXP Graph)
     free(edges);
     ccf_chickering(cg);
     SEXP Pattern = PROTECT(duplicate(Graph));
-    recalculate_edges_from_cgraph(cg, Pattern);
+    calcluateEdgesFromCgraph(cg, Pattern);
     free_cgraph(cg);
     UNPROTECT(1);
     return Pattern;
