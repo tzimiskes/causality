@@ -27,7 +27,7 @@ meek <- function(graph) {
   # Really, this operation only makes sense for PDAGs, so this might change
   if (is.dag(graph) || is.pattern(graph))
     return(graph)
-  if (!is.pdag(graph) || !(is.nonlatent(graph) && is.acyclic(graph)))
+  if (!is.pdag(graph) && !(is.nonlatent(graph) && is.acyclic(graph)))
     stop("The meek rules can only be run on nonlatent acylic graphs.")
 
   # maybe check to see if it has a dag extension first?
