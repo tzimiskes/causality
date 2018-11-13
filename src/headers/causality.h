@@ -30,4 +30,5 @@
 int * calculateEdgesPtr(SEXP Graph);
 void calcluateEdgesFromCgraph(struct cgraph *cgPtr, SEXP Graph);
 int   is_directed(int edge);
+SEXP causalityGraphFromCgraph(struct cgraph *cg, SEXP Nodes);
 #endif

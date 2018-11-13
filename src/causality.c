@@ -11,7 +11,7 @@ const char *BIDIRECTED_STR    = "<->";
 
 static int          edgeToInt(const char * EdgeStr);
 static const char * edgeToChar(int edgeType);
-static int          nodeToInt(const char * node, const char ** nodes, int n_nodes);
+static int          nodeToInt(const char * node, const char **nodes, int n_nodes);
 
 int * calculateEdgesPtr(SEXP Graph)
 {
@@ -76,7 +76,19 @@ SEXP causalityGraphFromCgraph(struct cgraph *cg, SEXP Nodes)
 {
     int          nNodes      = cg->n_nodes;
     int          nEdges      = cg->n_edges;
-    SEXP         Edges       = PROTECT(allocMatrix(CHARSXP, nEdges, 3));
+    SEXP Graph = PROTECT(allocVector(VECSXP, 3));
+    SET_VECTOR_ELT(Graph, NODES, duplicate(Nodes));
+    SET_VECTOR_ELT(Graph, EDGES, allocMatrix(STRSXP, nEdges, 3));
+    SET_VECTOR_ELT(Graph, ADJACENCIES, R_NilValue);
+    SEXP Names = PROTECT(allocVector(STRSXP, 3));
+    SEXP Class = PROTECT(allocVector(STRSXP, 1));
+    SET_STRING_ELT(Names, NODES, mkChar("nodes"));
+    SET_STRING_ELT(Names, EDGES, mkChar("edges"));
+    SET_STRING_ELT(Names, ADJACENCIES, mkChar("adjacencies"));
+    SET_STRING_ELT(Class, 0, mkChar("causality.graph"));
+    setAttrib(Graph, R_NamesSymbol, Names);
+    setAttrib(Graph, R_ClassSymbol, Class);
+    SEXP Edges = VECTOR_ELT(Graph, EDGES);
     struct ill **parents     = cg->parents;
     struct ill **spouses     = cg->spouses;
     int          parentIndex = 0;
@@ -107,8 +119,8 @@ SEXP causalityGraphFromCgraph(struct cgraph *cg, SEXP Nodes)
             p = p->next;
         }
     }
-    UNPROTECT(1);
-    return Edges;
+    UNPROTECT(3);
+    return Graph;
 }
 
 int nodeToInt(const char *node, const char **nodes, int n_nodes)

@@ -88,7 +88,7 @@ void delete_edge_from_cgraph(struct cgraph *cg, int node1, int node2, int edge)
         ill_delete(&spouses[node2], node1);
         ill_delete(&spouses[node1], node2);
     }
-    cg->n_edges--;
+    cg->n_edges -= 1;
 }
 
 void free_cgraph(struct cgraph *cg)

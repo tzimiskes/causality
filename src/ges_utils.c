@@ -182,7 +182,9 @@ int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
     int n = 0;
     // int x = op->x;
     int y = op.y;
+    int x = op.x;
     visited[y] = 1;
+    visited[x] = 1;
     if (op.type == INSERTION) {
         for (int i = 0; i < op.set_size; ++i) {
             if ((op.t & 1 << i) == 1 << i)

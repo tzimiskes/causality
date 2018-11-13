@@ -48,6 +48,11 @@ ges <- function(df,
   else if (score == "CG")
     stop("not implemented")
 
-  system.time(.Call("ccf_ges_wrapper", df, score, dimensions, floating.args,
-                                           integer.args))
+  graph <- .Call("ccf_ges_wrapper", df, score, dimensions, floating.args,
+                                    integer.args)
+
+  graph$adjacencies <- .calculate_adjacencies_from_edges(graph$edges,
+                                                         graph$nodes)
+
+  return(graph)
 }

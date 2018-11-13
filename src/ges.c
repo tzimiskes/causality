@@ -264,9 +264,9 @@ static void delete(struct cgraph *cg, struct ges_op g)
         delete_edge_from_cgraph(cg, g.x, g.y, UNDIRECTED);
     for (int i = 0; i < g.naxy_size; ++i) {
             if ((g.h & 1 << i) == 1 << i) {
-                if (edge_undirected_in_cgraph(cg, g.x, g.set[i]))
-                    orient_undirected_edge(cg, g.x , g.set[i]);
-                orient_undirected_edge(cg, g.y, g.set[i]);
+                if (edge_undirected_in_cgraph(cg, g.x, g.naxy[i]))
+                    orient_undirected_edge(cg, g.x , g.naxy[i]);
+                orient_undirected_edge(cg, g.y, g.naxy[i]);
         }
     }
 }
@@ -342,9 +342,7 @@ struct cgraph *ccf_ges(struct score score)
         }
         free(nodes);
     }
-    Rprintf("FES complete\n");
     free(mem);
-
     /* BES STEP 0 */
     for (int i = 0; i < nvar; ++i) {
         op    = ops + i;
@@ -371,24 +369,20 @@ struct cgraph *ccf_ges(struct score score)
         int *nodes     = deterimine_nodes_to_recalc(cpy, cg, *op, visited,
                                                          n_visited, &n_nodes);
         for (int i = 0; i < n_nodes; ++i) {
-            op    = ops + nodes[i];
+            op = ops + nodes[i];
             remove_heap(heap, nodes[i]);
             recalculate_bes(cg, op, score);
             insert_heap(heap, op->score_diff, op);
         }
         free(nodes);
     }
-    for (int i = 0; i < cg->n_nodes; i++)
-        Rprintf("%f\n", heap->keys[i]);
-    Rprintf("BES complete\n");
+    // for (int i = 0; i < cg->n_nodes; i++)
+    //     Rprintf("%f\n", heap->keys[i]);
     /* Memory cleanup */
     for (int i = 0; i < nvar; ++i)
         free_ges_op(ops[i]);
     free(ops);
     free_heap(heap);
     free_cgraph(cpy);
-    print_cgraph(cg);
-    Rprintf("Number of edges: %i\n", cg->n_edges);
-
     return cg;
 }
