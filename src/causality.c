@@ -1,5 +1,5 @@
 #include "headers/causality.h"
-#include "headers/edgetypes.h"
+#include "headers/causalityRWrapper.h"
 
 const char *DIRECTED_STR      = "-->";
 const char *UNDIRECTED_STR    = "---";
@@ -9,16 +9,16 @@ const char *CIRCLEARROW_STR   = "o->";
 const char *CIRCLECIRCLE_STR  = "o-o";
 const char *BIDIRECTED_STR    = "<->";
 
-static int          edgeToInt(const char * EdgeStr);
+static int          edgeToInt(const char *EdgeStr);
 static const char * edgeToChar(int edgeType);
-static int          nodeToInt(const char * node, const char **nodes, int n_nodes);
+static int          nodeToInt(const char *node, const char **nodes, int nNodes);
 
 int * calculateEdgesPtr(SEXP Graph)
 {
     SEXP         Edges  = PROTECT(VECTOR_ELT(Graph, EDGES));
     SEXP         Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
     int          nNodes = length(Nodes);
-    const char **nodes  = CALLOC(nNodes, const char*);
+    const char **nodes  = malloc(nNodes * sizeof(const char*));
     // make a table so we can easily refer to the nodes
     for (int i = 0; i < nNodes; ++i)
         nodes[i] = CHAR(STRING_ELT(Nodes, i));
@@ -168,10 +168,4 @@ static const char * edgeToChar(int edgeType) {
     default:
         error("Failed match integer edge_type to char * edge type!\n");
     }
-}
-
-int is_directed(int edge)
-{
-    return (edge == DIRECTED || edge == CIRCLEARROW ||
-            edge == SQUIGGLEARROW || edge == PLUSPLUSARROW);
 }

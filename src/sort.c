@@ -9,16 +9,15 @@
  */
 
 #include <setjmp.h> /* for error handling */
+#include <stdlib.h>
 
-#include <causality.h>
-#include <cgraph.h>
-#include <int_linked_list.h>
-#include <edgetypes.h>
-#include <sort.h>
+#include "headers/causality.h"
+#include "headers/cgraph.h"
+#include "headers/int_linked_list.h"
 
 /* macros used in ccf_sort */
-#define UNMARKED 0
-#define MARKED 1
+#define UNMARKED   0
+#define MARKED     1
 #define TEMPORARY -1
 
 static void visit(int node, int *marked, int *n_unmarked,
@@ -32,39 +31,6 @@ static void visit(int node, int *marked, int *n_unmarked,
 static jmp_buf FAIL_STATE;
 
 /*
- * ccf_sort_wrapper takes in an R object, proccesses it down to the C level
- * and then runs C level sort on this lower level representation. In then takes
- * the output of ccf_sort and turns it back into an R object.
- */
-SEXP ccf_sort_wrapper(SEXP Graph)
-{
-    int *edges   = calculateEdgesPtr(Graph);
-    int  n_nodes = length(VECTOR_ELT(Graph, NODES));
-    int  n_edges = nrows(VECTOR_ELT(Graph, EDGES));
-    struct cgraph *cg = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges);
-    free(edges);
-    /*
-     * ccf_sort returns NULL if graph doesn't have a sort. In that case,
-     * we return R_NilValue (aka R's version of NULL)
-     */
-    int *sort = ccf_sort(cg);
-    free_cgraph(cg);
-    if (sort == NULL)
-        return R_NilValue;
-    /* grab the R structure that holds the Nodes (Char * vector) of the Graph */
-    SEXP Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
-    /* allocate memory for the output */
-    SEXP Output = PROTECT(allocVector(STRSXP, n_nodes));
-    /* convert C level output to R level output */
-    for (int i = 0; i < n_nodes; ++i)
-        SET_STRING_ELT(Output, i, STRING_ELT(Nodes, sort[i]));
-    free(sort);
-    UNPROTECT(2);
-    return Output;
-}
-
-/*
  * ccf_sort implements a topological sort by using a breadth first search as
  * described in CLRS. This function takes in a C level representation
  * (currently an integer linked list) of the edge list of an causality.graph,
@@ -75,12 +41,17 @@ int * ccf_sort(struct cgraph *cg)
     int  n_nodes = cg->n_nodes;
     /* create an array to signify whether or not a node has been marked, */
     int *marked  = calloc(n_nodes, sizeof(int));
-    if (marked == NULL)
-        error("Failed to allocate memory for marked in ccf_sort!\n");
+    if (marked == NULL) {
+        CAUSALITY_ERROR("Failed to allocate memory for marked in ccf_sort\n")
+        return NULL;
+    }
 
     int *sort = malloc(n_nodes * sizeof(int));
-    if (sort == NULL)
-        error("Failed to allocate memory for sort in ccf_sort!\n");
+    if (sort == NULL) {
+        CAUSALITY_ERROR("Failed to allocate memory for sort in ccf_sort\n")
+        free(marked);
+        return NULL;
+    }
     /*
      * setjmp(FAIL_STATE) == 0 the first time this is called. longjmping here
      * from visit will have setjmp(FAIL_STATE) == 1

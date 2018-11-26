@@ -1,6 +1,8 @@
-#include <causality.h>
-#include <cgraph.h>
-#include <ges_utils.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "headers/cgraph.h"
+#include "headers/ges.h"
 
 void free_ges_op(struct ges_op op)
 {
@@ -9,47 +11,55 @@ void free_ges_op(struct ges_op op)
     free(op.parents);
 }
 
+void free_ges_score(struct ges_score sc)
+{
+    free(sc.imem);
+    free(sc.fmem);
+}
+
 /*
  * forms_clique checks to see if s_u_naxy forms a clique. This is the first
  * validity test for the forward equivalence search of GES, and the validity
  * test for the backward equivalence search of GES.
  */
-int forms_clique(struct cgraph *cg, struct ges_op op)
+
+int valid_fes_clique(struct cgraph *cg, struct ges_op op)
 {
-    if (op.type == INSERTION) {
-        for (int i = 0; i < op.naxy_size; ++i) {
-            for (int j = 0; j < i; ++j) {
-                if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j]))
-                    return 0;
-            }
-            for (int j = 0; j < op.set_size; ++j) {
-                if ((op.t & 1 << j) == 0)
-                    continue;
-                if (!adjacent_in_cgraph(cg, op.naxy[i], op.set[j]))
-                    return 0;
-            }
+    for (int i = 0; i < op.naxy_size; ++i) {
+        for (int j = 0; j < i; ++j) {
+            if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j]))
+                return 0;
         }
-        for (int i = 0; i < op.set_size; ++i) {
-            if ((op.t & 1 << i) == 0)
+        for (int j = 0; j < op.set_size; ++j) {
+            if ((op.t & 1 << j) == 0)
                 continue;
-            for (int j = 0; j < i; ++j) {
-                if ((op.t & 1 << j) == 0)
-                    continue;
-                if (!adjacent_in_cgraph(cg, op.set[i], op.set[j]))
-                    return 0;
-            }
+            if (!adjacent_in_cgraph(cg, op.naxy[i], op.set[j]))
+                return 0;
         }
     }
-    else if (op.type == DELETION) {
-        for (int i = 0; i < op.naxy_size; ++i) {
-            if ((op.h & 1 << i) == 1 << i)
+    for (int i = 0; i < op.set_size; ++i) {
+        if ((op.t & 1 << i) == 0)
+            continue;
+        for (int j = 0; j < i; ++j) {
+            if ((op.t & 1 << j) == 0)
                 continue;
-            for (int j = 0; j < i; ++j) {
-                if ((op.h & 1 << j) == 1 << j)
-                    continue;
-                if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j])) {
-                    return 0;
-                }
+            if (!adjacent_in_cgraph(cg, op.set[i], op.set[j]))
+                return 0;
+        }
+    }
+    return 1;
+}
+
+int valid_bes_clique(struct cgraph *cg, struct ges_op op)
+{
+    for (int i = 0; i < op.naxy_size; ++i) {
+        if ((op.h & 1 << i) == 1 << i)
+            continue;
+        for (int j = 0; j < i; ++j) {
+            if ((op.h & 1 << j) == 1 << j)
+                continue;
+            if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j])) {
+                return 0;
             }
         }
     }
@@ -162,10 +172,11 @@ void calculate_naxy(struct cgraph *cg, struct ges_op *op)
     *op = o;
 }
 
-void calculate_parents(struct cgraph *cg, struct ges_op *op) {
+void calculate_parents(struct cgraph *cg, struct ges_op *op)
+{
     struct ill *p = cg->parents[op->y];
-    op->parents_size = ill_size(p);
-    op->parents      = malloc(op->parents_size * sizeof(int));
+    op->n_parents = ill_size(p);
+    op->parents   = malloc(op->n_parents * sizeof(int));
     int i = 0;
     while (p) {
         op->parents[i++] = p->key;

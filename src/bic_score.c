@@ -1,14 +1,16 @@
 /* TODO */
+#include <stdlib.h>
+#include <math.h>
+#include <float.h>
 #include <causality.h>
 #include <dataframe.h>
 #include <scores.h>
 #include <R_ext/Lapack.h>
 
 #define ERROR_THRESH     1e-9
-void fcov_xx(double * restrict cov_xx, double * restrict * x, int n,
-                                         int m);
-void fcov_xy(double * restrict cov_xy, double * restrict *x,
-             double * restrict y, int n, int m);
+
+void fcov_xx(double *cov_xx, double **x, int n, int m);
+void fcov_xy(double *cov_xy, double **x, double *y, int n, int m);
 
 double calculate_rss(double *cov, int m);
 
@@ -22,14 +24,13 @@ static double calcluate_bic_diff(double rss_p, double rss_m, double penalty,
     return nobs * log(rss_p/rss_m) + penalty * log(nobs) * 2;
 }
 
-
 double bic_score(struct dataframe data, int *xy, int npar,
-                                        double *fargs, int *iargs)
+                                        struct score_args args)
 {
-    double  penalty = fargs[0];
+    double  penalty = args.fargs[0];
     int     nobs    = data.nobs;
     double *_y      = data.df[xy[npar]];
-    /* allocate memor y for submatrix and fill in the columns */
+    /* allocate memory for submatrix and fill in the columns */
     double **_x      = malloc((npar + 1) * sizeof(double *));
     for (int i = 0; i < npar + 1; ++i)
         _x[i] = data.df[xy[i]];
@@ -74,16 +75,16 @@ void construct_covariances(double *cov, double *pc_cov_xx, double *pc_cov_xy,
 }
 
 /* TODO */
-double ges_bic_score(struct dataframe data, int x, int y, int *ypar, int npar,
-                                        double *fargs, int *iargs, double *fmem,
-                                        int *imem)
+double ges_bic_score(struct dataframe df, int x, int y, int *ypar, int npar,
+                                          struct score_args args, double *fmem,
+                                          int *imem)
 {
-    double  penalty   = fargs[0];
+    double  penalty   = args.fargs[0];
     int     n_lbls    = *imem;
     int    *lbls      = imem + 1;
     double *pc_cov_xy = fmem;
-    double *pc_cov_xx = fmem + data.nvar;
-    int     nobs      = data.nobs;
+    double *pc_cov_xx = fmem + df.nvar;
+    int     nobs      = df.nobs;
     double *m_mem   = calloc(npar * (npar + 2), sizeof(double));
     if (m_mem == NULL)
     error("failed to allocate memory for BIC score\n");
@@ -98,9 +99,9 @@ double ges_bic_score(struct dataframe data, int x, int y, int *ypar, int npar,
     memcpy(cov_xy_p + 1, m_mem + npar * npar, npar * sizeof(double));
     memcpy(cov_xy_p_t, cov_xy_p, (npar + 1 ) * sizeof(double));
     double **_x       = malloc((npar + 1) * sizeof(double *));
-    _x[0] = data.df[x];
+    _x[0] = df.df[x];
     for (int i = 0; i < npar; ++i)
-        _x[i + 1] = data.df[ypar[i]];
+        _x[i + 1] = df.df[ypar[i]];
     fcov_xy(cov_xx_p, _x, _x[0], nobs, npar + 1);
     free(_x);
 
@@ -152,7 +153,7 @@ double calculate_rss(double *cov, int m)
          * positive definite
          */
         if (det < ERROR_THRESH)  {
-            Rprintf("DET is too small!!\n");
+            //Rprintf("DET is too small!!\n");
             rss = DBL_MAX;
         }
         else
@@ -188,7 +189,7 @@ double calculate_rss(double *cov, int m)
  * fcov_xy calculates the covariance matrix between random variable vector
  */
 
-void fcov_xx(double * restrict cov_xx, double * restrict *x, int n, int m)
+void fcov_xx(double *cov_xx, double **x, int n, int m)
 {
     int    u           = 1;
     double inv_nminus1 = 1.0f / (n - 1.0f);
@@ -209,8 +210,7 @@ void fcov_xx(double * restrict cov_xx, double * restrict *x, int n, int m)
  * fcov_xy calculates the covariance vector between the random variable y
  * and the random variable vector, x.
  */
-void fcov_xy(double * restrict cov_xy, double * restrict *x,
-             double * restrict y, int n, int m)
+void fcov_xy(double *cov_xy, double **x, double *y, int n, int m)
 {
     int              u = 1;
     double inv_nminus1 = 1.0f / (n - 1.0f);

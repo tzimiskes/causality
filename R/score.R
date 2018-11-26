@@ -1,4 +1,4 @@
-#' @useDynLib causality ccf_score_graph_wrapper
+#' @useDynLib causality causalityScoreGraph
 #' @export
 score <- function(graph,
                   df,
@@ -50,7 +50,7 @@ score <- function(graph,
   }
   else if (score == "CG")
     stop("not implemented")
-  score <- .Call("ccf_score_graph_wrapper",
+  score <- .Call("causalityScoreGraph",
                  graph,
                  df,
                  score,

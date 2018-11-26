@@ -1,3 +1,4 @@
+#include "headers/causalityRWrapper.h"
 #include "headers/causality.h"
 #include "headers/int_redblacktree.h"
 #include "headers/edgetypes.h"

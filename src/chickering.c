@@ -3,17 +3,12 @@
  * patterns. The algorithm is described in Chickering's paper
  * "A Transformational Characterization of Equivalent Bayesian Network
  * Structures", avaliable on the arxiv: https://arxiv.org/abs/1302.4938
- * ccf_chickering_wrapper is the R interface to ccf_chickering, which consists
- * of several functions, sort (which is in sort.c), order_edges (which uses
- * insertion_sort), and find_compelled.
  */
+#include <stdlib.h>
 
-#include <causality.h>
-#include <cgraph.h>
-#include <int_linked_list.h>
-#include <edgetypes.h>
-#include <sort.h>
-#include <chickering.h>
+#include "headers/causality.h"
+#include "headers/cgraph.h"
+#include "headers/int_linked_list.h"
 
 #define UNKNOWN   -1
 #define COMPELLED  1 /* This means directed */
@@ -22,22 +17,6 @@
 static void order_edges(struct cgraph *cg, int *sort);
 static void insertion_sort(struct ill *list);
 static void find_compelled(struct cgraph *cg, int *sort);
-
-SEXP ccf_chickering_wrapper(SEXP Graph)
-{
-    int           *edges   = calculateEdgesPtr(Graph);
-    int            n_nodes = length(VECTOR_ELT(Graph, NODES));
-    int            n_edges = nrows(VECTOR_ELT(Graph, EDGES));
-    struct cgraph *cg      = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges);
-    free(edges);
-    ccf_chickering(cg);
-    SEXP Pattern = PROTECT(duplicate(Graph));
-    calcluateEdgesFromCgraph(cg, Pattern);
-    free_cgraph(cg);
-    UNPROTECT(1);
-    return Pattern;
-}
 
 void ccf_chickering(struct cgraph *cg)
 {

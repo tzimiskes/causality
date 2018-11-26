@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include "headers/causality.h"
+#include "headers/causalityRWrapper.h"
 #include "headers/edgetypes.h"
 
 #define LEFT 0

@@ -46,12 +46,12 @@
     cgraph$edges <- as.integer(cgraph$edges)
     dim(cgraph$edges) <- c(nr, nc)
   }
-  if(adjacencies) {
+  if (adjacencies) {
     cgraph$adjacencies <- lapply(cgraph$adjacencies, function(x) {
       as.integer(unname(unlist(hash)[x]))
     })
   }
-  if(nodes)
+  if (nodes)
     cgraph$nodes <- unname(unlist(hash))
   return(cgraph)
 }

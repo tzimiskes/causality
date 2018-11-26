@@ -1,21 +1,17 @@
-#include <causality.h>
-#include <cgraph.h>
-#include <dataframe.h>
-#include <scores.h>
-
-struct score {
-    ges_score score;
-    struct dataframe df;
-    double    *fargs;
-    int       *iargs;
-    double    *fmem;
-    int       *imem;
-};
+#include "headers/causalityRWrapper.h"
+#include "headers/causality.h"
+#include "headers/cgraph.h"
+#include "headers/dataframe.h"
+#include "headers/scores.h"
+#include "headers/ges.h"
 
 
-struct cgraph * ccf_ges(struct score score);
-
-void normalize(double * x, int n) {
+/*
+ * normalize continuous variables to help speed up scoring of continuous
+ * variables.
+ */
+static void normalize(double *x, int n)
+{
     double mu  = 0.0f;
     double var = 0.0f;
     for (int i = 0; i < n; ++i)
@@ -30,30 +26,31 @@ void normalize(double * x, int n) {
         x[i] *= var;
 }
 
-struct dataframe prepare_df(SEXP Df, SEXP States) {
-    struct dataframe d;
-    d.nvar   = length(Df);
-    d.nobs   = length(VECTOR_ELT(Df, 0));
-    d.states = INTEGER(States);
-    d.df   = malloc(d.nvar * sizeof(void *));
-    for (int i = 0; i < d.nvar; ++i) {
+struct dataframe prepare_df(SEXP Df, SEXP States)
+{
+    struct dataframe df;
+    df.nvar   = length(Df);
+    df.nobs   = length(VECTOR_ELT(Df, 0));
+    df.states = INTEGER(States);
+    df.df   = malloc(df.nvar * sizeof(void *));
+    for (int i = 0; i < df.nvar; ++i) {
         SEXP Df_i = VECTOR_ELT(Df, i);
-        if (d.states[i]) {
-            d.df[i] = malloc(d.nobs * sizeof(int));
-            memcpy(d.df[i], INTEGER(Df_i), d.nobs * sizeof(int));
+        if (df.states[i]) {
+            df.df[i] = malloc(df.nobs * sizeof(int));
+            memcpy(df.df[i], INTEGER(Df_i), df.nobs * sizeof(int));
         }
         else {
-            d.df[i] = malloc(d.nobs * sizeof(double));
-            memcpy(d.df[i], REAL(Df_i), d.nobs * sizeof(double));
-            normalize(d.df[i], d.nobs);
+            df.df[i] = malloc(df.nobs * sizeof(double));
+            memcpy(df.df[i], REAL(Df_i), df.nobs * sizeof(double));
+            normalize(df.df[i], df.nobs);
         }
     }
-    return d;
+    return df;
 }
 
 
 SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
-                               SEXP FloatingArgs, SEXP IntegerArgs)
+                              SEXP FloatingArgs, SEXP IntegerArgs)
 {
     /*
      * calcluate the integer arguments and floating point arguments for the
@@ -66,7 +63,7 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     if (!isNull(FloatingArgs))
         fargs = REAL(FloatingArgs);
     struct dataframe data = prepare_df(Df, States);
-    ges_score ges_score;
+    ges_score_func ges_score;
     if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
         ges_score = ges_bic_score;
     else
@@ -75,9 +72,8 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
      * All the preprocessing work has now been done, so lets instantiate
      * an empty graph and run FGES
      */
-    struct score score = {ges_score, data, fargs, iargs, NULL, NULL};
+    struct ges_score score = {ges_score, data, {fargs, iargs}, NULL, NULL};
     struct cgraph *cg  = ccf_ges(score);
-
 
     for(int i = 0; i < data.nvar; ++i)
         free(data.df[i]);

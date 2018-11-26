@@ -1,8 +1,9 @@
-#include <causality.h>
-#include <cgraph.h>
-#include <int_linked_list.h>
-#include <edgetypes.h>
-#include <pdx.h>
+#include <stdlib.h>
+
+#include "headers/causality.h"
+#include "headers/cgraph.h"
+#include "headers/int_linked_list.h"
+
 
 struct cll {
     struct ill **children;
@@ -10,24 +11,6 @@ struct cll {
     struct ill **spouses;
     struct cll  *next;
 };
-
-SEXP ccf_pdx_wrapper(SEXP Pdag)
-{
-    int           *edges   = calculateEdgesPtr(Pdag);
-    int            n_nodes = length(VECTOR_ELT(Pdag,NODES));
-    int            n_edges = nrows(VECTOR_ELT(Pdag, EDGES));
-    struct cgraph *cg      = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges);
-    free(edges);
-    cg = ccf_pdx(cg);
-    if (cg == NULL)
-        return R_NilValue;
-    SEXP Dag = PROTECT(duplicate(Pdag));
-    calcluateEdgesFromCgraph(cg, Dag);
-    free_cgraph(cg);
-    UNPROTECT(1);
-    return Dag;
-}
 
 /* a node is a sink if it has no children */
 static int is_sink(struct cll *node)
@@ -68,7 +51,7 @@ static int is_clique(struct cll *node, struct cgraph *cg)
 static void orient_in_cgraph(struct cgraph *cg, int node)
 {
     struct ill *cpy = copy_ill(cg->spouses[node]);
-    struct ill *p = cpy;
+    struct ill *p   = cpy;
     while (p) {
         orient_undirected_edge(cg, p->key, node);
         p = p->next;
@@ -95,10 +78,19 @@ static void remove_node(struct cll *current, struct cll *nodes)
 struct cgraph * ccf_pdx(struct cgraph *cg)
 {
     int            n_nodes = cg->n_nodes;
-    struct cgraph *copy    = copy_cgraph(cg);
+    struct cgraph *cpy     = copy_cgraph(cg);
+    if (cpy == NULL) {
+        free_cgraph(cg);
+        CAUSALITY_ERROR("Failed to allocate memory for cpy in ccf_pdx\n");
+        return NULL;
+    }
     struct cll    *nodes   = calloc(n_nodes, sizeof(struct cll));
-    if (nodes == NULL)
-        error("Failed to allocate memory for nodes in cf_extend_pdag\n");
+    if (nodes == NULL) {
+        free_cgraph(cg);
+        free_cgraph(cpy);
+        CAUSALITY_ERROR("Failed to allocate memory for nodes in ccf_pdx\n");
+        return NULL;
+    }
     /* set up circular linked list */
     struct ill **parents  = cg->parents;
     struct ill **spouses  = cg->spouses;
@@ -116,7 +108,7 @@ struct cgraph * ccf_pdx(struct cgraph *cg)
     /* Comment needed */
     while (ll_size > 0 && n_checked <= ll_size) {
         if (is_sink(current) && is_clique(current, cg)) {
-            orient_in_cgraph(copy, current - nodes);
+            orient_in_cgraph(cpy, current - nodes);
             remove_node(current, nodes);
             prev->next = current->next;
             ll_size--;
@@ -128,16 +120,16 @@ struct cgraph * ccf_pdx(struct cgraph *cg)
         }
         current = current->next;
     }
-    free(nodes);
     free_cgraph(cg);
+    free(nodes);
     /*
      * check to see if pdx failed to generate an extension. If there is a
      * failure, free the copy_ptr and set it to NULL.
      */
     int failure = ll_size > 0 ? 1 : 0;
     if (failure) {
-        free_cgraph(copy);
-        copy = NULL;
+        free_cgraph(cpy);
+        cpy = NULL;
     }
-    return copy;
+    return cpy;
 }

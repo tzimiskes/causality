@@ -1,19 +1,23 @@
-#include <causality.h>
-#include <int_linked_list.h>
-#include <edgetypes.h>
-#include <cgraph.h>
+#include <stdlib.h>
+
+#include "headers/causality.h"
+#include "headers/int_linked_list.h"
+#include "headers/edgetypes.h"
+#include "headers/cgraph.h"
 
 struct cgraph *create_cgraph(int n_nodes)
 {
     struct cgraph *cg = calloc(1,sizeof(struct cgraph));
-    if (!cg)
-        error("Failed to allocate memory for cgraph!\n");
+    if (!cg) {
+        CAUSALITY_ERROR("Failed to allocate memory for cgraph!\n");
+        return NULL;
+    }
     cg->n_nodes  = n_nodes;
     cg->parents  = create_ptr_to_ill_ptr(n_nodes);
     cg->children = create_ptr_to_ill_ptr(n_nodes);
     cg->spouses  = create_ptr_to_ill_ptr(n_nodes);
     if (!cg->parents || !cg->children || !cg->spouses)
-        error("Failed to allocate memory for cgraph!\n");
+        CAUSALITY_ERROR("Failed to allocate memory for cgraph!\n");
     return cg;
 }
 
@@ -29,7 +33,7 @@ void fill_in_cgraph(struct cgraph *cg, int n_edges, int *edges)
         int x = node1[i];
         int y = node2[i];
         int edge  = edge_type[i];
-        if (is_directed(edge)) {
+        if (IS_DIRECTED(edge)) {
             children[x] = ill_insert(children[x], y, edge);
             parents[y]  = ill_insert(parents[y],  x, edge);
         }
@@ -64,7 +68,7 @@ void add_edge_to_cgraph(struct cgraph *cg, int node1, int node2, int edge)
     struct ill **parents   = cg->parents;
     struct ill **children  = cg->children;
     struct ill **spouses   = cg->spouses;
-    if (is_directed(edge)) {
+    if (IS_DIRECTED(edge)) {
         children[node1] = ill_insert(children[node1], node2, edge);
         parents[node2]  = ill_insert(parents[node2],  node1, edge);
     }
@@ -80,7 +84,7 @@ void delete_edge_from_cgraph(struct cgraph *cg, int node1, int node2, int edge)
     struct ill **parents   = cg->parents;
     struct ill **children  = cg->children;
     struct ill **spouses   = cg->spouses;
-    if (is_directed(edge)) {
+    if (IS_DIRECTED(edge)) {
         ill_delete(&parents[node2], node1);
         ill_delete(&children[node1], node2);
     }
@@ -297,13 +301,13 @@ void print_cgraph(struct cgraph *cg)
     for (int i = 0; i < cg->n_nodes; ++i) {
         struct ill *p = cg->parents[i];
         while (p) {
-            Rprintf("%i --> %i, %i\n", p->key, i, p->value);
+            //Rprintf("%i --> %i, %i\n", p->key, i, p->value);
             p = p->next;
         }
         p = cg->spouses[i];
         while (p) {
-            if (p->key < i)
-                Rprintf("%i --- %i, %i\n", p->key, i, p->value);
+            //if (p->key < i)
+            //    Rprintf("%i --- %i, %i\n", p->key, i, p->value);
             p = p->next;
         }
     }

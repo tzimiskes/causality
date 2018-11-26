@@ -1,12 +1,15 @@
-#include <dataframe.h>
-#include <causality.h>
-#include <scores.h>
+#include <stdlib.h>
+#include <math.h>
 
-double bdeu_score(struct dataframe data, int *xy, int npar, double *fargs,
-                                         int *iargs)
+#include "headers/dataframe.h"
+#include "headers/causality.h"
+#include "headers/scores.h"
+
+double bdeu_score(struct dataframe data, int *xy, int npar,
+                                         struct score_args args)
 {
-    double sample_prior    = fargs[0];
-    double structure_prior = fargs[1];
+    double sample_prior    = args.fargs[0];
+    double structure_prior = args.fargs[1];
     int * df[npar + 1];
     for(int i = 0; i < npar + 1; ++i)
         df[i] = data.df[xy[i]];
@@ -26,7 +29,7 @@ double bdeu_score(struct dataframe data, int *xy, int npar, double *fargs,
      */
     int *alloced_mem = calloc((n_x_states + 1) * n_y_states, sizeof(int));
     if(alloced_mem == NULL)
-        error("Failed\n to allocate enough memory for bdeu_score\n");
+        CAUSALITY_ERROR("Failed\n to allocate enough memory for bdeu_score\n");
     int *n_jk        = alloced_mem;
     int *n_j         = alloced_mem + n_x_states * n_y_states;
     /*

@@ -1,34 +1,36 @@
-#ifndef _CAUSALITY_
-#define _CAUSALITY_
-
-// R API
-#include <R.h>
-#include <Rinternals.h>
-
-/* Define some memory allocation macros so to increase portability between the
- * R version of this library and the potential Python version */
-#ifdef R_R_H
-#define CALLOC(n_elem, type) Calloc(n_elem, type)
-#define FREE(ptr) Free(ptr)
-#else
-#define CALLOC(n_elem, size) calloc(n_elem, sizeof(type))
-#define FREE(ptr) free(ptr)
-#endif
-
-// C LIBS
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
 #include <cgraph.h>
+#include <stdio.h>
 
-#define NODES       0
-#define ADJACENCIES 1
-#define EDGES       2
+#include "ges.h"
 
-int * calculateEdgesPtr(SEXP Graph);
-void calcluateEdgesFromCgraph(struct cgraph *cgPtr, SEXP Graph);
-int   is_directed(int edge);
-SEXP causalityGraphFromCgraph(struct cgraph *cg, SEXP Nodes);
+#ifndef CAUSALITY_H
+#define CAUSALITY_H
+
+#define CAUSALITY_ERROR(s) fprintf(stderr, "%s\n", s);
+
+#define DIRECTED      1 /* -->               */
+#define UNDIRECTED    2 /* ---               */
+#define PLUSPLUSARROW 3 /* ++> aka --> dd nl */
+#define SQUIGGLEARROW 4 /* ~~> aka --> pd nl */
+#define CIRCLEARROW   5 /* o->               */
+#define CIRCLECIRCLE  6 /* o-o               */
+#define BIDIRECTED    7 /* <->               */
+
+#define NUM_NL_EDGETYPES 2
+#define NUM_LAT_EDGETYPES 7
+#define NUM_EDGES_STORED 11
+
+#define IS_DIRECTED(edge) (edge == DIRECTED || edge == CIRCLEARROW || \
+                           edge == SQUIGGLEARROW || edge == PLUSPLUSARROW)
+
+
+/* Search algorithms */
+struct cgraph * ccf_ges(struct ges_score score);
+/* Graph manipulations */
+int           * ccf_sort(struct cgraph *cg);
+struct cgraph * ccf_pdx(struct cgraph *cg);
+void            ccf_chickering(struct cgraph *cg);
+
+double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
+                                      struct score_args args);
 #endif

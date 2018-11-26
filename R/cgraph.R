@@ -95,7 +95,7 @@ cgraph <- function(nodes, edges, validate = TRUE) {
 #' @export
 is_valid_cgraph <- function(graph) {
   # check to make sure it has valid fields (in the right order)
-  if(!isTRUE(all.equal(c("nodes", "adjacencies","edges"), names(graph)))) {
+  if (!isTRUE(all.equal(c("nodes", "adjacencies","edges"), names(graph)))) {
     message("graph does not contain the appropriate fields")
     return(FALSE)
   }
@@ -109,7 +109,7 @@ is_valid_cgraph <- function(graph) {
   }
   # check to make sure that there are no duplicate nodes
   nodes <- sort(graph$nodes)
-  for (i in 1:(length(nodes)-1)) {
+  for (i in 1:(length(nodes) - 1)) {
     if ( nodes[i] == nodes[i + 1]) {
       message("graph contains duplicate nodes")
       return(FALSE)
@@ -119,7 +119,7 @@ is_valid_cgraph <- function(graph) {
   # determine whether the graph is simple (No self-loops, no multi-edges)
   # as well as making sure all nodes in the edges show up in nodes
   n_edges <- nrow(graph$edges)
-  parents = list() # this should probably be renamed; unclear
+  parents <- list() # this should probably be renamed; unclear
   for (i in 1:n_edges) {
     edge <- graph$edges[i,]
     if (edge[1] == edge[2]) {

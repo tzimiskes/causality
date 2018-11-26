@@ -1,9 +1,11 @@
-#include <causality.h>
+#include <stdlib.h>
 #include <float.h>
-#include <heap.h>
+
+#include "headers/causality.h"
+#include "headers/heap.h"
 
 struct heap * create_heap(const int max_size, const void *ext_data_loc,
-                                         const int ext_data_size)
+                                              const int ext_data_size)
 {
     struct heap *hp = calloc(1, sizeof(struct heap));
     hp->max_size      = max_size;
@@ -14,7 +16,7 @@ struct heap * create_heap(const int max_size, const void *ext_data_loc,
     hp->data          = malloc(max_size * sizeof(void *));
     hp->indices       = malloc(max_size * sizeof(int));
     if (!hp->keys || !hp->data || !hp->data)
-        error("Failed to allocate memory for heap!\n");
+        CAUSALITY_ERROR("Failed to allocate memory for heap!\n");
     return hp;
 }
 

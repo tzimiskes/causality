@@ -1,12 +1,13 @@
-#include <causality.h>
-#include <int_linked_list.h>
+#include <stdlib.h>
+#include "headers/causality.h"
+#include "headers/int_linked_list.h"
 
 
 static struct ill * ill_instantiate(int key, int value)
 {
     struct ill *p = malloc(sizeof(struct ill));
     if (p == NULL)
-        error("Failed to instaniate linked list!\n");
+        CAUSALITY_ERROR("Failed to instaniate linked list!\n");
     p->key   =  key;
     p->value = value;
     p->next  = NULL;
@@ -71,7 +72,7 @@ struct ill ** create_ptr_to_ill_ptr(int n)
 {
     struct ill ** array = malloc(n * sizeof(struct ill *));
     if (array == NULL)
-        error("Failed to allocate pointer for ill_ptr*\n");
+        CAUSALITY_ERROR("Failed to allocate pointer for ill_ptr*\n");
     for(int i = 0; i < n; ++i)
         array[i] = NULL;
     return(array);
@@ -81,14 +82,14 @@ struct ill * create_ill_ptr(int n)
 {
     struct ill *p = calloc(n, sizeof(struct ill));
     if (p == NULL)
-        error("Failed to allocate pointer for ill_ptr\n");
+        CAUSALITY_ERROR("Failed to allocate pointer for ill_ptr\n");
     return(p);
 }
 
 void ill_print(struct ill *root)
 {
     while (root) {
-        Rprintf("Key: %i Value: %i\n", root->key, root->value);
+        printf("Key: %i Value: %i\n", root->key, root->value);
         root = root->next;
     }
 }
@@ -105,9 +106,7 @@ int ill_size(struct ill *root)
 
 void ill_delete(struct ill ** root, int key)
 {
-    struct ill *p = *root; /* should probably check to see if this is not null */
-    if (p == NULL)
-        error("*root is NULL\n");
+    struct ill *p = *root;
     if (p->key == key) {
         *root = (*root)->next;
         free(p);
