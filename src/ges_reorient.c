@@ -36,7 +36,7 @@ void orient(struct cgraph *cg, int x, int y, struct ill **stack,
                                struct pll **compelled, int *visited,
                                int *n_visited);
 
-void insert_pll(struct pll **p, struct ill *l)
+static void insert_pll(struct pll **p, struct ill *l)
 {
     struct pll *t = malloc(sizeof(struct pll));
     t->p    = l;
@@ -232,8 +232,8 @@ void meek_rules(struct cgraph *cg, int x, struct ill **stack,
                                      struct pll **compelled, int *visited,
                                      int *n_visited)
 {
-    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek1);
-    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek2);
-    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek3);
-    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek4);
+    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek_rule1);
+    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek_rule2);
+    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek_rule3);
+    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek_rule4);
 }

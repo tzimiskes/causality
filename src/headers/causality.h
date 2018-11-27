@@ -30,6 +30,7 @@ struct cgraph * ccf_ges(struct ges_score score);
 int           * ccf_sort(struct cgraph *cg);
 struct cgraph * ccf_pdx(struct cgraph *cg);
 void            ccf_chickering(struct cgraph *cg);
+void            ccf_meek(struct cgraph *cg);
 
 double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
                                       struct score_args args);
