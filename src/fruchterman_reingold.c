@@ -5,10 +5,6 @@
 #include "headers/causality.h"
 #include "headers/causalityRWrapper.h"
 
-void ccf_fruchterman_reingold(double *positions, int n_nodes, int *edges,
-                                                 int n_edges, double width,
-                                                 double height,
-                                                 int n_iterations);
 
 SEXP causalityFruchtermanReingold(SEXP graph, SEXP nIterations, SEXP height,
                                                SEXP width)
@@ -20,7 +16,7 @@ SEXP causalityFruchtermanReingold(SEXP graph, SEXP nIterations, SEXP height,
 
     int *edges = calculateEdgesPtr(graph);
 
-    ccf_fruchterman_reingold(REAL(positions), nNodes, edges, nEdges,
+    ccf_fr_layout(REAL(positions), nNodes, edges, nEdges,
                                               asReal(width), asReal(height),
                                               asInteger(nIterations));
     free(edges);
@@ -43,28 +39,25 @@ void ccf_uniform_rng(double *x, int n, double low, double high)
     #endif
 }
 
-void ccf_fruchterman_reingold(double *positions, int n_nodes, int *edges,
-                                                     int n_edges, double width,
-                                                     double height,
-                                                     int n_iterations)
+void ccf_fr_layout(double *positions, int n_nodes, int *edges, int n_edges,
+                                      double width, double height,
+                                      int iterations)
 {
-    double  area       = height * width;
-    double  inv_k      = 1.0f / sqrt(area/n_nodes);
-    double  k_sq       = area/n_nodes;
+    double  k          = n_edges / n_nodes * 1.0f;
+    double  inv_k      = 1.0f / k;
+    double  k_sq       = k * k;
     double *x          = positions;
     double *y          = positions + n_nodes;
     double *velocities = malloc(2 * n_nodes * sizeof(double));
     double *v_x        = velocities;
     double *v_y        = velocities + n_nodes;
     /* give each node an initial position in space */
-    ccf_uniform_rng(x, n_nodes, 0.0f, width);
-    ccf_uniform_rng(y, n_nodes, 0.0f, height);
+    ccf_uniform_rng(x, n_nodes, 0.25f, width - 0.25f);
+    ccf_uniform_rng(y, n_nodes, 0.25f, height - 0.25f);
 
-    for (int i = 0; i < n_nodes; ++i)
-        Rprintf("%f %f\n", x[i], y[i]);
-    double t0 = 2 * (width * height) / (width + height);
+    double t0 = 2 * (width * height) / (width + height) / 5;
     double t  = t0;
-    for (int i = 0; i < n_iterations; ++i) {
+    for (int i = 0; i < iterations; ++i) {
         /* calculate the dispersive forces between x_j and x_k (j != k) */
         for (int j = 0; j < n_nodes; ++j) {
             v_x[j] = 0.0f;
@@ -98,7 +91,7 @@ void ccf_fruchterman_reingold(double *positions, int n_nodes, int *edges,
             x[j] = fmin(width, fmax(0.0f, x[j]));
             y[j] = fmin(height, fmax(0.0f, y[j]));
         }
-        t = t0 * (n_iterations - i + 1) / n_iterations;
+        t = t0 / sqrt(i + 1);
     }
     free(velocities);
 }

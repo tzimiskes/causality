@@ -3,13 +3,11 @@
 export_tikz <- function(cgraph, file = stdout(), iterations = 10, height = 3,
                                 width = 3)
 {
-
-
   positions <- .Call("causalityFruchtermanReingold", graph = cgraph,
                                                      nIterations = iterations,
                                                      height = height,
                                                      width = width)
-  print(positions)
+  positions <- round(positions, digits = 2)
   edge_style <- function(edge) {
     switch (edge,
       "-->" = "directed",
@@ -57,6 +55,16 @@ export_tikz <- function(cgraph, file = stdout(), iterations = 10, height = 3,
       edge.type <- edge_style(edges[i, 3])
       s <- sprintf("\\draw[%s, line width = 1] (%s) -- (%s);\n", edge.type, x, y)
       cat(s, file = file, append = T)
+  }
+
+  cat("\n", file = file, append = T)
+  for (node in nodes) {
+      x <- positions[match(node, nodes), 1]
+      y <- positions[match(node, nodes), 2]
+      if (!is.null(cgraph$adjacencies[[node]]))
+        cat(sprintf("\\node[node] at (%f, %f) (%s) {%s};\n", x, y, node, node),
+                      file = file, append = T)
+
   }
   cat("\\end{tikzpicture}\n", file = file, append = T)
   cat("\\end{document}\n", file = file, append = T)
