@@ -1,5 +1,5 @@
-#ifndef _HEAP_H
-#define _HEAP_H
+#ifndef HEAP_H
+#define HEAP_H
 
 struct heap {
     double      *keys;

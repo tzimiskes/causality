@@ -1,5 +1,5 @@
-#ifndef _EDGETYPES_
-#define _EDGETYPES_
+#ifndef EDGETYPES_H
+#define EDGETYPES_H
 
 #define DIRECTED 1 // -->
 #define UNDIRECTED 2 // ---

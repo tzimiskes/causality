@@ -1,6 +1,6 @@
-#include <cgraph.h>
 #include <stdio.h>
 
+#include "cgraph.h"
 #include "ges.h"
 
 #ifndef CAUSALITY_H
@@ -31,7 +31,11 @@ int           * ccf_sort(struct cgraph *cg);
 struct cgraph * ccf_pdx(struct cgraph *cg);
 void            ccf_chickering(struct cgraph *cg);
 void            ccf_meek(struct cgraph *cg);
-
-double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
-                                      struct score_args args);
+/* misc functions */
+double          ccf_score_graph(struct cgraph *cg, struct dataframe df,
+                                                   score_func score,
+                                                   struct score_args args);
+void            ccf_fr_layout(double *positions, int n_nodes, int *edges,
+                                                 int n_edges, double width,
+                                                 double height, int iterations);
 #endif

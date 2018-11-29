@@ -1,5 +1,5 @@
-#ifndef _DATAFRAME_H
-#define _DATAFRAME_H
+#ifndef DATAFRAME_H
+#define DATAFRAME_H
 struct dataframe {
     void **df;
     int   *states;

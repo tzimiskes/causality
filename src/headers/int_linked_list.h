@@ -1,5 +1,5 @@
-#ifndef _ILL_H
-#define _ILL_H
+#ifndef ILL_H
+#define ILL_H
 
 /* definition of each node in a linked list */
 struct ill {
