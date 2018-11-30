@@ -1,27 +1,30 @@
 # causality
-Hello! I don't know why you are here, but if you have an feedback ( suggestions, bugs, feature requests), let me know so I can address it. 
-`causality` is still in early development, as you can see there are not too many things you can do with the code. But, this will change as I begin to add implementations of GES, GFCI, FOFC/FTFC and beyond. 
-## Development Roadmap 
 
-*Active Devlopment of New Features has halted while I undergo a review of the code and document what is implemented so far*
+`causality` is still in early development, but there are a few useful things you do with the R package.
+You can aggrate graphs into order to access the stabiliity of algorithms, you
+can convert dags to patterns and patterns to dags, and you can employ
+causality's (BETA) implementation of greedy equivalence search (GES) to learn
+bayesian networks. You can also export the graphs to latex so you can put them in papers.
 
+## Development Roadmap
 
-Rough roadmap of major features:
+Testing:
+- GES (single threaded, continuous)
+- exporting causality.graphs to LaTeX
 
-- GES (July 2018) 
-  - Realistically, this will first occur for SEMs and then Bayes Nets
-- Latent Variable Models (August)
-- FCI (September)
-- FOFC (October)
+Future major features:
+- GES with BDeu scoring for discrete data
+- GES with CG scoring for mixed data
+- Multithreaded GES
+- Latent Variable Models
+- FCI /GFCI
+- FOFC/FTFC
 
-Rougher roadmap of minor features:
-
-
+Future minor features
 - function to remove cycles from cgraphs
-- mutator functions to safely add and delete edges/nodes from graphs
-- function for d-separation test
-- function to calculate the markov boundary/blanket of a node
-- function to calculate partial correlations between variables
+- mutators to safely add and delete edges/nodes from graphs
+- d-separation test
+- markov boundary/blanket calculation
+- partial correlations (need for G/FCI)
 
-
-In the future I would like to add support for simulations, and using javascript to create interactive plots, with possible support for exporting to tikz (LaTeX) 
+If you have any feedback ( suggestions, bugs, feature requests), let me know so I can address it!
