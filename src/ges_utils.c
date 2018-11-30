@@ -68,18 +68,13 @@ int valid_bes_clique(struct cgraph *cg, struct ges_op op)
 
 static inline int is_marked(int i, unsigned char *marked)
 {
-    int q = i / 8;
-    int r = i % 8;
-
-    return (marked[q] & 1 << r) == (1 << r);
+    return marked[i / 8] & 1 << (i % 8);
 }
 
 static inline void mark(int i, unsigned char *marked)
 {
     int q = i / 8;
-    int r = i % 8;
-
-    marked[q] = marked[q] | 1 << r;
+    marked[q] = marked[q] | 1 << (i % 8);
 }
 /*
  * cycle_created returns whether or not the adding the edge x --> y

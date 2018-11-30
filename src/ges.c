@@ -3,7 +3,7 @@
  * Description: ges.c contains a (partially optimized implemented version of
  * greedy equivalence search by chickering and meek.) It is a score based
  * causal discovery algorithm that is correct in the the large sample
- * limit given its assumptions. For more information see the paper
+ * limit given its assumptions. For more information see the paper by
  * David Maxwell Chikcering, Optimal Structure Identification With Greedy Search
  * Journal of Machine Learning Research 3 (2002) 507-554
  */
@@ -11,13 +11,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
+#include "headers/causality.h"
 #include "headers/cgraph.h"
 #include "headers/heap.h"
 #include "headers/dataframe.h"
 #include "headers/scores.h"
-#include "headers/edgetypes.h"
 #include "headers/ges.h"
 
 #define DEFAULT_SCORE_DIFF 1.0f
@@ -165,7 +164,8 @@ void compute_xgroup_covariances(struct dataframe data, int _x,
     free(x);
 }
 
-void recalculate_fes(struct cgraph *cg, struct ges_op *op, struct ges_score sc)
+static void update_insertion_operator(struct cgraph *cg, struct ges_op *op,
+                                                         struct ges_score sc)
 {
     op->score_diff = DEFAULT_SCORE_DIFF;
     /* preallocate memory for cycle_created */
@@ -199,7 +199,8 @@ void recalculate_fes(struct cgraph *cg, struct ges_op *op, struct ges_score sc)
     free_ges_score(sc);
 }
 
-void recalculate_bes(struct cgraph *cg, struct ges_op *op, struct ges_score sc)
+static void update_deletion_operator(struct cgraph *cg, struct ges_op *op,
+                                                        struct ges_score sc)
 {
     op->score_diff = DEFAULT_SCORE_DIFF;
     int y = op->y;
@@ -247,7 +248,7 @@ void recalculate_bes(struct cgraph *cg, struct ges_op *op, struct ges_score sc)
  * insert takes the ges_op and adds the edge x --> y, and then for all
  * nodes in s, orients node --> y.
  */
-static void insert(struct cgraph *cg, struct ges_op op)
+static void apply_insertion_operator(struct cgraph *cg, struct ges_op op)
 {
     add_edge_to_cgraph(cg, op.x, op.y, DIRECTED);
     for (int i = 0; i < op.set_size; ++i) {
@@ -262,7 +263,7 @@ static void insert(struct cgraph *cg, struct ges_op op)
  * know whether or not  the edges involving x are directed or undirected,
  * we must check them.
  */
-static void delete(struct cgraph *cg, struct ges_op op)
+static void apply_deletion_operator(struct cgraph *cg, struct ges_op op)
 {
     if (edge_directed_in_cgraph(cg, op.x, op.y))
         delete_edge_from_cgraph(cg, op.x, op.y, DIRECTED);
@@ -330,12 +331,12 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     while ((op = peek_heap(heap)) && op->score_diff <= 0.0f) {
         if (!is_valid_insertion(cg, *op, mem)) {
             remove_heap(heap, op->y);
-            recalculate_fes(cg, op, sc);
+            update_insertion_operator(cg, op, sc);
             insert_heap(heap, op->score_diff, op);
             continue;
         }
         graph_score   += op->score_diff;
-        insert(cg, *op);
+        apply_insertion_operator(cg, *op);
         int  n_visited = 0;
         int *visited   = reorient(cg, *op, &n_visited);
         int  n_nodes   = 0;
@@ -344,7 +345,7 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
         for(int i = 0; i < n_nodes; ++i) {
             op = ops + nodes[i];
             remove_heap(heap, nodes[i]);
-            recalculate_fes(cg, op, sc);
+            update_insertion_operator(cg, op, sc);
             insert_heap(heap, op->score_diff, op);
         }
         free(nodes);
@@ -354,7 +355,7 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     for (int i = 0; i < n_var; ++i) {
         op              = ops + i;
         op->y           = i;
-        recalculate_bes(cg, op, sc);
+        update_deletion_operator(cg, op, sc);
         records[i]      = op;
         indices[i]      = i;
         dscores[i]      = op->score_diff;
@@ -364,21 +365,22 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     while ((op = peek_heap(heap)) && op->score_diff <= 0.0f) {
         if (!is_valid_deletion(cg, *op)) {
             remove_heap(heap, op->y);
-            recalculate_bes(cg, op, sc);
+            update_deletion_operator(cg, op, sc);
             insert_heap(heap, op->score_diff, op);
             continue;
         }
         graph_score   += op->score_diff;
-        delete(cg, *op);
+        apply_deletion_operator(cg, *op);
         int  n_visited = 0;
         int *visited   = reorient(cg, *op, &n_visited);
         int  n_nodes   = 0;
         int *nodes     = deterimine_nodes_to_recalc(cpy, cg, *op, visited,
                                                          n_visited, &n_nodes);
+     /* reorient_and_discern_operators_to_update(cpy, cg, *op, nodes, &n_nodes); */
         for (int i = 0; i < n_nodes; ++i) {
             op = ops + nodes[i];
             remove_heap(heap, nodes[i]);
-            recalculate_bes(cg, op, sc);
+            update_deletion_operator(cg, op, sc);
             insert_heap(heap, op->score_diff, op);
         }
         free(nodes);

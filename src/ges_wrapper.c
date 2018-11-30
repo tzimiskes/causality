@@ -76,9 +76,6 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     struct cgraph *cg      = create_cgraph(data.nvar);
     /* run ges */
     double graph_score      = ccf_ges(score, cg);
-
-    Rprintf("score\n");
-
     for(int i = 0; i < data.nvar; ++i)
         free(data.df[i]);
     free(data.df);
