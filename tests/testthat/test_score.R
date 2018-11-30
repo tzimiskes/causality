@@ -29,15 +29,3 @@ score_graph <- function(cgraph, data) {
   }
   return(as.numeric(sum_BIC))
 }
-
-parents <- function(cgraph) {
-  parents <- list()
-  edges <- cgraph$edges
-  for (i in 1:nrow(edges)) {
-    edge <- edges[i, ]
-    if (edge[3] == .DIRECTED) {
-      parents[[edge[2]]] <- c(edge[1], parents[[edge[2]]])
-    }
-  }
-  return(parents)
-}

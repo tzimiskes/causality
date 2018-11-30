@@ -93,3 +93,29 @@ is.latent <- function(cgraph) {
   }
   return(TRUE)
 }
+
+#' @rdname cgraph-methods
+#' @export
+parents <- function(cgraph) {
+  parents <- list()
+  edges <- cgraph$edges
+  for (i in 1:nrow(edges)) {
+    edge <- edges[i, ]
+    if (edge[3] %in% .DIRECTED_EDGE_TYPES)
+      parents[[edge[2]]] <- c(edge[1], parents[[edge[2]]])
+  }
+  return(parents)
+}
+
+#' @rdname cgraph-methods
+#' @export
+children <- function(cgraph) {
+  children <- list()
+  edges <- cgraph$edges
+  for (i in 1:nrow(edges)) {
+    edge <- edges[i, ]
+    if (edge[3] %in% .DIRECTED_EDGE_TYPES)
+      children[[edge[1]]] <- c(edge[2], children[[edge[1]]])
+  }
+  return(children)
+}

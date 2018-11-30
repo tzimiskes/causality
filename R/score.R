@@ -1,11 +1,8 @@
 #' @useDynLib causality causalityScoreGraph
 #' @export
-score <- function(graph,
-                  df,
-                  score = c("BIC", "BDue"),
-                  penalty = 1.0,
-                  sample_prior = 1.0,
-                  structure_prior = 1.0) {
+score <- function(graph, df, score = c("BIC", "BDue"), penalty = 1.0,
+                         sample_prior = 1.0, structure_prior = 1.0)
+{
   if (!is.cgraph(graph))
     stop("graph is not a causality.graph!")
   if (!is.dag(graph))

@@ -4,6 +4,7 @@
 \alias{cgraph}
 \alias{is_valid_cgraph}
 \alias{is.cgraph}
+\alias{summary.causality.graph}
 \title{Casuality Graphs}
 \usage{
 cgraph(nodes, edges, validate = TRUE)
@@ -11,6 +12,8 @@ cgraph(nodes, edges, validate = TRUE)
 is_valid_cgraph(graph)
 
 is.cgraph(graph)
+
+\method{summary}{causality.graph}(object, ...)
 }
 \arguments{
 \item{nodes}{A character array of node names}

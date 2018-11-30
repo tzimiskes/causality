@@ -178,6 +178,24 @@ is.cgraph <- function(graph) {
     return(FALSE)
 }
 
+#' @rdname cgraph
+#' @export
+summary.causality.graph <- function(object, ...) {
+  if (!is.cgraph(object))
+    stop("object is not a causality.graph!")
+  summary <- list()
+  summary$n.nodes            <- length(object$nodes)
+  summary$n.edges            <- nrow(object$edges)
+  summary$n.directed.edges   <- sum(object$edge[,3] %in% .DIRECTED_EDGE_TYPES)
+  summary$n.undirected.edges <- summary$n.edges - summary$n.directed.edges
+  summary$average.degree     <- 2 * summary$n.edges / summary$n.nodes
+  summary$max.degree         <- max(unlist(lapply(object$adjacencies, length)))
+  summary$max.indegree       <- max(unlist(lapply(parents(object), length)))
+  summary$max.outdegree      <- max(unlist(lapply(children(object), length)))
+  return(summary)
+}
+
+
 # Causality Graph as.cgraph Functions ------------------------------------------
 #' Coerce a graph to a Causality Graph
 #' @details \code{as.cgraph} is an S3 generic that attempts to convert a not
@@ -204,6 +222,18 @@ as.cgraph.default <- function(graph) {
   }
   else
     stop("Cannot coerce input to causality.graph")
+}
+
+#' @rdname as.cgraph
+#' @export
+as.cgraph.bn <- function(graph) {
+  if (!(class(graph) == "bn"))
+    stop("Input is not of class bn!")
+
+  names <- names(graph$nodes)
+  # get the edges
+  edges <- cbind(unname(graph$arcs), rep(.DIRECTED, nrow(graph$arcs)))
+  return(cgraph(names, edges))
 }
 
 # rcausal uses different classes for each algorithm, this makes it necessary to
@@ -238,42 +268,44 @@ as.cgraph.rcausal <- function(graph) {
 #' @rdname as.cgraph
 #' @export
 as.cgraph.fges <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.fges.discrete <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.fges.mixed <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.gfci <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.gfci.discrete <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.gfci.mixed <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.pc <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.cpc <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.pcstable <- as.cgraph.rcausal
+
 #' @rdname as.cgraph
 #' @export
 as.cgraph.cpcstable <- as.cgraph.rcausal
 
 #' @rdname as.cgraph
 #' @export
-as.cgraph.bn <- function(graph) {
-  if (!(class(graph) == "bn"))
-    stop("Input is not of class bn!")
+as.cgraph.fci <- as.cgraph.rcausal
 
-  names <- names(graph$nodes)
-  # get the edges
-  edges <- cbind(unname(graph$arcs), rep(.DIRECTED, nrow(graph$arcs)))
-  return(cgraph(names, edges))
-}

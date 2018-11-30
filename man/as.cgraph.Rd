@@ -4,6 +4,7 @@
 \alias{as.cgraph}
 \alias{as.cgraph.causality.graph}
 \alias{as.cgraph.default}
+\alias{as.cgraph.bn}
 \alias{as.cgraph.fges}
 \alias{as.cgraph.fges.discrete}
 \alias{as.cgraph.fges.mixed}
@@ -14,7 +15,7 @@
 \alias{as.cgraph.cpc}
 \alias{as.cgraph.pcstable}
 \alias{as.cgraph.cpcstable}
-\alias{as.cgraph.bn}
+\alias{as.cgraph.fci}
 \title{Coerce a graph to a Causality Graph}
 \usage{
 as.cgraph(graph)
@@ -22,6 +23,8 @@ as.cgraph(graph)
 \method{as.cgraph}{causality.graph}(graph)
 
 \method{as.cgraph}{default}(graph)
+
+\method{as.cgraph}{bn}(graph)
 
 \method{as.cgraph}{fges}(graph)
 
@@ -43,7 +46,7 @@ as.cgraph(graph)
 
 \method{as.cgraph}{cpcstable}(graph)
 
-\method{as.cgraph}{bn}(graph)
+\method{as.cgraph}{fci}(graph)
 }
 \value{
 \code{as.cgraph} returns a causality graph object, or throws an error
