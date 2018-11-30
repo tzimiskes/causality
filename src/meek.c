@@ -1,3 +1,11 @@
+/* Author : Alexander Rix
+ * Date   : 11/30/18
+ * Description:
+ * meek.c implements the four meek rules found in meek(1995), as well a
+ * causality c function, ccf_meek, that takes a pdag maximially orients it
+ * (ie turns it into a PDAG) via the meek rules.
+ */
+
 #include <stdlib.h>
 
 #include "headers/causality.h"
@@ -5,10 +13,9 @@
 #include "headers/cgraph.h"
 #include "headers/meek.h"
 
-
 void ccf_meek(struct cgraph *cg);
 void apply_rule(struct cgraph *cg, int x, struct ill **stack,
-                                   meek_rule _meek_rule);
+                                   meek_rule meek_rule);
 
 /*
  * meek_rules take in a PDAG and maximially orients it by repeatedly applying
@@ -39,7 +46,7 @@ void ccf_meek(struct cgraph *cg)
  * it returns 1 if the rule was applied, and 0 if not
  */
 void apply_rule(struct cgraph *cg, int x, struct ill **stack,
-                                   meek_rule _meek_rule)
+                                   meek_rule meek_rule)
 {
     /*
      * we need to create a copy of spouses incase an edge is
@@ -51,11 +58,11 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
         return;
     while(p) {
         int y = p->key;
-        if (_meek_rule(cg, x, y)) {
+        if (meek_rule(cg, x, y)) {
             orient_undirected_edge(cg, x, y);
             *stack = ill_insert(*stack, y, 0);
         }
-        else if (_meek_rule(cg, y, x)) {
+        else if (meek_rule(cg, y, x)) {
             orient_undirected_edge(cg, y, x);
             *stack = ill_insert(*stack, x, 0);
         }

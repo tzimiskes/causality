@@ -1,12 +1,16 @@
+/* Author: Alexander Rix
+ * Date  : 11/30/18
+ * Description:
+ * score_graph.c implements a function to generate the score of a bayesian
+ * network via a score_func. It scores the SEM y ~ Pa(y). This is currently
+ * intended to be used on DAGs only.
+ */
+
 #include <stdlib.h>
 
 #include "headers/causality.h"
 #include "headers/dataframe.h"
 #include "headers/scores.h"
-
-double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
-                                      struct score_args args);
-
 
 /*
  * score_graph calculates the (BIC-like) score of a graph using a causality
@@ -16,7 +20,7 @@ double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
  * the model given the data.
  */
 double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
-                                      struct score_args args)
+                                          struct score_args args)
 {
     double       graph_score = 0.0f;
     int          n_nodes     = cg->n_nodes;

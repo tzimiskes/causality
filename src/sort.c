@@ -1,11 +1,9 @@
-/* Author: Alexander Rix
- * sort.c Impements a function to perform a topological sort on a a graph.
- * There are two main functions ccf_sort_wrapper, which is acts as an interface
- * between R and ccf_sort, which is the Causality C Function that actually
- * performs the sorting. ccf_sort_wrapper returns R;s version of NULL is there
- * is an error, or a R charecter vector which contain the nodes of the graph
- * sorted by their topological ordering. ccf_sort returns a NULL pointer, or a
- * pointer to an interger which contains the C version of the node ordering
+/* Author : Alexander Rix
+ * Date   : 11/30/18
+ * Description:
+ * sort.c implements a function to perform a topological sort on a graph.
+ * ccf_sort returns a NULL pointer, or a pointer to an integer containing the
+ * ordering of the nodes of the graph.
  */
 
 #include <setjmp.h> /* for error handling */
@@ -15,7 +13,6 @@
 #include "headers/cgraph.h"
 #include "headers/int_linked_list.h"
 
-/* macros used in ccf_sort */
 #define UNMARKED   0
 #define MARKED     1
 #define TEMPORARY -1
@@ -38,7 +35,7 @@ static jmp_buf FAIL_STATE;
  */
 int * ccf_sort(struct cgraph *cg)
 {
-    int  n_nodes = cg->n_nodes;
+    int n_nodes = cg->n_nodes;
     /* create an array to signify whether or not a node has been marked, */
     int *marked  = calloc(n_nodes, sizeof(int));
     if (marked == NULL) {
@@ -93,11 +90,10 @@ static void visit(int node, int *marked, int *stack_index,
                             struct ill **children, int *sort)
 {
     /* Cycle exists; perform longjmp to so we can terminate the sort */
-    if (marked[node] == TEMPORARY) {
+    if (marked[node] == TEMPORARY)
         longjmp(FAIL_STATE, 1);
-    }
     else if (marked[node] == UNMARKED) {
-        marked[node]  = TEMPORARY;
+        marked[node] = TEMPORARY;
         struct ill *child = children[node];
         while(child != NULL) {
             visit(child->key, marked, stack_index, children, sort);

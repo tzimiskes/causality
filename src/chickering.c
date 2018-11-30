@@ -1,9 +1,12 @@
 /* Author: Alexander Rix
- * chickering.c Impements a function to convert directed acyclic graphs into
+ * Date  : 11/30/18
+ * Description:
+ * chickering.c implements a function to convert directed acyclic graphs into
  * patterns. The algorithm is described in Chickering's paper
  * "A Transformational Characterization of Equivalent Bayesian Network
  * Structures", avaliable on the arxiv: https://arxiv.org/abs/1302.4938
  */
+
 #include <stdlib.h>
 
 #include "headers/causality.h"
@@ -34,6 +37,9 @@ static void order_edges(struct cgraph *cg, int *sort)
 {
     int  n_nodes  = cg->n_nodes;
     int *inv_sort = malloc(n_nodes * sizeof(int));
+    if (inv_sort == NULL) {
+        CAUSALITY_ERROR("Failed to allocate memory in order edges\n");
+    }
     for (int i = 0; i < n_nodes; ++i)
         inv_sort[sort[i]] = i;
     /*
