@@ -73,13 +73,22 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
      * an empty graph and run FGES
      */
     struct ges_score score = {ges_score, data, {fargs, iargs}, NULL, NULL};
-    struct cgraph *cg  = ccf_ges(score);
+    struct cgraph *cg      = create_cgraph(data.nvar);
+    /* run ges */
+    double graph_score      = ccf_ges(score, cg);
+
+    Rprintf("score\n");
 
     for(int i = 0; i < data.nvar; ++i)
         free(data.df[i]);
     free(data.df);
     /* POST PROCESSING */
     SEXP Graph = causalityGraphFromCgraph(cg, getAttrib(Df, R_NamesSymbol));
+
+    SEXP Output = PROTECT(allocVector(VECSXP, 2));
+    SET_VECTOR_ELT(Output, 0, Graph);
+    SET_VECTOR_ELT(Output, 1, ScalarReal(graph_score));
     free_cgraph(cg);
-    return Graph;
+    UNPROTECT(1);
+    return Output;
 }

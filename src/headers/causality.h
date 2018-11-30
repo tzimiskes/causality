@@ -25,7 +25,7 @@
 
 
 /* Search algorithms */
-struct cgraph * ccf_ges(struct ges_score score);
+double ccf_ges(struct ges_score score, struct cgraph *cg);
 /* Graph manipulations */
 int           * ccf_sort(struct cgraph *cg);
 struct cgraph * ccf_pdx(struct cgraph *cg);
