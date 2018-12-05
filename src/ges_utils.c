@@ -22,7 +22,6 @@ void free_ges_score(struct ges_score sc)
  * validity test for the forward equivalence search of GES, and the validity
  * test for the backward equivalence search of GES.
  */
-
 int valid_fes_clique(struct cgraph *cg, struct ges_op op)
 {
     for (int i = 0; i < op.naxy_size; ++i) {
@@ -78,7 +77,7 @@ static inline void mark(int i, unsigned char *marked)
 }
 /*
  * cycle_created returns whether or not the adding the edge x --> y
- * would create a cycle in cop. This is the second validity test for the
+ * would create a cycle in cg. This is the second validity test for the
  * forward equivalence search of GES.
  */
 int cycle_created(struct cgraph *cg, struct ges_op op, int *mem)
@@ -88,7 +87,7 @@ int cycle_created(struct cgraph *cg, struct ges_op op, int *mem)
      * a node has been marked. The bytes are intrepeted as chars to save space.
      */
     unsigned char *marked = (unsigned char *) mem;
-    memset(marked, 0, cg->n_nodes/8 + 1);
+    memset(marked, 0, cg->n_nodes / 8 + 1);
     /*
      * If a path goes into s_u_naxy, it is ignored. Nodes will only be enqueued
      * if they are unmarked, so marking every node in s_u_naxy accomplishes
@@ -185,12 +184,9 @@ int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
                                                      int n_visited,
                                                      int *n_nodes)
 {
-    int n = 0;
-    // int x = op->x;
-    int y = op.y;
-    int x = op.x;
-    visited[y] = 1;
-    visited[x] = 1;
+    int n = 0;;
+    visited[op.y] = 1;
+    visited[op.x] = 1;
     if (op.type == INSERTION) {
         for (int i = 0; i < op.set_size; ++i) {
             if ((op.t & 1 << i) == 1 << i)

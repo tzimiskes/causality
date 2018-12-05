@@ -53,7 +53,7 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
                               SEXP FloatingArgs, SEXP IntegerArgs)
 {
     /*
-     * calcluate the integer arguments and floating point arguments for the
+     * calculate the integer arguments and floating point arguments for the
      * score function.
      */
     int *iargs = NULL;
@@ -80,8 +80,7 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
         free(data.df[i]);
     free(data.df);
     /* POST PROCESSING */
-    SEXP Graph = causalityGraphFromCgraph(cg, getAttrib(Df, R_NamesSymbol));
-
+    SEXP Graph  = causalityGraphFromCgraph(cg, getAttrib(Df, R_NamesSymbol));
     SEXP Output = PROTECT(allocVector(VECSXP, 2));
     SET_VECTOR_ELT(Output, 0, Graph);
     SET_VECTOR_ELT(Output, 1, ScalarReal(graph_score));

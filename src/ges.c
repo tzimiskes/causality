@@ -1,11 +1,11 @@
 /* Author: Alexander Rix
  * Date  : 11/29/2018
- * Description: ges.c contains a (partially optimized implemented version of
- * greedy equivalence search by chickering and meek.) It is a score based
+ * Description: ges.c contains a (partially optimized) version of
+ * greedy equivalence search by Chickering. It is a score based
  * causal discovery algorithm that is correct in the the large sample
  * limit given its assumptions. For more information see the paper by
- * David Maxwell Chikcering, Optimal Structure Identification With Greedy Search
- * Journal of Machine Learning Research 3 (2002) 507-554
+ * David Maxwell Chickering, Optimal Structure Identification With Greedy
+ * Search Journal of Machine Learning Research 3 (2002) 507-554
  */
 
 #include <stdint.h>
@@ -21,12 +21,8 @@
 
 #define DEFAULT_SCORE_DIFF 1.0f
 
-#define IS_IN_T(t, node) ((t) & 1 << (node))
-#define IS_IN_H(h, node) ((h) & 1 << (node))
-
-#ifndef DEBUG
-#define DEBUG 0
-#endif
+#define IS_TAIL_NODE(t, node) ((t) & 1 << (node))
+#define IS_HEAD_NODE(h, node) ((h) & 1 << (node))
 
 /*
  * is_valid_insertion returns whether or not applying the given insertion
@@ -49,8 +45,16 @@ static int is_valid_deletion(struct cgraph *cg, struct ges_op op)
     return valid_bes_clique(cg, op);
 }
 
-static void score_insertion(struct cgraph *cg, struct ges_op *op,
-                                               struct ges_score sc, int *mem)
+/*
+ * score_insertion_operator takes the insertion operator op and modifies it by
+ * finding the (valid) set T (where T is in the powerset of S) that minimizes
+ * the quantity score((py, naxy, T, x), y) - score((py, naxy, T), y).
+ * The function also modifies op by setting the score_diff field to the best
+ * score difference. If there is no valid T, then op is unmodified.
+ */
+static void score_insertion_operator(struct cgraph *cg, struct ges_op *op,
+                                                        struct ges_score sc,
+                                                        int *mem)
 {
     struct ges_op o = *op;
     /* allocate enough memory to store all of Pa(y) U Naxy U S */
@@ -65,10 +69,10 @@ static void score_insertion(struct cgraph *cg, struct ges_op *op,
     for (o.t = 0; o.t < powerset_size; ++o.t) {
         if (!is_valid_insertion(cg, o, mem))
             continue;
-        /* We now need to score the valid operator. We add t to py_naxy_t */
         int py_naxy_t_size = py_naxy_size;
         for (int j = 0; j < o.set_size; ++j) {
-            if (IS_IN_T(o.t, j))
+            /* We now need to score the valid operator. We add t to py_naxy_t */
+            if (IS_TAIL_NODE(o.t, j))
                 py_naxy_t[py_naxy_t_size++] = o.set[j];
         }
         /* score_diff = score(y, pay_naxy_t_x) - score(y, pay_naxy_t) */
@@ -80,11 +84,19 @@ static void score_insertion(struct cgraph *cg, struct ges_op *op,
     free(py_naxy_t);
 }
 
-void score_deletion(struct cgraph *cg, struct ges_op *op, struct ges_score sc)
+/*
+ * score_deletion_operator takes the deletion operator op and modifies it by
+ * finding the (valid) set H (where H is in the powerset of Naxy/x) that
+ * minimizes the quantity -(score((py, naxy/H, x), y) - score((py, naxy/H, y)).
+ * The function also modifies op by setting the score_diff field to the best
+ * score difference. If there is no valid H, then op is unmodified.
+ */
+void score_deletion_operator(struct cgraph *cg, struct ges_op *op,
+                                                struct ges_score sc)
 {
-    struct ges_op o       = *op;
+    struct ges_op o = *op;
     /* allocate enough memory to store all of Pa(y) U Naxy */
-    int  py_size     = 0;
+    int  py_size    = 0;
     int *py_naxy_mh = malloc((o.n_parents + o.naxy_size) * sizeof(int));
     /* add pa(y) != x to py_naxy_smh */
     for (int i = 0; i < o.n_parents; ++i) {
@@ -99,7 +111,7 @@ void score_deletion(struct cgraph *cg, struct ges_op *op, struct ges_score sc)
         /* add naxy_smh to py_naxy_smh (naxy minus h ) */
         int py_naxy_mh_size = py_size;
         for (int j = 0; j < o.naxy_size; ++j) {
-            if (!IS_IN_H(o.h, j) && o.naxy[j] != o.x)
+            if (!IS_HEAD_NODE(o.h, j) && o.naxy[j] != o.x)
                 py_naxy_mh[py_naxy_mh_size++] = o.naxy[j];
         }
         o.score_diff = -sc.score(sc.df, o.x, o.y, py_naxy_mh, py_naxy_mh_size,
@@ -172,7 +184,8 @@ static void update_insertion_operator(struct cgraph *cg, struct ges_op *op,
     int *mem = malloc(cg->n_nodes * 2 * sizeof(int));
     /* precalculate the covariances common to all calculations */
     int y = op->y;
-    compute_common_covariances(cg, y, cg->n_nodes, &sc);
+    if (sc.score == ges_bic_score)
+        compute_common_covariances(cg, y, cg->n_nodes, &sc);
     for (int x = 0; x < cg->n_nodes; ++x) {
         if (x == y || adjacent_in_cgraph(cg, x, y))
             continue;
@@ -187,7 +200,7 @@ static void update_insertion_operator(struct cgraph *cg, struct ges_op *op,
          * those who are not (set).
          */
         partition_neighbors(cg, &o);
-        score_insertion(cg, &o, sc, mem);
+        score_insertion_operator(cg, &o, sc, mem);
         if (o.score_diff < op->score_diff) {
             free_ges_op(*op);
             *op = o;
@@ -196,6 +209,7 @@ static void update_insertion_operator(struct cgraph *cg, struct ges_op *op,
             free_ges_op(o);
     }
     free(mem);
+    if (sc.score == ges_bic_score)
     free_ges_score(sc);
 }
 
@@ -222,7 +236,8 @@ static void update_deletion_operator(struct cgraph *cg, struct ges_op *op,
         p          = p->next;
     }
     /* precalculate the covariances common to all calculations */
-    compute_common_covariances(cg, y, cg->n_nodes, &sc);
+    if (sc.score == ges_bic_score)
+        compute_common_covariances(cg, y, cg->n_nodes, &sc);
     for (int i = 0; i < n; ++i) {
         struct ges_op o;
         o.x          = nodes[i];
@@ -232,7 +247,7 @@ static void update_deletion_operator(struct cgraph *cg, struct ges_op *op,
         calculate_parents(cg, &o);
         /* Calculate the neighbors of y that are adjacent to x */
         calculate_naxy(cg, &o);
-        score_deletion(cg, &o, sc);
+        score_deletion_operator(cg, &o, sc);
         if (o.score_diff < op->score_diff) {
             free_ges_op(*op);
             *op = o;
@@ -241,27 +256,28 @@ static void update_deletion_operator(struct cgraph *cg, struct ges_op *op,
             free_ges_op(o);
     }
     free(nodes);
-    free_ges_score(sc);
+    if (sc.score == ges_bic_score)
+        free_ges_score(sc);
 }
 
 /*
- * insert takes the ges_op and adds the edge x --> y, and then for all
- * nodes in s, orients node --> y.
+ * apply_insertion_operator takes the ges_op and adds the edge x --> y, and
+ * then for all nodes in s, orients node --> y.
  */
 static void apply_insertion_operator(struct cgraph *cg, struct ges_op op)
 {
     add_edge_to_cgraph(cg, op.x, op.y, DIRECTED);
     for (int i = 0; i < op.set_size; ++i) {
-        if (IS_IN_T(op.t, i))
+        if (IS_TAIL_NODE(op.t, i))
             orient_undirected_edge(cg, op.set[i], op.y);
     }
 }
 
 /*
- * delete takes the ges_op and deletes edge between x and y, and then for all
- * node in s, orients y -- > node, and x --> node if x --- y. Since we do not
- * know whether or not  the edges involving x are directed or undirected,
- * we must check them.
+ * apply_deletion_operator takes the ges_op and deletes edge between x and y,
+ * and then for all node in s, orients y -- > node, and x --> node if x --- y.
+ * Since we do not know whether or not the edges involving x are directed or
+ * undirected, we must check them.
  */
 static void apply_deletion_operator(struct cgraph *cg, struct ges_op op)
 {
@@ -269,12 +285,13 @@ static void apply_deletion_operator(struct cgraph *cg, struct ges_op op)
         delete_edge_from_cgraph(cg, op.x, op.y, DIRECTED);
     else
         delete_edge_from_cgraph(cg, op.x, op.y, UNDIRECTED);
+    /* orient uncovered edges */
     for (int i = 0; i < op.naxy_size; ++i) {
         /*
          * If naxy[i] is in h orient the edge between x and naxy[i] if it is
          * not already. Then, orient the undirected edge y --- naxy[i]
          */
-        if (IS_IN_H(op.h, i)) {
+        if (IS_HEAD_NODE(op.h, i)) {
             if (edge_undirected_in_cgraph(cg, op.x, op.naxy[i]))
                 orient_undirected_edge(cg, op.x , op.naxy[i]);
             orient_undirected_edge(cg, op.y, op.naxy[i]);
@@ -293,11 +310,11 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     * recorded and then we find the highest scoring edge of all of those by
     * extracting the top of the heap.
     */
-    struct ges_op *ops  = calloc(n_var, sizeof(struct ges_op)); /* OBP + SLG */
-    struct heap   *heap = create_heap(n_var, ops, sizeof(struct ges_op));
-    double        *dscores    = heap->keys;
-    void         **records    = heap->data;
-    int           *indices    = heap->indices;
+    struct ges_op  *ops     = calloc(n_var, sizeof(struct ges_op));
+    struct heap    *heap    = create_heap(n_var, ops, sizeof(struct ges_op));
+    double         *dscores = heap->keys;
+    void          **records = heap->data;
+    int            *indices = heap->indices;
     for (int i = 0; i < n_var; ++i) {
         records[i] = ops + i;
         indices[i] = i;
@@ -306,7 +323,8 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     for (int y = 0; y < n_var; ++y) {
         double min_score = DEFAULT_SCORE_DIFF;
         int    x         = -1;
-        compute_common_covariances(cg, y, y, &sc);
+        if (sc.score == ges_bic_score)
+            compute_common_covariances(cg, y, y, &sc);
         for (int i = 0; i < y; ++i) {
             double score_diff = sc.score(sc.df, i, y, NULL, 0, sc.args,
                                                 sc.fmem, sc.imem);
@@ -315,7 +333,8 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
                 x         = i;
             }
         }
-        free_ges_score(sc);
+        if (sc.score == ges_bic_score)
+            free_ges_score(sc);
         dscores[y]        = min_score;
         ops[y].x          = x;
         ops[y].y          = y;
