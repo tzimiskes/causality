@@ -48,157 +48,30 @@ aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df 
   class(output) <- c("aggregated-cgraphs")
   return(output)
 }
-#' @export
-vote <- function(agg_pdags, threshold = .5, method = c("plurality", "majority",
-                  "relative_majority", "square_relative_majority"))
-{
-  plurality <- function(x) {
-    max <- max(x)
-    n_max <- 0
-    for (value in x) {
-      if (value == max) {
-        n_max <- n_max + 1
-      }
-    }
-    if (n_max > 1)
-      return(0)
-    else
-      return(match(max, x))
-  }
-
-  majority <- function(x) {
-    for(i in 1:length(x) ) {
-      if (x[i] > .5)
-        return(i)
-    }
-    return(0)
-  }
-
-  relative_majority <- function(x) {
-    for (i in 1:length(x)) {
-      if (x[i] > sum(x[-i]))
-        return(i)
-    }
-    return(0)
-  }
-
-  square_relative_majority <- function(x) {
-    for (i in 1:length(x)) {
-      if (x[i]^2 > sum(x[-i]^2))
-        return(i)
-    }
-    return(0)
-  }
-
-  method <- match.arg(method)
-
-  voting_method <- switch (method,
-                           "plurality"                = plurality,
-                           "majority"                 = majority,
-                           "relative_majority"        = relative_majority,
-                           "square_relative_majority" = square_relative_majority
-  )
-
-  calculate_edge <- function(src, dst, x) {
-    # these need to be chars because R is dumb
-    return(switch(as.character(x),
-                 "0"  = c(src, dst, "---"),
-                 "1"  = c(dst, src, "-->"),
-                 "2"  = c(src, dst, "---"),
-                 "3"  = c(src, dst, "-->"),
-                 "4"  = c(dst, src, "~~>"),
-                 "5"  = c(src, dst, "~~>"),
-                 "6"  = c(src, dst, "++>"),
-                 "7"  = c(src, dst, "++>"),
-                 "8"  = c(dst, src, "o->"),
-                 "9"  = c(src, dst, "o->"),
-                 "10" = c(src, dst, "<->"),
-                 "11" = c(src, dst, "o-o")
-
-    ))
-  }
-
-  df <- agg_pdags$table
-  df <- df[rowSums(df[, -c(1:2)]) > threshold,]
-  nodes <- agg_pdags$nodes
-  n_edges <- nrow(df)
-  if (n_edges == 0) {
-    warning("Threshold too high, resulting graph is empty! Returning NA")
-    return(NA)
-  }
-  edges <- matrix(data = "", nrow = n_edges, ncol = 3)
-  for (i in 1:n_edges) {
-    edges[i,] <- calculate_edge(df[i,1], df[i,2], voting_method(df[i, -c(1:2)]))
-  }
-  return(cgraph(nodes, edges))
-}
 
 #' @export
-vote2 <- function(agg_pdags) {
-  df <- agg_pdags$table
-  df$'!' <- 1- rowSums(df[, -(1:2)])
+vote <- function(aggregated.cgraphs) {
+  nodes     <- aggregated.cgraphs$nodes
+  table     <- aggregated.cgraphs$table
+  table$" " <- 1 - rowSums(table[, -(1:2)])
 
-  plurality <- function(x) {
-    max <- max(x)
-    n_max <- 0
-    for (value in x) {
-      if (value == max) {
-        n_max <- n_max + 1
-      }
-    }
-    if (n_max > 1)
-      return(0)
-    else
-      return(match(max, x))
+  arrows <- names(table[, -(1:2)])[max.col(table[, -(1:2)])]
+
+  edge <- function(node1, node2, arrow) {
+    if (arrow == "<--")
+      return(c(node2, node1, "-->"))
+    if (arrow == "<~~")
+      return(c(node2, node1, "~~>"))
+    if (arrow == "<++")
+       return(c(node2, node1, "++>"))
+    if (arrow == "<-o")
+      return(c(node2, node1, "o->"))
+    if (arrow == " ")
+      return(NULL)
+    return(c(node1, node2, arrow))
   }
-
-
   edges <- c()
-  for (i in 1:nrow(df)) {
-    edge_type <- plurality(df[i, -c(1:2)])
-    if (edge_type == 0 || edge_type == 2)
-      edges <- c(edges, df[i, 1], df[i, 2], "---" )
-    else if(edge_type == 1)
-      edges <- c(edges, df[i, 2], df[i, 1], "-->")
-    else if(edge_type == 3)
-      edges <- c(edges, df[i, 1], df[i, 2], "-->" )
-  }
-  nodes <- agg_pdags$nodes
-  edges <- matrix(edges, ncol = 3, byrow = T)
-  return(cgraph(nodes, edges))
-}
-
-#' @export
-votek<- function(agg_pdags, k) {
-  df <- agg_pdags$table
-  df$'!' <- 1- rowSums(df[, -(1:2)])/k
-
-  plurality <- function(x) {
-    max <- max(x)
-    n_max <- 0
-    for (value in x) {
-      if (value == max) {
-        n_max <- n_max + 1
-      }
-    }
-    if (n_max > 1)
-      return(0)
-    else
-      return(match(max, x))
-  }
-
-
-  edges <- c()
-  for (i in 1:nrow(df)) {
-    edge_type <- plurality(df[i, -c(1:2)])
-    if (edge_type == 0 || edge_type == 2)
-      edges <- c(edges, df[i, 1], df[i, 2], "---" )
-    else if(edge_type == 1)
-      edges <- c(edges, df[i, 2], df[i, 1], "-->")
-    else if(edge_type == 3)
-      edges <- c(edges, df[i, 1], df[i, 2], "-->" )
-  }
-  nodes <- agg_pdags$nodes
-  edges <- matrix(edges, ncol = 3, byrow = T)
+  for (i in 1:length(arrows))
+    edges <- rbind(edges, edge(table[i, 1], table[i, 2], arrows[i]))
   return(cgraph(nodes, edges))
 }

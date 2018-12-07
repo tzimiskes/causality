@@ -54,8 +54,8 @@ ges <- function(df, score = c("BIC", "BDue"), penalty = 1.0, sample.prior = 1.0,
   ges.out <- .Call("ccf_ges_wrapper", df, score, dimensions, floating.args,
                                     integer.args)
   names(ges.out) <- c("graph", "graph.score")
-  ges.out$graph$adjacencies <- .calculate_adjacencies_from_edges(graph$edges,
-                                                                 graph$nodes)
+  ges.out$graph$adjacencies <- .calculate_adjacencies_from_edges(ges.out$graph$edges,
+                                                                 ges.out$graph$nodes)
   # add additonal diagnostic info
   ges.out$score.func      <- score
   ges.out$score.func.args <- score.func.args
