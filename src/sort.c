@@ -95,7 +95,7 @@ static void visit(int node, int *marked, int *stack_index,
     else if (marked[node] == UNMARKED) {
         marked[node] = TEMPORARY;
         struct ill *child = children[node];
-        while(child != NULL) {
+        while (child != NULL) {
             visit(child->key, marked, stack_index, children, sort);
             child = child->next;
         }

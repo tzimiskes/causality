@@ -1,10 +1,19 @@
+/* Author     : Alexander Rix
+ * Date       : 12/7/18
+ * Description:
+ * pdx.c implements the pdag extension algorithm found in
+ * Dor D, Tarsi M. A simple algorithm to construct a consistent extension of a
+ * partially oriented graph. Technicial Report R-185, Cognitive Systems
+ * Laboratory, UCLA. 1992 Oct 23.
+ */
+
 #include <stdlib.h>
 
 #include "headers/causality.h"
 #include "headers/cgraph.h"
 #include "headers/int_linked_list.h"
 
-
+/* create a circular linked list to iterate through */
 struct cll {
     struct ill **children;
     struct ill **parents;
@@ -19,8 +28,8 @@ static int is_sink(struct cll *node)
 }
 
 /*
- * clique checks each undirected parent of current if that undirected
- * parent forms a clique with all the other parents of current
+ * is_clique checks each undirected parent of node to see if that undirected
+ * parent forms a clique with all the other parents of node
  */
 static int is_clique(struct cll *node, struct cgraph *cg)
 {
@@ -48,6 +57,10 @@ static int is_clique(struct cll *node, struct cgraph *cg)
     return 1;
 }
 
+/*
+ * orient_in_cgraph takes all spouses of node and orients the edge bewteen
+ * spouse and node towards node.
+ */
 static void orient_in_cgraph(struct cgraph *cg, int node)
 {
     struct ill *cpy = copy_ill(cg->spouses[node]);
@@ -59,6 +72,8 @@ static void orient_in_cgraph(struct cgraph *cg, int node)
     free(cpy);
 }
 
+/* remove_node deletes the node from the circular linked list, and removes all
+ * edges involving node in cg (which is referenced by cll) */
 static void remove_node(struct cll *current, struct cll *nodes)
 {
     int node = current - nodes; /* ptr arithemtic */
@@ -75,6 +90,11 @@ static void remove_node(struct cll *current, struct cll *nodes)
     }
 }
 
+/*
+ * The PDag eXtension algorithm. It takes in cg and wither returns a new cgraph
+ * that is the dag extension of cg, or NULL. cg will be deallocated as a apart
+ * of the algorithm.
+ */
 struct cgraph * ccf_pdx(struct cgraph *cg)
 {
     int            n_nodes = cg->n_nodes;
@@ -84,14 +104,14 @@ struct cgraph * ccf_pdx(struct cgraph *cg)
         CAUSALITY_ERROR("Failed to allocate memory for cpy in ccf_pdx\n");
         return NULL;
     }
-    struct cll    *nodes   = calloc(n_nodes, sizeof(struct cll));
+    struct cll *nodes = calloc(n_nodes, sizeof(struct cll));
     if (nodes == NULL) {
         free_cgraph(cg);
         free_cgraph(cpy);
         CAUSALITY_ERROR("Failed to allocate memory for nodes in ccf_pdx\n");
         return NULL;
     }
-    /* set up circular linked list */
+    /* set up circular linked list. The entries of each node refernce cg */
     struct ill **parents  = cg->parents;
     struct ill **spouses  = cg->spouses;
     struct ill **children = cg->children;
@@ -104,14 +124,20 @@ struct cgraph * ccf_pdx(struct cgraph *cg)
     struct cll *current   = nodes;
     struct cll *prev      = nodes + (n_nodes - 1);
     int         n_checked = 0;
-    int         ll_size   = n_nodes;
-    /* Comment needed */
-    while (ll_size > 0 && n_checked <= ll_size) {
+    int         cll_size  = n_nodes;
+    /* We iterate through the cll until it is empty, or we cycle through all
+     * the nodes. If a node satisifies is_clique and is_sink, the node is
+     * removed in cg and from the cll, n_checked is reset, and cll_size is
+     * decremented. Otherwise, we increment n_checked and goto the next node.
+     * After the loop condition fails we are done and either cpy is the dag
+     * extension of cg, or cg does not have a dag extension.
+     */
+    while (cll_size > 0 && n_checked <= cll_size) {
         if (is_sink(current) && is_clique(current, cg)) {
             orient_in_cgraph(cpy, current - nodes);
             remove_node(current, nodes);
             prev->next = current->next;
-            ll_size--;
+            cll_size--;
             n_checked = 0;
         }
         else {
@@ -123,11 +149,13 @@ struct cgraph * ccf_pdx(struct cgraph *cg)
     free_cgraph(cg);
     free(nodes);
     /*
-     * check to see if pdx failed to generate an extension. If there is a
-     * failure, free the copy_ptr and set it to NULL.
+     * check to see if pdx could not generate an extension. If no extension
+     * exists, free cpy and return NULL.
      */
-    int failure = ll_size > 0 ? 1 : 0;
-    if (failure) {
+    int extension_exists = 0;
+    if (cll_size == 0)
+        extension_exists = 1;
+    if (!extension_exists) {
         free_cgraph(cpy);
         cpy = NULL;
     }
