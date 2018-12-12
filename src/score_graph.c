@@ -29,12 +29,14 @@ double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
         struct ill *p = parents[i];
         if (p) {
             int  npar = ill_size(p);
+            if (npar == 0)
+                continue;
             int *xy   = malloc((npar + 1) * sizeof(int));
             for (int j = 0; j < npar; ++j) {
                 xy[j] = p->key;
                 p     = p->next;
             }
-            xy[npar + 1] = i; /* set y to i */
+            xy[npar] = i; /* set y to i */
             graph_score += score(df, xy, npar, args);
             free(xy);
         }

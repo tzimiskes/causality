@@ -46,29 +46,28 @@ static void insert_pll(struct pll **p, struct ill *l)
     *p = t;
 }
 
-int * reorient(struct cgraph *cg, struct ges_op op, int *n_visited)
+void reorient(struct cgraph *cg, struct ges_op op, int *visited, int *n)
 {
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;
-    int        *visited   = calloc(cg->n_nodes, sizeof(int));
-    undirect_reversible_parents(op.y, cg, &stack, &compelled, visited, n_visited);
+    undirect_reversible_parents(op.y, cg, &stack, &compelled, visited, n);
     stack = ill_insert_front(stack, op.y, 0);
     if (op.type == DELETION) {
         for (int i = 0; i < op.naxy_size; ++i) {
             if ((op.h & 1 << i) == 1 << i) {
                 undirect_reversible_parents(op.naxy[i], cg, &stack, &compelled,
-                                                        visited, n_visited);
+                                                        visited, n);
                 stack = ill_insert_front(stack, op.naxy[i], 0);
             }
         }
-        meek_rules(cg, op.y, &stack, &compelled, visited, n_visited);
+        meek_rules(cg, op.y, &stack, &compelled, visited, n);
         for (int i = 0; i < op.naxy_size; ++i) {
             if ((op.h & 1 << i) == 1 << i)
-                meek_rules(cg, op.naxy[i], &stack, &compelled, visited, n_visited);
+                meek_rules(cg, op.naxy[i], &stack, &compelled, visited, n);
         }
     }
     else if (op.type == INSERTION)
-        meek_rules(cg, op.y, &stack, &compelled, visited, n_visited);
+        meek_rules(cg, op.y, &stack, &compelled, visited, n);
     while (stack) {
         /* pop the top */
         int node = stack->key;
@@ -76,8 +75,8 @@ int * reorient(struct cgraph *cg, struct ges_op op, int *n_visited)
         stack = stack->next;
         free(p);
         undirect_reversible_parents(node, cg, &stack, &compelled, visited,
-                                          n_visited);
-        meek_rules(cg, node, &stack, &compelled, visited, n_visited);
+                                          n);
+        meek_rules(cg, node, &stack, &compelled, visited, n);
     }
     /*
      * now that we've completed the pdag, we need to clean up the mess we made
@@ -89,7 +88,6 @@ int * reorient(struct cgraph *cg, struct ges_op op, int *n_visited)
         free(compelled);
         compelled = p;
     }
-    return visited;
 }
 
 /*

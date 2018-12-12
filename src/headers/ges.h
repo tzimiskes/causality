@@ -1,4 +1,5 @@
 #include <stdint.h>
+
 #include "scores.h"
 #include "dataframe.h"
 
@@ -33,18 +34,17 @@ struct ges_op {
     double score_diff;
 }; /*  64 bytes */
 
-int * reorient(struct cgraph *cg, struct ges_op op, int *n_visited);
-void   free_ges_op(struct ges_op op);
-void   free_ges_score(struct ges_score sc);
-int    valid_fes_clique(struct cgraph *cg, struct ges_op op);
-int    valid_bes_clique(struct cgraph *cg, struct ges_op op);
-int    cycle_created(struct cgraph *cg, struct ges_op op, int *mem);
-void   partition_neighbors(struct cgraph *cg, struct ges_op *op);
-void   calculate_naxy(struct cgraph *cg, struct ges_op *op);
-void   calculate_parents(struct cgraph *cg, struct ges_op *op);
-int  * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
-                                                      struct ges_op op,
-                                                      int *visited,
-                                                      int n_visited,
-                                                      int *n_nodes);
+void free_ges_op(struct ges_op op);
+void free_ges_score(struct ges_score sc);
+int  valid_fes_clique(struct cgraph *cg, struct ges_op op);
+int  valid_bes_clique(struct cgraph *cg, struct ges_op op);
+int  cycle_created(struct cgraph *cg, struct ges_op op, int *mem);
+void partition_neighbors(struct cgraph *cg, struct ges_op *op);
+void calculate_naxy(struct cgraph *cg, struct ges_op *op);
+void calculate_parents(struct cgraph *cg, struct ges_op *op);
+void reorient(struct cgraph *cg, struct ges_op op, int *visited, int *n);
+void reorient_and_determine_operators_to_update(struct cgraph *cpy,
+                                                struct cgraph *cg,
+                                                struct ges_op op,
+                                                int *nodes, int *n);
 #endif

@@ -19,6 +19,11 @@
 #include "headers/scores.h"
 #include "headers/ges.h"
 
+#include <R.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #define DEFAULT_SCORE_DIFF 1.0f
 
 #define IS_TAIL_NODE(t, node) ((t) & 1 << (node))
@@ -43,6 +48,14 @@ static int is_valid_insertion(struct cgraph *cg, struct ges_op op, int *mem)
 static int is_valid_deletion(struct cgraph *cg, struct ges_op op)
 {
     return valid_bes_clique(cg, op);
+}
+
+static int is_valid_operator(struct cgraph *cg, struct ges_op op, int *mem)
+{
+    if (op.type == INSERTION)
+        return is_valid_insertion(cg, op, mem);
+    else
+        return is_valid_deletion(cg, op);
 }
 
 /*
@@ -260,6 +273,14 @@ static void update_deletion_operator(struct cgraph *cg, struct ges_op *op,
         free_ges_score(sc);
 }
 
+static void update_operator(struct cgraph *cg, struct ges_op *op,
+                                               struct ges_score sc)
+{
+    if (op->type == INSERTION)
+        update_insertion_operator(cg, op, sc);
+    else
+        update_deletion_operator(cg, op, sc);
+}
 /*
  * apply_insertion_operator takes the ges_op and adds the edge x --> y, and
  * then for all nodes in s, orients node --> y.
@@ -299,6 +320,14 @@ static void apply_deletion_operator(struct cgraph *cg, struct ges_op op)
     }
 }
 
+static void apply_operator(struct cgraph *cg, struct ges_op op)
+{
+    if (op.type == INSERTION)
+        apply_insertion_operator(cg, op);
+    else
+        apply_deletion_operator(cg, op);
+}
+
 double ccf_ges(struct ges_score sc, struct cgraph *cg)
 {
     int    n_var       = cg->n_nodes;
@@ -321,20 +350,21 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     }
     /* FES STEP 0: For all x,y score x --> y */
     for (int y = 0; y < n_var; ++y) {
+        struct ges_score local_sc = sc;
         double min_score = DEFAULT_SCORE_DIFF;
         int    x         = -1;
-        if (sc.score == ges_bic_score)
-            compute_common_covariances(cg, y, y, &sc);
+        if (local_sc.score == ges_bic_score)
+            compute_common_covariances(cg, y, y, &local_sc);
         for (int i = 0; i < y; ++i) {
-            double score_diff = sc.score(sc.df, i, y, NULL, 0, sc.args,
-                                                sc.fmem, sc.imem);
+            double score_diff = local_sc.score(local_sc.df, i, y, NULL, 0, local_sc.args, local_sc.fmem,
+                                                local_sc.imem);
             if (score_diff < min_score) {
                 min_score = score_diff;
                 x         = i;
             }
         }
-        if (sc.score == ges_bic_score)
-            free_ges_score(sc);
+        if (local_sc.score == ges_bic_score)
+            free_ges_score(local_sc);
         dscores[y]        = min_score;
         ops[y].x          = x;
         ops[y].y          = y;
@@ -343,72 +373,77 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     }
     build_heap(heap);
     /* FORWARD EQUIVALENCE SEARCH (FES) */
-    struct cgraph *cpy = copy_cgraph(cg);
-    struct ges_op *op;
-    int *mem = malloc(n_var * 2 * sizeof(int));
+    struct cgraph *cpy   = copy_cgraph(cg);
+    struct ges_op *op    = NULL;
+    int           *mem   = malloc(n_var * 2 * sizeof(int));
+    int           *nodes = mem;
     /* extract the smallest op from the heap and check to see if positive */
     while ((op = peek_heap(heap)) && op->score_diff <= 0.0f) {
-        if (!is_valid_insertion(cg, *op, mem)) {
+        if (!is_valid_operator(cg, *op, mem)) {
             remove_heap(heap, op->y);
             update_insertion_operator(cg, op, sc);
             insert_heap(heap, op->score_diff, op);
             continue;
         }
         graph_score   += op->score_diff;
-        apply_insertion_operator(cg, *op);
-        int  n_visited = 0;
-        int *visited   = reorient(cg, *op, &n_visited);
-        int  n_nodes   = 0;
-        int *nodes     = deterimine_nodes_to_recalc(cpy, cg, *op, visited,
-                                                         n_visited, &n_nodes);
-        for(int i = 0; i < n_nodes; ++i) {
-            op = ops + nodes[i];
+        apply_operator(cg, *op);
+        int n = 0;
+        reorient_and_determine_operators_to_update(cpy, cg, *op, nodes, &n);
+        struct ges_op *new_ops = malloc(n * sizeof(struct ges_op));
+        for (int i = 0; i < n; ++i)
+            new_ops[i] = ops[nodes[i]];
+        /* This step (updating) can be paralellized */
+        for (int i = 0; i < n; ++i)
+            update_operator(cg, new_ops + i, sc);
+        for (int i = 0; i < n; ++i) {
+            ops[nodes[i]] = new_ops[i];
             remove_heap(heap, nodes[i]);
-            update_insertion_operator(cg, op, sc);
-            insert_heap(heap, op->score_diff, op);
+            insert_heap(heap, ops[nodes[i]].score_diff, ops + nodes[i]);
         }
-        free(nodes);
+        free(new_ops);
     }
-    free(mem);
     /* BES STEP 0 */
     for (int i = 0; i < n_var; ++i) {
-        op              = ops + i;
-        op->y           = i;
+        op       = ops + i;
+        op->y    = i;
+        op->type = DELETION;
         update_deletion_operator(cg, op, sc);
-        records[i]      = op;
-        indices[i]      = i;
-        dscores[i]      = op->score_diff;
+        records[i] = op;
+        indices[i] = i;
+        dscores[i] = op->score_diff;
     }
     build_heap(heap);
     /* BACKWARD EQUIVALENCE SEARCH (BES) */
-    while ((op = peek_heap(heap)) && op->score_diff <= 0.0f) {
-        if (!is_valid_deletion(cg, *op)) {
+    while ((op = peek_heap(heap)) && (op->score_diff <= 0.0f)) {
+        if (!is_valid_operator(cg, *op, NULL)) {
             remove_heap(heap, op->y);
-            update_deletion_operator(cg, op, sc);
+            update_operator(cg, op, sc);
             insert_heap(heap, op->score_diff, op);
             continue;
         }
         graph_score   += op->score_diff;
-        apply_deletion_operator(cg, *op);
-        int  n_visited = 0;
-        int *visited   = reorient(cg, *op, &n_visited);
-        int  n_nodes   = 0;
-        int *nodes     = deterimine_nodes_to_recalc(cpy, cg, *op, visited,
-                                                         n_visited, &n_nodes);
-     /* reorient_and_discern_operators_to_update(cpy, cg, *op, nodes, &n_nodes); */
-        for (int i = 0; i < n_nodes; ++i) {
-            op = ops + nodes[i];
+        apply_operator(cg, *op);
+        int n = 0;
+        reorient_and_determine_operators_to_update(cpy, cg, *op, nodes, &n);
+        struct ges_op *new_ops = malloc(n * sizeof(struct ges_op));
+        for (int i = 0; i < n; ++i)
+            new_ops[i] = ops[nodes[i]];
+        /* This step (updating) can be parallelized */
+        for (int i = 0; i < n; ++i)
+            update_operator(cg, new_ops + i, sc);
+        for (int i = 0; i < n; ++i) {
+            ops[nodes[i]] = new_ops[i];
             remove_heap(heap, nodes[i]);
-            update_deletion_operator(cg, op, sc);
-            insert_heap(heap, op->score_diff, op);
+            insert_heap(heap, ops[nodes[i]].score_diff, ops + nodes[i]);
         }
-        free(nodes);
+        free(new_ops);
     }
     /* Memory cleanup */
+    free(mem);
+    free_heap(heap);
+    free_cgraph(cpy);
     for (int i = 0; i < n_var; ++i)
         free_ges_op(ops[i]);
     free(ops);
-    free_heap(heap);
-    free_cgraph(cpy);
     return graph_score;
 }

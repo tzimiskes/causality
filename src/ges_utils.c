@@ -178,11 +178,12 @@ void calculate_parents(struct cgraph *cg, struct ges_op *op)
     }
 }
 
-int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
-                                                     struct ges_op op,
-                                                     int *visited,
-                                                     int n_visited,
-                                                     int *n_nodes)
+static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
+                                                           struct ges_op op,
+                                                           int *visited,
+                                                           int n_visited,
+                                                           int *nodes,
+                                                           int *n_nodes)
 {
     int n = 0;;
     visited[op.y] = 1;
@@ -212,13 +213,23 @@ int * deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
         else
             visited[i] = 0;
     }
-    int *nodes = calloc(n, sizeof(int));
     int  j     = 0;
     for (int i = 0; i < cg->n_nodes; ++i) {
         if (visited[i])
             nodes[j++] = i;
     }
     *n_nodes = n;
-    free(visited);
-    return nodes;
+}
+
+
+void reorient_and_determine_operators_to_update(struct cgraph *cpy,
+                                                struct cgraph *cg,
+                                                struct ges_op op,
+                                                int *nodes, int *n)
+{
+    int n_visited = 0;
+    int *visited  = nodes + cg->n_nodes;
+    memset(visited, 0, cg->n_nodes * sizeof (int));
+    reorient(cg, op, visited, &n_visited);
+    deterimine_nodes_to_recalc(cpy, cg, op, visited, n_visited, nodes, n);
 }
