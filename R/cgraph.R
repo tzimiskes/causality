@@ -39,7 +39,6 @@
 #'     \item \code{<->}
 #'   }
 #'
-#'
 #' @return \code{cgraph} returns object of class "causality.graph", or an error
 #'   if the graph is invalid.
 #' @author Alexander Rix
@@ -52,7 +51,7 @@
 #'                   "X4", "X2", "-->"), ncol = 3, byrow = T)
 #' graph <- cgraph(nodes, edges)
 #'
-#' # cgraph defaults to validate = TRUE, but if you want to make sure it is
+#' # cgraph defaults to validate = TRUE, but you can check validity by calling
 #' is_valid_cgraph(graph)
 #'
 #' # you can coerce graphs from package \code{bnlearn} to causality.graphs
@@ -62,8 +61,8 @@
 #'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
 #'
-#'  Spirtes P. Introduction to causal inference.
-#'  Journal of Machine Learning Research. 2010;11(May):1643-62.
+#'   Spirtes P. Introduction to causal inference.
+#'   Journal of Machine Learning Research. 2010;11(May):1643-62.
 #'
 #'   Pearl, Judea. Causality. Cambridge university press, 2009.
 #' @seealso
@@ -78,7 +77,7 @@ cgraph <- function(nodes, edges, validate = TRUE) {
   graph <- structure(
     list(nodes = nodes, adjacencies = adjacencies, edges = edges),
     class = .CGRAPH_CLASS)
-  if(validate) {
+  if (validate) {
     if (!is_valid_cgraph(graph))
       stop("Input is not a valid causality graph")
   }
@@ -156,19 +155,20 @@ is_valid_cgraph <- function(graph) {
 .BIDIRECTED     <- "<->"
 
 # edges that show up in PAGs ~~>, ++>, o->, o-o, <->
-.LATENT_EDGE_TYPES    <- c(.SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED,
-                           .CIRCLECIRCLE, .BIDIRECTED)
-#edges that show up in PDAGs: -->, ---
+.LATENT_EDGE_TYPES <- c(.SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED, .CIRCLECIRCLE,
+                                   .BIDIRECTED
+                       )
+# edges that show up in PDAGs: -->, ---
 .NONLATENT_EDGE_TYPES <- c(.DIRECTED, .UNDIRECTED)
 
 # edges of the type -->, ~~>, ++>, o->
 .DIRECTED_EDGE_TYPES <- c(.DIRECTED, .SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED)
 
-# Casusality Graph is Function ----------------------------------------------
+# Casusality Graph is ----------------------------------------------------------
 #' @usage is.cgraph(graph)
 #' @details \code{is.cgraph} tests whether or not an object has the class
 #'   causality.graph
-#'   @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
+#' @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
 #' @rdname cgraph
 #' @export
 is.cgraph <- function(graph) {
@@ -178,6 +178,10 @@ is.cgraph <- function(graph) {
     return(FALSE)
 }
 
+# Casusality Graph summary -----------------------------------------------------
+#' @details \code{summary} provides basic summary statistics about the graph,
+#'   like average degree, max degree, number of directed/undirected eges etc.
+#' @usage summary(graph)
 #' @rdname cgraph
 #' @export
 summary.causality.graph <- function(object, ...) {
@@ -308,4 +312,3 @@ as.cgraph.cpcstable <- as.cgraph.rcausal
 #' @rdname as.cgraph
 #' @export
 as.cgraph.fci <- as.cgraph.rcausal
-

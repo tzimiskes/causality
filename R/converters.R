@@ -1,3 +1,8 @@
+# converters.R contains interfaces to causality c functions to help convert the
+# different cgraph subclasses into each other
+# Author: Alexander Rix
+
+
 #' @export
 chickering <- function(graph) {
   if (!is.cgraph(graph))

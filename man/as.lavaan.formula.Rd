@@ -23,7 +23,6 @@ currently, only DAGs are supported, though patterns and PDAGs with
   output from the FnFC family as a latent measurement model.
 }
 \examples{
-TODO(arix) change this to the alarm data
 # turn the dag from Sachs(2009) into a lavaan compatable formula
 library(lavaan)
 lavaan.forumula <- as.lavaan.formula(sachs.dag)

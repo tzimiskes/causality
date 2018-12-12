@@ -1,4 +1,4 @@
-# Causality Graph methodos ----------------------------------------------------
+# Causality Graph methods ----------------------------------------------------
 #' Causality graph methods
 #'
 #' These are miscellaneous functions that can be applied any to causality.graph

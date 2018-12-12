@@ -25,6 +25,6 @@ Future minor features
 - mutators to safely add and delete edges/nodes from graphs
 - d-separation test
 - markov boundary/blanket calculation
-- partial correlations (need for G/FCI)
+- partial correlations (needed for G/FCI)
 
 If you have any feedback ( suggestions, bugs, feature requests), let me know so I can address it!

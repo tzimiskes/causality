@@ -13,7 +13,7 @@ is_valid_cgraph(graph)
 
 is.cgraph(graph)
 
-\method{summary}{causality.graph}(object, ...)
+summary(graph)
 }
 \arguments{
 \item{nodes}{A character array of node names}
@@ -71,6 +71,9 @@ A causality-graph consists of three things
 \code{is.cgraph} tests whether or not an object has the class
   causality.graph
   @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
+
+\code{summary} provides basic summary statistics about the graph,
+  like average degree, max degree, number of directed/undirected eges etc.
 }
 \examples{
 nodes <- c("X1", "X2", "X3", "X4")
@@ -81,7 +84,7 @@ edges <- matrix(c("X1", "X2", "-->",
                   "X4", "X2", "-->"), ncol = 3, byrow = T)
 graph <- cgraph(nodes, edges)
 
-# cgraph defaults to validate = TRUE, but if you want to make sure it is
+# cgraph defaults to validate = TRUE, but you can check validity by calling
 is_valid_cgraph(graph)
 
 # you can coerce graphs from package \\code{bnlearn} to causality.graphs
@@ -92,8 +95,8 @@ sachs <- as.cgraph(mmhc(sachs.df))
 Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
   2001, p. 109.
 
- Spirtes P. Introduction to causal inference.
- Journal of Machine Learning Research. 2010;11(May):1643-62.
+  Spirtes P. Introduction to causal inference.
+  Journal of Machine Learning Research. 2010;11(May):1643-62.
 
   Pearl, Judea. Causality. Cambridge university press, 2009.
 }
