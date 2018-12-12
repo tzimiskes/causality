@@ -27,22 +27,20 @@ double bdeu_score(struct dataframe data, int *xy, int npar,
      * Create a matrix that will store the frequencies of the microstate (x, y).
      * The matrix will populated in row major format.
      */
-    int *alloced_mem = calloc((n_x_states + 1) * n_y_states, sizeof(int));
-    if(alloced_mem == NULL)
-        CAUSALITY_ERROR("Failed\n to allocate enough memory for bdeu_score\n");
-    int *n_jk        = alloced_mem;
-    int *n_j         = alloced_mem + n_x_states * n_y_states;
+    int *alloced_mem = calloc(n_x_states * (n_y_states + 1), sizeof(int));
+    if (alloced_mem == NULL)
+        CAUSALITY_ERROR("Failed to allocate enough memory for bdeu_score\n");
+    int *n_jk = alloced_mem;
+    int *n_j  = alloced_mem + n_x_states * n_y_states;
     /*
      * x_state stores the observed microstate (x). Unsure if it declaring it on
      * the stack is a good idea.
      */
     int x_state [npar];
-    int nobs = data.nobs;
-    for(int i = 0; i < nobs; ++i) {
+    for (int i = 0; i < data.nobs; ++i) {
         int y_state = y[i];
-        for(int j = 0; j < npar; ++j) {
+        for (int j = 0; j < npar; ++j)
             x_state[j] = df[j][i];
-        }
         /* convert the macro state of x into an index (i.e. k) for n_jk */
         int k = 0;
         for (int j = 0; j < npar; ++j) {
