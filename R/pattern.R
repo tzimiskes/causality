@@ -64,19 +64,23 @@ is_valid_pattern <- function(graph) {
   if (!is.cgraph(graph))
     stop("Input must be a causality graph!")
   if (!is.nonlatent(graph)) {
-    warning("graph contains nonlatent edge types")
+    warning("graph contains latent edge types")
     return(FALSE)
   }
   else if (is.cyclic(graph)) {
     warning("graph is cylic")
     return(FALSE)
   }
-  else if(isTRUE(all.equal(graph$edges, meek(graph)$edges))) {
-    return(TRUE)
-  }
   else {
-    warning("graph is not invariant under the meek rules,
-             so it is a pdag not a pattern")
+    dag <- .pdx(graph)
+    if (is.null(dag)) {
+      warning("graph cannot be a pattern")
+      return(FALSE)
+    }
+    dag <- .chickering(dag)
+    if (isTRUE(all.equal(graph$edges, dag$edges)))
+      return(TRUE)
+    warning("graph is a PDAG, not a pattern")
     return(FALSE)
   }
 }

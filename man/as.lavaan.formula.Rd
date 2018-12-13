@@ -23,7 +23,7 @@ currently, only DAGs are supported, though patterns and PDAGs with
   output from the FnFC family as a latent measurement model.
 }
 \examples{
-# turn the dag from Sachs(2009) into a lavaan compatable formula
+# turn the dag from Sachs(2009) DAG into a lavaan compatable formula
 library(lavaan)
 lavaan.forumula <- as.lavaan.formula(sachs.dag)
 fit <- cfa(lavaan.formula, data = sachs.df)

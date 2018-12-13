@@ -33,6 +33,8 @@ if the cgraph is valid before returning it. Default is \code{TRUE}}
 
 \code{is_valid_cgraph} returns \code{TRUE} or \code{FALSE} depending
   on whether or not the input is valid
+
+\code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
 }
 \description{
 Create or test for objects of type "causality.graph"
@@ -70,7 +72,6 @@ A causality-graph consists of three things
 
 \code{is.cgraph} tests whether or not an object has the class
   causality.graph
-  @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
 
 \code{summary} provides basic summary statistics about the graph,
   like average degree, max degree, number of directed/undirected eges etc.

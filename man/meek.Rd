@@ -10,24 +10,32 @@ meek(graph)
 \item{graph}{a "causality.pdag"}
 }
 \value{
-If a "causality.pdag is input, either either a pattern or dag is
-  output. In the event that the pdag doesn't have a dag extension, garbage
-  is output If a causality.dag or causality.pattern is input, \code{meek}
-  just returns the input with no changes.
+\code{meek} either returns a causality.dag, causality.pattern,
+  or causality.pdag.
 }
 \description{
-\code{meek} will turn a PDAG into a Pattern if the PDAG has a
-valid dag extension
+\code{meek} will maximally orient the given causality.pdag, possibly turning
+it into a pattern or dag.
 }
 \details{
-TODO(arix) -- Perhaps this function shouldn't be public
+\code{meek} applies the meek rules to the given graph. Applying the
+  rules results in an a maximally oriented pdag. Depending on the exact
+  structure of graph, the output graph is either a dag, pattern, or pdag.
 }
 \note{
 You are almostly certainly better off using the function
   \code{as.pattern}.
 }
 \examples{
-TODO(arix)
+# Create a causality.pdag
+nodes <- c("X1", "X2", "X3", "X4", "X5")
+edges <- matrix(c("X1", "X5", "---",
+                  "X1", "X2", "-->",
+                  "X3", "X2", "-->",
+                  "X3", "X4", "---"), ncol = 3, byrow = T)
+graph <- cgraph(nodes, edges)
+# Applying the meek rules will turn this graph into a pattern
+meek(graph)
 }
 \references{
 Meek C. Causal inference and causal explanation with background knowledge.

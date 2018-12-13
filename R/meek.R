@@ -1,18 +1,25 @@
 #' Apply the Meek rules to a causality PDAG
 #'
-#' \code{meek} will turn a PDAG into a Pattern if the PDAG has a
-#' valid dag extension
-#'
+#' \code{meek} will maximally orient the given causality.pdag, possibly turning
+#' it into a pattern or dag.
 #' @param graph a "causality.pdag"
-#' @details TODO(arix) -- Perhaps this function shouldn't be public
-#' @return If a "causality.pdag is input, either either a pattern or dag is
-#'   output. In the event that the pdag doesn't have a dag extension, garbage
-#'   is output If a causality.dag or causality.pattern is input, \code{meek}
-#'   just returns the input with no changes.
+#' @details \code{meek} applies the meek rules to the given graph. Applying the
+#'   rules results in an a maximally oriented pdag. Depending on the exact
+#'   structure of graph, the output graph is either a dag, pattern, or pdag.
+#' @return \code{meek} either returns a causality.dag, causality.pattern,
+#'   or causality.pdag.
 #' @note You are almostly certainly better off using the function
 #'   \code{as.pattern}.
 #' @examples
-#' TODO(arix)
+#' # Create a causality.pdag
+#' nodes <- c("X1", "X2", "X3", "X4", "X5")
+#' edges <- matrix(c("X1", "X5", "---",
+#'                   "X1", "X2", "-->",
+#'                   "X3", "X2", "-->",
+#'                   "X3", "X4", "---"), ncol = 3, byrow = T)
+#' graph <- cgraph(nodes, edges)
+#' # Applying the meek rules will turn this graph into a pattern
+#' meek(graph)
 #' @references
 #' Meek C. Causal inference and causal explanation with background knowledge.
 #'   InProceedings of the Eleventh conference on Uncertainty in artificial
@@ -32,9 +39,9 @@ meek <- function(graph) {
 
   # maybe check to see if it has a dag extension first?
   graph <- .Call("ccf_meek_wrapper", graph)
-  if (is.directed(graph))
+  if (is_valid_dag(graph))
     class(graph) <- .DAG_CLASS
-  else
+  else if(is_valid_pattern(graph))
     class(graph) <- .PATTERN_CLASS
   return(graph)
 }

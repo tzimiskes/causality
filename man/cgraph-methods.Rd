@@ -3,9 +3,7 @@
 \name{cgraph-methods}
 \alias{cgraph-methods}
 \alias{is.cyclic}
-\alias{cgraph-methods}
 \alias{is.acyclic}
-\alias{cgraph-methods}
 \alias{is.directed}
 \alias{is.nonlatent}
 \alias{is.latent}
