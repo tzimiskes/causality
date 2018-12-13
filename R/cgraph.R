@@ -72,7 +72,7 @@
 cgraph <- function(nodes, edges, validate = TRUE) {
   if (!is.logical(validate))
     stop("validate must take on a logical value")
-  adjacencies <- .calculate_adjacencies_from_edges(edges, nodes)
+  adjacencies <- .calculate_adjacencies(edges, nodes)
 
   graph <- structure(
     list(nodes = nodes, adjacencies = adjacencies, edges = edges),

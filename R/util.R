@@ -1,6 +1,6 @@
 # get the skeleton from the edge representation
 # loop over the nodes
-.calculate_adjacencies_from_edges <- function(edges, nodes) {
+.calculate_adjacencies <- function(edges, nodes) {
   n_edges <- nrow(edges)
   adjacency <- lapply(nodes, function(node) {
     neighborhood <- c()

@@ -38,8 +38,8 @@ ges <- function(df, score = c("BIC", "BDue"), penalty = 1.0, sample.prior = 1.0,
   }
   # deterime the floating and integer arguments depending on the score
   if (score == "BIC") {
-  floating.args <- c(penalty)
-  integer.args  <- c()
+    floating.args <- c(penalty)
+    integer.args  <- c()
   }
   else if (score == "BDeu") {
     floating.args <- c(sample.prior, structure.prior)
@@ -49,20 +49,20 @@ ges <- function(df, score = c("BIC", "BDue"), penalty = 1.0, sample.prior = 1.0,
   else if (score == "CG")
     stop("not implemented")
 
-  score.func.args <- switch(score,
-                            "BIC" = list(penalty = penalty),
-                            "BDeu" = list(sample.prior = sample.prior,
-                                          structure.prior = structure.prior)
-                           )
+  score.func.args <-
+  switch(score,
+         "BIC"  = list(penalty = penalty),
+         "BDeu" = list(sample.prior = sample.prior,
+                       structure.prior = structure.prior
+                  )
+        )
   ges.out <- .Call("ccf_ges_wrapper", df, score, dimensions, floating.args,
                                     integer.args)
   names(ges.out) <- c("graph", "graph.score")
-  ges.out$graph$adjacencies <- .calculate_adjacencies_from_edges(ges.out$graph$edges,
-                                                                 ges.out$graph$nodes)
+  ges.out$graph$adjacencies <- .calculate_adjacencies(ges.out$graph$edges,
+                                                      ges.out$graph$nodes)
   # add additonal diagnostic info
   ges.out$score.func      <- score
   ges.out$score.func.args <- score.func.args
-  if (!is_valid_pattern(ges.out$graph))
-    warning("ges did not produce a valid pattern")
   return(ges.out)
 }

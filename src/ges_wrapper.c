@@ -5,18 +5,17 @@
 #include "headers/scores.h"
 #include "headers/ges.h"
 
-
 /*
  * normalize continuous variables to help speed up scoring of continuous
  * variables.
  */
 static void normalize(double *x, int n)
 {
-    double mu  = 0.0f;
-    double var = 0.0f;
+    double mu = 0.0f;
     for (int i = 0; i < n; ++i)
         mu += x[i];
-    mu = mu / n;
+    mu /= n;
+    double var = 0.0f;
     for (int i = 0; i < n; ++i) {
         x[i] -= mu;
         var += x[i] * x[i];
@@ -76,6 +75,7 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     struct cgraph *cg      = create_cgraph(data.nvar);
     /* run ges */
     double graph_score     = ccf_ges(score, cg);
+    /* free dataframe */
     for(int i = 0; i < data.nvar; ++i)
         free(data.df[i]);
     free(data.df);

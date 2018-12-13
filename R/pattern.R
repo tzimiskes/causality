@@ -78,7 +78,7 @@ is_valid_pattern <- function(graph) {
       return(FALSE)
     }
     dag <- .chickering(dag)
-    if (isTRUE(all.equal(graph$edges, dag$edges)))
+    if (shd(graph, dag) == 0)
       return(TRUE)
     warning("graph is a PDAG, not a pattern")
     return(FALSE)
