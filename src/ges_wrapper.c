@@ -70,21 +70,28 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
         error("nope\n");
     /*
      * All the preprocessing work has now been done, so lets instantiate
-     * an empty graph and run FGES
+     * an empty graph and run FGES.
      */
     struct ges_score score = {ges_score, data, {fargs, iargs}, NULL, NULL};
     struct cgraph *cg      = create_cgraph(data.nvar);
     /* run ges */
-    double graph_score      = ccf_ges(score, cg);
+    double graph_score     = ccf_ges(score, cg);
     for(int i = 0; i < data.nvar; ++i)
         free(data.df[i]);
     free(data.df);
-    /* POST PROCESSING */
-    SEXP Graph  = causalityGraphFromCgraph(cg, getAttrib(Df, R_NamesSymbol));
+    /* Create R causality.graph object from cg */
+    SEXP Names  = PROTECT(getAttrib(Df, R_NamesSymbol));
+    SEXP Graph  = PROTECT(causalityGraphFromCgraph(cg, Names));
+    free_cgraph(cg);
+    /* Set the output of GES to the class causality.pattern */
+    SEXP Class = PROTECT(allocVector(STRSXP, 2));
+    SET_STRING_ELT(Class, 0, mkChar("causality.pattern"));
+    SET_STRING_ELT(Class, 1, mkChar("causality.graph"));
+    setAttrib(Graph, R_ClassSymbol, Class);
+    /* Return the graph and its score */
     SEXP Output = PROTECT(allocVector(VECSXP, 2));
     SET_VECTOR_ELT(Output, 0, Graph);
     SET_VECTOR_ELT(Output, 1, ScalarReal(graph_score));
-    free_cgraph(cg);
-    UNPROTECT(1);
+    UNPROTECT(4);
     return Output;
 }

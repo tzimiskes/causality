@@ -3,6 +3,8 @@
 ges <- function(df, score = c("BIC", "BDue"), penalty = 1.0, sample.prior = 1.0,
                     structure.prior = 1.0)
 {
+  if (!is.data.frame(df))
+    stop("df must be a data.frame")
   score <- match.arg(score, c("BIC", "BDeu"))
   # the first step is to convert the data frame into one that only contains
   # numerics and integers. numerics are normalized.
@@ -37,11 +39,12 @@ ges <- function(df, score = c("BIC", "BDue"), penalty = 1.0, sample.prior = 1.0,
   # deterime the floating and integer arguments depending on the score
   if (score == "BIC") {
   floating.args <- c(penalty)
-  integer.args <- c()
+  integer.args  <- c()
   }
   else if (score == "BDeu") {
     floating.args <- c(sample.prior, structure.prior)
     integer.args <- c()
+    stop("Not implemented")
   }
   else if (score == "CG")
     stop("not implemented")
@@ -59,9 +62,7 @@ ges <- function(df, score = c("BIC", "BDue"), penalty = 1.0, sample.prior = 1.0,
   # add additonal diagnostic info
   ges.out$score.func      <- score
   ges.out$score.func.args <- score.func.args
-  if (is_valid_pattern(ges.out$graph))
-    class(ges.out$graph) <- .PATTERN_CLASS
-  else
-    warning("ges did not produce a pattern")
+  if (!is_valid_pattern(ges.out$graph))
+    warning("ges did not produce a valid pattern")
   return(ges.out)
 }
