@@ -146,16 +146,12 @@ as.pattern.causality.pag <- function(graph) {
 #' @rdname pattern
 #' @export
 as.pattern.causality.graph <- function(graph) {
-  if (is_valid_pattern(graph)) {
-    class(graph) <- .PATTERN_CLASS
-    return(graph)
-  }
-  else if (is.acyclic(graph)) {
+  if (is.acyclic(graph)) {
     if (is.directed(graph)) {
-      return(.dag_to_pattern(graph))
+      return(.chickering(graph))
     }
     else if (is.nonlatent(graph)) {
-      graph <- .dag_from_pdag(graph)
+      graph <- .pdx(graph)
       if(is.null(graph)) {
         warning("graph is a pdag that doesn't contain a dag extension.")
         warning("Cannot coerce graph to causality.pattern.")
@@ -163,7 +159,7 @@ as.pattern.causality.graph <- function(graph) {
       }
     }
     else {
-      return(.dag_to_pattern(graph))
+      return(.chickering(graph))
     }
   }
   else {
