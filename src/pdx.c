@@ -1,5 +1,5 @@
-/* Author     : Alexander Rix
- * Date       : 12/7/18
+/* Author: Alexander Rix
+ * Date  : 12/7/18
  * Description:
  * pdx.c implements the pdag extension algorithm found in
  * Dor D, Tarsi M. A simple algorithm to construct a consistent extension of a

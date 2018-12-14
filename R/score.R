@@ -1,13 +1,13 @@
 #' @useDynLib causality causalityScoreGraph
 #' @export
-score <- function(graph, df, score = c("BIC", "BDue"), penalty = 1.0,
-                         sample_prior = 1.0, structure_prior = 1.0)
+score <- function(graph, df, score = c("bic", "bdue"), penalty = 1.0,
+                             sample.prior = 1.0, structure.prior = 1.0)
 {
   if (!is.cgraph(graph))
     stop("graph is not a causality.graph!")
   if (!is.dag(graph))
     stop("graph is not a causality.dag!")
-  score <- match.arg(score, c("BIC", "BDeu"))
+  score <- match.arg(score, c("bic", "bdeu"))
   # the first step is to convert the data frame into one that only contains
   # numerics and integers. numerics are normalized.
   dimensions <- rep(0L, ncol(df))
@@ -30,22 +30,22 @@ score <- function(graph, df, score = c("BIC", "BDue"), penalty = 1.0,
       dimensions[j] <- nlevels(col)
       df[[j]]       <- as.integer(col) - 1L
     }
-    if (score == "BIC" && is.integer(col))
+    if (score == "bic" && is.integer(col))
       col <- as.double(col)
-    if (score == "BDeu" && is.double(col))
-      stop("BDeu scoring cannot be used in conjuction with continuous data.
-            Use BIC or CG")
+    if (score == "bdeu" && is.double(col))
+      stop("bdeu scoring cannot be used in conjuction with continuous data.
+            Use bic or cg")
   }
   # deterime the floating and integer arguments depending on the score
-  if (score == "BIC") {
+  if (score == "bic") {
     floating.args <- c(penalty)
     integer.args  <- c()
     }
-  else if (score == "BDeu") {
+  else if (score == "bdeu") {
     floating.args <- c(sample_prior, structure_prior)
     integer.args <- c()
   }
-  else if (score == "CG")
+  else if (score == "cg")
     stop("not implemented")
   score <- .Call("causalityScoreGraph", graph, df, score, dimensions,
                                         floating.args, integer.args)

@@ -9,50 +9,57 @@ const char *CIRCLEARROW_STR   = "o->";
 const char *CIRCLECIRCLE_STR  = "o-o";
 const char *BIDIRECTED_STR    = "<->";
 
-static int          edgeToInt(const char *EdgeStr);
-static const char * edgeToChar(int edgeType);
-static int          nodeToInt(const char *node, const char **nodes, int nNodes);
+const char *NODES_STR       = "nodes";
+const char *EDGES_STR       = "edges";
+const char *ADJACENCIES_STR = "adjacencies";
+
+const char* CAUSALITY_GRAPH_CLASS = "causality.graph";
+
+static int          edge_to_int(const char *edge);
+static const char * edge_to_char(int edge);
+static int          node_to_int(const char *node, const char **nodes,
+                                                  int n_nodes);
 
 int * calculateEdgesPtr(SEXP Graph)
 {
     SEXP         Edges  = PROTECT(VECTOR_ELT(Graph, EDGES));
     SEXP         Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
-    int          nNodes = length(Nodes);
-    const char **nodes  = malloc(nNodes * sizeof(const char*));
-    // make a table so we can easily refer to the nodes
-    for (int i = 0; i < nNodes; ++i)
+    int          n_nodes = length(Nodes);
+    /* make a table so we can easily refer to the nodes */
+    const char **nodes  = malloc(n_nodes * sizeof(const char*));
+    for (int i = 0; i < n_nodes; ++i)
         nodes[i] = CHAR(STRING_ELT(Nodes, i));
-    int  nEdges   = nrows(Edges);
-    int *edgesPtr = malloc(nEdges * 3 * sizeof(int));
-    for (int i = 0; i < 2 * nEdges; ++i)
-        edgesPtr[i] = nodeToInt(CHAR(STRING_ELT(Edges, i)), nodes, nNodes);
-    for (int i = 2 * nEdges; i < 3 * nEdges; ++i)
-        edgesPtr[i] = edgeToInt(CHAR(STRING_ELT(Edges, i)));
+    int  n_edges   = nrows(Edges);
+    int *edges = malloc(n_edges * 3 * sizeof(int));
+    for (int i = 0; i < 2 * n_edges; ++i)
+        edges[i] = node_to_int(CHAR(STRING_ELT(Edges, i)), nodes, n_nodes);
+    for (int i = 2 * n_edges; i < 3 * n_edges; ++i)
+        edges[i] = edge_to_int(CHAR(STRING_ELT(Edges, i)));
     free(nodes);
     UNPROTECT(2);
-    return(edgesPtr);
+    return(edges);
 }
 
-void calcluateEdgesFromCgraph(struct cgraph *cgPtr, SEXP Graph)
+void calcluateEdgesFromCgraph(struct cgraph *cg, SEXP Graph)
 {
-    SEXP         Edges       = PROTECT(VECTOR_ELT(Graph, EDGES));
-    SEXP         Nodes       = PROTECT(VECTOR_ELT(Graph, NODES));
-    int          nNodes      = cgPtr->n_nodes;
-    int          nEdges      = cgPtr->n_edges;
-    struct ill **parents     = cgPtr->parents;
-    struct ill **spouses     = cgPtr->spouses;
-    int          parentIndex = 0;
-    int          childIndex  = nEdges;
-    int          edgeIndex   = 2 * nEdges;
-    for (int j = 0; j < nNodes; ++j) {
+    SEXP         Edges   = PROTECT(VECTOR_ELT(Graph, EDGES));
+    SEXP         Nodes   = PROTECT(VECTOR_ELT(Graph, NODES));
+    int          n_nodes = cg->n_nodes;
+    int          n_edges = cg->n_edges;
+    struct ill **parents = cg->parents;
+    struct ill **spouses = cg->spouses;
+    int          p_i     = 0;
+    int          c_i     = n_edges;
+    int          e_i     = 2 * n_edges;
+    for (int j = 0; j < n_nodes; ++j) {
         struct ill *p     = parents[j];
         while (p) {
             int parent = p->key;
             int child  = j;
             int edge   = p->value;
-            SET_STRING_ELT(Edges, parentIndex++, STRING_ELT(Nodes, parent));
-            SET_STRING_ELT(Edges, childIndex++,  STRING_ELT(Nodes, child));
-            SET_STRING_ELT(Edges, edgeIndex++,   mkChar(edgeToChar(edge)));
+            SET_STRING_ELT(Edges, p_i++, STRING_ELT(Nodes, parent));
+            SET_STRING_ELT(Edges, c_i++, STRING_ELT(Nodes, child));
+            SET_STRING_ELT(Edges, e_i++, mkChar(edge_to_char(edge)));
             p = p->next;;
         }
         p = spouses[j];
@@ -62,9 +69,9 @@ void calcluateEdgesFromCgraph(struct cgraph *cgPtr, SEXP Graph)
             int edge   = p->value;
             /* this is to prevent an undirected edge from appearing twice. */
             if (child < parent) {
-                SET_STRING_ELT(Edges, parentIndex++, STRING_ELT(Nodes, parent));
-                SET_STRING_ELT(Edges, childIndex++,  STRING_ELT(Nodes, child));
-                SET_STRING_ELT(Edges, edgeIndex++,   mkChar(edgeToChar(edge)));
+                SET_STRING_ELT(Edges, p_i++, STRING_ELT(Nodes, parent));
+                SET_STRING_ELT(Edges, c_i++, STRING_ELT(Nodes, child));
+                SET_STRING_ELT(Edges, e_i++, mkChar(edge_to_char(edge)));
             }
             p = p->next;
         }
@@ -74,56 +81,65 @@ void calcluateEdgesFromCgraph(struct cgraph *cgPtr, SEXP Graph)
 
 SEXP causalityGraphFromCgraph(struct cgraph *cg, SEXP Nodes)
 {
-    int          nNodes      = cg->n_nodes;
-    int          nEdges      = cg->n_edges;
+    int  n_nodes  = cg->n_nodes;
+    int  n_edges  = cg->n_edges;
+    /* Allocate memory for the causality graph */
     SEXP Graph = PROTECT(allocVector(VECSXP, 3));
-    SET_VECTOR_ELT(Graph, NODES, duplicate(Nodes));
-    SET_VECTOR_ELT(Graph, EDGES, allocMatrix(STRSXP, nEdges, 3));
+    SET_VECTOR_ELT(Graph, NODES,       duplicate(Nodes));
+    SET_VECTOR_ELT(Graph, EDGES,       allocMatrix(STRSXP, n_edges, 3));
     SET_VECTOR_ELT(Graph, ADJACENCIES, R_NilValue);
+    /* Names stores the names of the elements of Graph */
     SEXP Names = PROTECT(allocVector(STRSXP, 3));
-    SEXP Class = PROTECT(allocVector(STRSXP, 1));
-    SET_STRING_ELT(Names, NODES, mkChar("nodes"));
-    SET_STRING_ELT(Names, EDGES, mkChar("edges"));
-    SET_STRING_ELT(Names, ADJACENCIES, mkChar("adjacencies"));
-    SET_STRING_ELT(Class, 0, mkChar("causality.graph"));
+    SET_STRING_ELT(Names, NODES,       mkChar(NODES_STR));
+    SET_STRING_ELT(Names, EDGES,       mkChar(EDGES_STR));
+    SET_STRING_ELT(Names, ADJACENCIES, mkChar(ADJACENCIES_STR));
+    /* Set Names to be Graphs names attribute */
     setAttrib(Graph, R_NamesSymbol, Names);
+    /* Similarly, we do the same with class */
+    SEXP Class = PROTECT(allocVector(STRSXP, 1));
+    SET_STRING_ELT(Class, 0, mkChar(CAUSALITY_GRAPH_CLASS));
     setAttrib(Graph, R_ClassSymbol, Class);
+    /* Now, fill in the edge matrix */
     SEXP Edges = VECTOR_ELT(Graph, EDGES);
-    struct ill **parents     = cg->parents;
-    struct ill **spouses     = cg->spouses;
-    int          parentIndex = 0;
-    int          childIndex  = nEdges;
-    int          edgeIndex   = 2 * nEdges;
-    for (int j = 0; j < nNodes; ++j) {
-        struct ill *p     = parents[j];
+    struct ill **parents = cg->parents;
+    struct ill **spouses = cg->spouses;
+    /* indices for parent, child, edge columns */
+    int     p_i   = 0;
+    int     c_i   = n_edges;
+    int     e_i   = 2 * n_edges;
+    void ** nodes = malloc(n_nodes * sizeof(void *));
+    for (int i = 0; i < n_nodes; ++i)
+        nodes[i] = STRING_ELT(Nodes, i);
+    for (int i = 0; i < n_nodes; ++i) {
+        struct ill *p      = parents[i];
+        int         child  = i;
         while (p) {
             int parent = p->key;
-            int child  = j;
             int edge   = p->value;
-            SET_STRING_ELT(Edges, parentIndex++, STRING_ELT(Nodes, parent));
-            SET_STRING_ELT(Edges, childIndex++,  STRING_ELT(Nodes, child));
-            SET_STRING_ELT(Edges, edgeIndex++,   mkChar(edgeToChar(edge)));
+            SET_STRING_ELT(Edges, p_i++, nodes[parent]);
+            SET_STRING_ELT(Edges, c_i++, nodes[child]);
+            SET_STRING_ELT(Edges, e_i++, mkChar(edge_to_char(edge)));
             p = p->next;
         }
-        p = spouses[j];
+        p = spouses[i];
         while (p) {
             int parent = p->key;
-            int child  = j;
             int edge   = p->value;
             /* this is to prevent an undirected edge from appearing twice. */
             if (child < parent) {
-                SET_STRING_ELT(Edges, parentIndex++, STRING_ELT(Nodes, parent));
-                SET_STRING_ELT(Edges, childIndex++,  STRING_ELT(Nodes, child));
-                SET_STRING_ELT(Edges, edgeIndex++,   mkChar(edgeToChar(edge)));
+                SET_STRING_ELT(Edges, p_i++, nodes[parent]);
+                SET_STRING_ELT(Edges, c_i++, nodes[child]);
+                SET_STRING_ELT(Edges, e_i++, mkChar(edge_to_char(edge)));
             }
             p = p->next;
         }
     }
+    free(nodes);
     UNPROTECT(3);
     return Graph;
 }
 
-int nodeToInt(const char *node, const char **nodes, int n_nodes)
+int node_to_int(const char *node, const char **nodes, int n_nodes)
 {
     for (int i = 0 ; i < n_nodes; ++i) {
         if (!strcmp(nodes[i], node))
@@ -132,27 +148,28 @@ int nodeToInt(const char *node, const char **nodes, int n_nodes)
     error("Failed to match node\n"); /* This should never happen */
 }
 
-static int edgeToInt(const char *edgeStr)
+/* converts an edge string to an integer */
+static int edge_to_int(const char *edge)
 {
-    if (!strcmp(edgeStr, DIRECTED_STR))
+    if (!strcmp(edge, DIRECTED_STR))
         return DIRECTED;
-    if (!strcmp(edgeStr, UNDIRECTED_STR))
+    if (!strcmp(edge, UNDIRECTED_STR))
         return UNDIRECTED;
-    if (!strcmp(edgeStr, PLUSPLUSARROW_STR))
+    if (!strcmp(edge, PLUSPLUSARROW_STR))
         return PLUSPLUSARROW;
-    if (!strcmp(edgeStr, SQUIGGLEARROW_STR))
+    if (!strcmp(edge, SQUIGGLEARROW_STR))
         return SQUIGGLEARROW;
-    if (!strcmp(edgeStr, CIRCLEARROW_STR))
+    if (!strcmp(edge, CIRCLEARROW_STR))
         return CIRCLEARROW;
-    if (!strcmp(edgeStr, CIRCLECIRCLE_STR))
+    if (!strcmp(edge, CIRCLECIRCLE_STR))
         return CIRCLECIRCLE;
-    if (!strcmp(edgeStr,BIDIRECTED_STR))
+    if (!strcmp(edge, BIDIRECTED_STR))
         return BIDIRECTED;
     error("Unrecognized edge type!"); /* This should never happen */
 }
 
-static const char * edgeToChar(int edgeType) {
-    switch (edgeType) {
+static const char * edge_to_char(int edge) {
+    switch (edge) {
     case DIRECTED:
         return DIRECTED_STR;
     case UNDIRECTED:

@@ -2,8 +2,8 @@
 #ifndef SCORES_H
 #define SCORES_H
 
-#define BIC_SCORE "BIC"
-#define BDEU_SCORE "BDeu"
+#define BIC_SCORE "bic"
+#define BDEU_SCORE "bdeu"
 
 struct score_args {
     double *fargs;
@@ -20,6 +20,10 @@ typedef double (*ges_score_func)(struct dataframe df, int x, int y, int *ypar,
 
 double bdeu_score(struct dataframe df, int *xy, int npar,
                                        struct score_args args);
+
+double ges_bdeu_score(struct dataframe data, int x, int y, int *ypar, int npar,
+                                             struct score_args args,
+                                             double *fmem, int *imem);
 
 double bic_score(struct dataframe df, int *xy, int npar,
                                       struct score_args args);

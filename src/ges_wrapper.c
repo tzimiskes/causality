@@ -65,6 +65,8 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     ges_score_func ges_score;
     if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
         ges_score = ges_bic_score;
+    else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
+        ges_score = ges_bdeu_score;
     else
         error("nope\n");
     /*
