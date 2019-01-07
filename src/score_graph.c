@@ -25,21 +25,24 @@ double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
     double       graph_score = 0.0f;
     int          n_nodes     = cg->n_nodes;
     struct ill **parents     = cg->parents;
+    struct ill **spouses     = cg->spouses;
     for (int i = 0; i < n_nodes; ++i) {
         struct ill *p = parents[i];
-        if (p) {
-            int  npar = ill_size(p);
-            if (npar == 0)
-                continue;
-            int *xy   = malloc((npar + 1) * sizeof(int));
-            for (int j = 0; j < npar; ++j) {
-                xy[j] = p->key;
-                p     = p->next;
-            }
-            xy[npar] = i; /* set y to i */
-            graph_score += score(df, xy, npar, args);
-            free(xy);
+        struct ill *s = spouses[i];
+        int  n  = ill_size(p) + ill_size(s);
+        int *xy = malloc((n + 1) * sizeof(int));
+        xy[n] = i; /* set y to i */
+        int j = 0;
+        while (p) {
+            xy[j++] = p->key;
+            p = p->next;
         }
+        while (s) {
+            xy[j++] = s->key;
+            s = s->next;
+        }
+        graph_score += score(df, xy, n, args);
+        free(xy);
     }
     return graph_score;
 }

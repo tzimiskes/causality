@@ -42,7 +42,7 @@ score <- function(graph, df, score = c("bic", "bdue"), penalty = 1.0,
     integer.args  <- c()
     }
   else if (score == "bdeu") {
-    floating.args <- c(sample_prior, structure_prior)
+    floating.args <- c(sample.prior, structure.prior)
     integer.args <- c()
   }
   else if (score == "cg")
