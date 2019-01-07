@@ -13,7 +13,8 @@ const char *NODES_STR       = "nodes";
 const char *EDGES_STR       = "edges";
 const char *ADJACENCIES_STR = "adjacencies";
 
-const char* CAUSALITY_GRAPH_CLASS = "causality.graph";
+const char *CAUSALITY_GRAPH_CLASS   = "causality.graph";
+const char *CAUSALITY_PATTERN_CLASS = "causality.pattern";
 
 static int          edge_to_int(const char *edge);
 static const char * edge_to_char(int edge);
@@ -168,6 +169,7 @@ static int edge_to_int(const char *edge)
     error("Unrecognized edge type!"); /* This should never happen */
 }
 
+/* convert edge int into an edge string */
 static const char * edge_to_char(int edge) {
     switch (edge) {
     case DIRECTED:
