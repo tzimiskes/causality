@@ -1,29 +1,29 @@
-/* TODO */
+/* Author: Alexander Rix
+ * Date  : 1/14/2019
+ * Description: bic_score.c contains an implementation of BIC scoring for
+ * continuous variables in a simple SEM. This particularly implementation is
+ * designed to be used in the function score_graph. GES uses ges_bic_score,
+ * however that uses, fcov_xx, fcov_xy, and calcluate_rss from this file.
+ */
+
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
-#include <causality.h>
-#include <dataframe.h>
-#include <scores.h>
+
+/* R interface to LAPACK */
 #include <R_ext/Lapack.h>
 
+#include "headers/causality.h"
+#include "headers/dataframe.h"
+#include "headers/scores.h"
+
 #define ERROR_THRESH     1e-9
-
-void fcov_xx(double *cov_xx, double **x, int n, int m);
-void fcov_xy(double *cov_xy, double **x, double *y, int n, int m);
-
-double calculate_rss(double *cov, int m);
 
 double calcluate_bic(double rss, double penalty, int nobs, int npar) {
     return nobs * log(rss) + penalty * log(nobs) * (2 * npar + 1);
 }
 
-static double calcluate_bic_diff(double rss_p, double rss_m, double penalty,
-                                               int nobs)
-{
-    return nobs * log(rss_p/rss_m) + penalty * log(nobs) * 2;
-}
-
+/* TODO */
 double bic_score(struct dataframe data, int *xy, int npar,
                                         struct score_args args)
 {
@@ -46,79 +46,6 @@ double bic_score(struct dataframe data, int *xy, int npar,
     double rss = calculate_rss(mem, npar);
     free(mem);
     return calcluate_bic(rss, penalty, nobs, npar);
-}
-
-int find(int node, int n_lbls, int *lbls) {
-    for(int i = 0; i < n_lbls; ++i) {
-        if (lbls[i] == node)
-            return i;
-    }
-    error("Failed to match node between covariance matrices");
-}
-
-void construct_covariances(double *cov, double *pc_cov_xx, double *pc_cov_xy,
-                                        int *pars, int m, int *lbls,
-                                        int n_lbls)
-{
-    double *cov_xx   = cov;
-    double *cov_xy   = cov + m * m;
-    double *cov_xy_t = cov + m * (m + 1);
-    for(int i = 0; i < m; ++i) {
-        cov_xy[i] = pc_cov_xy[pars[i]];
-        int i_pc = find(pars[i], n_lbls, lbls);
-        for(int j = 0; j < m; ++j) {
-            int j_pc = find(pars[j], n_lbls, lbls);
-            cov_xx[i * m + j] = pc_cov_xx[i_pc * n_lbls + j_pc];
-        }
-    }
-    memcpy(cov_xy_t, cov_xy, m * sizeof(double));
-}
-
-/* TODO */
-double ges_bic_score(struct dataframe df, int x, int y, int *ypar, int npar,
-                                          struct score_args args, double *fmem,
-                                          int *imem)
-{
-    double  penalty   = args.fargs[0];
-    int     n_lbls    = *imem;
-    int    *lbls      = imem + 1;
-    double *pc_cov_xy = fmem;
-    double *pc_cov_xx = fmem + df.nvar;
-    int     nobs      = df.nobs;
-    double *m_mem   = calloc(npar * (npar + 2), sizeof(double));
-    if (m_mem == NULL)
-    error("failed to allocate memory for BIC score\n");
-    construct_covariances(m_mem, pc_cov_xx, pc_cov_xy, ypar, npar, lbls, n_lbls);
-    double *p_mem = calloc((npar + 1) * (npar + 1 + 2), sizeof(double));
-    if (p_mem == NULL)
-    error("failed to allocate memory for BIC score\n");
-    double *cov_xx_p     = p_mem;
-    double *cov_xy_p     = p_mem + (npar + 1) * (npar + 1);
-    double *cov_xy_p_t   = p_mem + (npar + 1) * (npar + 2);
-    cov_xy_p[0] = pc_cov_xy[x];
-    memcpy(cov_xy_p + 1, m_mem + npar * npar, npar * sizeof(double));
-    memcpy(cov_xy_p_t, cov_xy_p, (npar + 1 ) * sizeof(double));
-    double **_x       = malloc((npar + 1) * sizeof(double *));
-    _x[0] = df.df[x];
-    for (int i = 0; i < npar; ++i)
-        _x[i + 1] = df.df[ypar[i]];
-    fcov_xy(cov_xx_p, _x, _x[0], nobs, npar + 1);
-    free(_x);
-
-
-    /* calculate the covariance vector between y and x */
-
-    for (int i = 0; i < npar; ++i) {
-        for (int j = 0; j < npar; ++j)
-            cov_xx_p[j + 1 + (i + 1) * (npar + 1)] = m_mem[j + i * npar];
-    }
-
-    double rss_p = calculate_rss(p_mem, npar + 1);
-    double rss_m = calculate_rss(m_mem, npar);
-
-    free(p_mem);
-    free(m_mem);
-    return calcluate_bic_diff(rss_p, rss_m, penalty, nobs);
 }
 
 /*
@@ -174,7 +101,7 @@ double calculate_rss(double *cov, int m)
          */
         F77_CALL(dposv)("L", &m, &u, cov_xx, &m, cov_xy, &m, &err);
         if (err) {
-            warning("Error in LAPACK routine dposv. code: %i!\n", err);
+            warning("Error in LAPACK routine dposv. error code: %i!\n", err);
             rss = DBL_MAX;
         }
         else
@@ -186,16 +113,15 @@ double calculate_rss(double *cov, int m)
 }
 
 /*
- * fcov_xy calculates the covariance matrix between random variable vector
+ * fcov_xy calculates the covariance matrix between random variable vector x.
  */
-
 void fcov_xx(double *cov_xx, double **x, int n, int m)
 {
     int    u           = 1;
     double inv_nminus1 = 1.0f / (n - 1.0f);
-    for(int i = 0; i < m; ++i) {
-        for(int j = i; j < m; ++j) {
-            if(i == j)
+    for (int i = 0; i < m; ++i) {
+        for (int j = i; j < m; ++j) {
+            if (i == j)
                 cov_xx[j + m * i] = 1.0f;
             else {
                 cov_xx[j + m * i] = F77_CALL(ddot)(&n, x[i], &u, x[j],
@@ -214,6 +140,10 @@ void fcov_xy(double *cov_xy, double **x, double *y, int n, int m)
 {
     int              u = 1;
     double inv_nminus1 = 1.0f / (n - 1.0f);
-    for (int i = 0; i < m; ++i)
-        cov_xy[i] = F77_CALL(ddot)(&n, x[i], &u, y, &u) * inv_nminus1;
+    for (int i = 0; i < m; ++i) {
+        if (x[i] == y)
+            cov_xy[i] = 1.0f;
+        else
+            cov_xy[i] = F77_CALL(ddot)(&n, x[i], &u, y, &u) * inv_nminus1;
+    }
 }
