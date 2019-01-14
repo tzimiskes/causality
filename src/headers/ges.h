@@ -38,7 +38,7 @@ struct ges_score {
     struct score_args    args;
 };
 
-struct ges_op {
+struct ges_operator {
     int    x;
     int    y;
     union {
@@ -56,23 +56,23 @@ struct ges_op {
 }; /* 64 bytes */
 
 /* memory utility functions */
-void free_ges_op(struct ges_op op);
+void free_ges_operator(struct ges_operator op);
 void free_ges_score_mem(struct ges_score_mem gsm);
 /* functions that deterimine whether or not a operators is legal */
-int  valid_fes_clique(struct cgraph *cg, struct ges_op op);
-int  valid_bes_clique(struct cgraph *cg, struct ges_op op);
-int  cycle_created(struct cgraph *cg, struct ges_op op, int *mem);
+int  valid_fes_clique(struct cgraph *cg, struct ges_operator op);
+int  valid_bes_clique(struct cgraph *cg, struct ges_operator op);
+int  cycle_created(struct cgraph *cg, struct ges_operator op, int *mem);
 /* misc utility functions */
-void partition_neighbors(struct cgraph *cg, struct ges_op *op);
-void calculate_naxy(struct cgraph *cg, struct ges_op *op);
-void calculate_parents(struct cgraph *cg, struct ges_op *op);
+void partition_neighbors(struct cgraph *cg, struct ges_operator *op);
+void calculate_naxy(struct cgraph *cg, struct ges_operator *op);
+void calculate_parents(struct cgraph *cg, struct ges_operator *op);
 /* reorient cgraph after an operator has been applied */
-void reorient(struct cgraph *cg, struct ges_op op, int *visited, int *n);
+void reorient(struct cgraph *cg, struct ges_operator op, int *visited, int *n);
 void reorient_and_determine_operators_to_update(struct cgraph *cpy,
                                                 struct cgraph *cg,
-                                                struct ges_op op,
+                                                struct ges_operator op,
                                                 int *nodes, int *n);
-/* functions that optimize a score */
-void ges_bic_opt1(struct cgraph *cg, int y, int n, struct ges_score *gs);
-void ges_bic_opt2(struct cgraph *cg, int xp, struct ges_score *gs);
+/* functions that optimize ges_bic_score score */
+void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs);
+void ges_bic_optimization2(int xp, struct ges_score *gs);
 #endif

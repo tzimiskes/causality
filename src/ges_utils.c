@@ -15,7 +15,7 @@
 #define IS_TAIL_NODE(t, node) ((t) & 1 << (node))
 #define IS_HEAD_NODE(h, node) ((h) & 1 << (node))
 
-void free_ges_op(struct ges_op op)
+void free_ges_operator(struct ges_operator op)
 {
     free(op.naxy);
     free(op.set);
@@ -34,7 +34,7 @@ void free_ges_score_mem(struct ges_score_mem gsm)
  * valid_fes_clique checks to see if the set TAIL_SET U NAXY constructed from
  * (INSERTION)  the given operator forms a clique.
  */
-int valid_fes_clique(struct cgraph *cg, struct ges_op op)
+int valid_fes_clique(struct cgraph *cg, struct ges_operator op)
 {
     for (int i = 0; i < op.naxy_size; ++i) {
         for (int j = 0; j < i; ++j) {
@@ -64,7 +64,7 @@ int valid_fes_clique(struct cgraph *cg, struct ges_op op)
  * valid_fes_clique checks to see if the given ges operator's NAXY/H
  * forms a clique.
  */
-int valid_bes_clique(struct cgraph *cg, struct ges_op op)
+int valid_bes_clique(struct cgraph *cg, struct ges_operator op)
 {
     for (int i = 0; i < op.naxy_size; ++i) {
         if (IS_HEAD_NODE(op.h, i))
@@ -100,7 +100,7 @@ static inline void mark(int i, unsigned char *marked)
  * would create a cycle in cg. This is the second validity test for the
  * forward equivalence search of GES. mem is passed in as an optimization.
  */
-int cycle_created(struct cgraph *cg, struct ges_op op, int *mem)
+int cycle_created(struct cgraph *cg, struct ges_operator op, int *mem)
 {
     /*
      * First, we grab memory from mem and use it for recording whether or not
@@ -155,9 +155,9 @@ int cycle_created(struct cgraph *cg, struct ges_op op, int *mem)
  * partition_neighbors partitions the neighbors of op.y into those adjacent
  * to opx (NAXY) in cg and those nonadjacent to op.x (set). Used in FES.
  */
-void partition_neighbors(struct cgraph *cg, struct ges_op *op)
+void partition_neighbors(struct cgraph *cg, struct ges_operator *op)
 {
-    struct ges_op o = *op;
+    struct ges_operator o = *op;
     struct ill   *s = cg->spouses[o.y];
     int           n = ill_size(s);
     o.naxy      = malloc(n * sizeof(int));
@@ -178,9 +178,9 @@ void partition_neighbors(struct cgraph *cg, struct ges_op *op)
  * calculate_naxy caculates the neighbors of op.y that are adjacent to op.x.
  * Used in BES.
  */
-void calculate_naxy(struct cgraph *cg, struct ges_op *op)
+void calculate_naxy(struct cgraph *cg, struct ges_operator *op)
 {
-    struct ges_op  o = *op;
+    struct ges_operator  o = *op;
     struct ill    *s = cg->spouses[o.y];
     o.naxy      = malloc(ill_size(s) * sizeof(int));
     o.naxy_size = 0;
@@ -197,7 +197,7 @@ void calculate_naxy(struct cgraph *cg, struct ges_op *op)
 /*
  * calculate_parents does what it says.
  */
-void calculate_parents(struct cgraph *cg, struct ges_op *op)
+void calculate_parents(struct cgraph *cg, struct ges_operator *op)
 {
     struct ill *p = cg->parents[op->y];
     op->n_parents = ill_size(p);
@@ -211,7 +211,7 @@ void calculate_parents(struct cgraph *cg, struct ges_op *op)
 
 /* TODO */
 static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
-                                                           struct ges_op op,
+                                                           struct ges_operator op,
                                                            int *visited,
                                                            int n_visited,
                                                            int *nodes,
@@ -262,7 +262,7 @@ static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
  */
 void reorient_and_determine_operators_to_update(struct cgraph *cpy,
                                                 struct cgraph *cg,
-                                                struct ges_op op,
+                                                struct ges_operator op,
                                                 int *nodes, int *n)
 {
     int n_visited = 0;

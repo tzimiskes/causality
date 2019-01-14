@@ -11,6 +11,7 @@
 #define DEBUG 0
 #endif
 
+/* pointer linked list */
 struct pll {
     struct ill *p;
     struct pll *next;
@@ -46,7 +47,7 @@ static void insert_pll(struct pll **p, struct ill *l)
     *p = t;
 }
 
-void reorient(struct cgraph *cg, struct ges_op op, int *visited, int *n)
+void reorient(struct cgraph *cg, struct ges_operator op, int *visited, int *n)
 {
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;

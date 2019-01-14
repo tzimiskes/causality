@@ -73,7 +73,7 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
      * All the preprocessing work has now been done, so lets instantiate
      * an empty graph and run FGES.
      */
-    struct ges_score score = {ges_score, data, {fargs, iargs}, NULL, NULL};
+    struct ges_score score = {ges_score, {0}, data, {fargs, iargs}};
     struct cgraph *cg      = create_cgraph(data.nvar);
     /* run ges */
     double graph_score     = ccf_ges(score, cg);

@@ -7,7 +7,7 @@
 
 double ges_bdeu_score(struct dataframe data, int x, int y, int *ypar, int npar,
                                              struct score_args args,
-                                             double *fmem, int *imem)
+                                            struct ges_score_mem gsm)
 {
     int xy[npar + 2];
     xy[0] = x;
