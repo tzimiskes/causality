@@ -1,5 +1,5 @@
 /* Author: Alexander Rix
- * Date  : 12/10/2019
+ * Date  : 1/14/2019
  * Description: ges_utils.c contains various utility functions for ges. These
  * functions would clutter up ges.c, so they are defined here instead. There is
  * a small performance hit in not making these static, but it should be (very)
