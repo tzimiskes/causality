@@ -1,8 +1,19 @@
+/* Author: Alexander Rix
+ * Date  : 12/10/2019
+ * Description: ges_utils.c contains various utility functions for ges. These
+ * functions would clutter up ges.c, so they are defined here instead. There is
+ * a small performance hit in not making these static, but it should be (very)
+ * small compared to scoring.
+ */
+
 #include <stdlib.h>
 #include <string.h>
 
 #include "headers/cgraph.h"
 #include "headers/ges.h"
+
+#define IS_TAIL_NODE(t, node) ((t) & 1 << (node))
+#define IS_HEAD_NODE(h, node) ((h) & 1 << (node))
 
 void free_ges_op(struct ges_op op)
 {
@@ -11,16 +22,17 @@ void free_ges_op(struct ges_op op)
     free(op.parents);
 }
 
-void free_ges_score(struct ges_score sc)
+void free_ges_score_mem(struct ges_score_mem gsm)
 {
-    free(sc.imem);
-    free(sc.fmem);
+    free(gsm.lbls);
+    free(gsm.cov_xy);
+    free(gsm.cov_xx);
+    free(gsm.cov_xpx);
 }
 
 /*
- * forms_clique checks to see if s_u_naxy forms a clique. This is the first
- * validity test for the forward equivalence search of GES, and the validity
- * test for the backward equivalence search of GES.
+ * valid_fes_clique checks to see if the set TAIL_SET U NAXY constructed from
+ * (INSERTION)  the given operator forms a clique.
  */
 int valid_fes_clique(struct cgraph *cg, struct ges_op op)
 {
@@ -30,17 +42,17 @@ int valid_fes_clique(struct cgraph *cg, struct ges_op op)
                 return 0;
         }
         for (int j = 0; j < op.set_size; ++j) {
-            if ((op.t & 1 << j) == 0)
+            if (!IS_TAIL_NODE(op.t, j))
                 continue;
             if (!adjacent_in_cgraph(cg, op.naxy[i], op.set[j]))
                 return 0;
         }
     }
     for (int i = 0; i < op.set_size; ++i) {
-        if ((op.t & 1 << i) == 0)
+        if (!IS_TAIL_NODE(op.t, i))
             continue;
         for (int j = 0; j < i; ++j) {
-            if ((op.t & 1 << j) == 0)
+            if (!IS_TAIL_NODE(op.t, j))
                 continue;
             if (!adjacent_in_cgraph(cg, op.set[i], op.set[j]))
                 return 0;
@@ -48,14 +60,17 @@ int valid_fes_clique(struct cgraph *cg, struct ges_op op)
     }
     return 1;
 }
-
+/*
+ * valid_fes_clique checks to see if the given ges operator's NAXY/H
+ * forms a clique.
+ */
 int valid_bes_clique(struct cgraph *cg, struct ges_op op)
 {
     for (int i = 0; i < op.naxy_size; ++i) {
-        if ((op.h & 1 << i) == 1 << i)
+        if (IS_HEAD_NODE(op.h, i))
             continue;
         for (int j = 0; j < i; ++j) {
-            if ((op.h & 1 << j) == 1 << j)
+            if (IS_HEAD_NODE(op.h, j))
                 continue;
             if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j])) {
                 return 0;
@@ -65,6 +80,10 @@ int valid_bes_clique(struct cgraph *cg, struct ges_op op)
     return 1;
 }
 
+/*
+ * is_marked and marked use bit operations to save memory,thus making the
+ * memset operation in cycle_created faster).
+ */
 static inline int is_marked(int i, unsigned char *marked)
 {
     return marked[i / 8] & 1 << (i % 8);
@@ -75,10 +94,11 @@ static inline void mark(int i, unsigned char *marked)
     int q = i / 8;
     marked[q] = marked[q] | 1 << (i % 8);
 }
+
 /*
  * cycle_created returns whether or not the adding the edge x --> y
  * would create a cycle in cg. This is the second validity test for the
- * forward equivalence search of GES.
+ * forward equivalence search of GES. mem is passed in as an optimization.
  */
 int cycle_created(struct cgraph *cg, struct ges_op op, int *mem)
 {
@@ -131,6 +151,10 @@ int cycle_created(struct cgraph *cg, struct ges_op op, int *mem)
     return 0;
 }
 
+/*
+ * partition_neighbors partitions the neighbors of op.y into those adjacent
+ * to opx (NAXY) in cg and those nonadjacent to op.x (set). Used in FES.
+ */
 void partition_neighbors(struct cgraph *cg, struct ges_op *op)
 {
     struct ges_op o = *op;
@@ -150,10 +174,14 @@ void partition_neighbors(struct cgraph *cg, struct ges_op *op)
     *op = o;
 }
 
+/*
+ * calculate_naxy caculates the neighbors of op.y that are adjacent to op.x.
+ * Used in BES.
+ */
 void calculate_naxy(struct cgraph *cg, struct ges_op *op)
 {
-    struct ges_op o = *op;
-    struct ill   *s = cg->spouses[o.y];
+    struct ges_op  o = *op;
+    struct ill    *s = cg->spouses[o.y];
     o.naxy      = malloc(ill_size(s) * sizeof(int));
     o.naxy_size = 0;
     o.set_size  = 0;
@@ -166,6 +194,9 @@ void calculate_naxy(struct cgraph *cg, struct ges_op *op)
     *op = o;
 }
 
+/*
+ * calculate_parents does what it says.
+ */
 void calculate_parents(struct cgraph *cg, struct ges_op *op)
 {
     struct ill *p = cg->parents[op->y];
@@ -178,6 +209,7 @@ void calculate_parents(struct cgraph *cg, struct ges_op *op)
     }
 }
 
+/* TODO */
 static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
                                                            struct ges_op op,
                                                            int *visited,
@@ -185,18 +217,18 @@ static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
                                                            int *nodes,
                                                            int *n_nodes)
 {
-    int n = 0;;
+    int n = 0;
     visited[op.y] = 1;
     visited[op.x] = 1;
     if (op.type == INSERTION) {
         for (int i = 0; i < op.set_size; ++i) {
-            if ((op.t & 1 << i) == 1 << i)
+            if (IS_TAIL_NODE(op.t, i))
                 visited[op.set[i]] = 1;
         }
     }
     else {
         for (int i = 0; i < op.naxy_size; ++i) {
-            if ((op.h & 1 << i) == 1 << i)
+            if (IS_HEAD_NODE(op.h, i))
                 visited[op.naxy[i]] = 1;
         }
     }
@@ -213,7 +245,7 @@ static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
         else
             visited[i] = 0;
     }
-    int  j     = 0;
+    int j = 0;
     for (int i = 0; i < cg->n_nodes; ++i) {
         if (visited[i])
             nodes[j++] = i;
@@ -221,7 +253,13 @@ static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
     *n_nodes = n;
 }
 
-
+/*
+ * reorient_and_determine_operators_to_update reorients the cgraph after
+ * applying a ges operator (insertion or deletion). It also passes along the
+ * information from the reorient functions in ges_reorient.c to
+ * deterimine_nodes_to_recalc to get the nodes and the number of nodes
+ * we need to recalculate.
+ */
 void reorient_and_determine_operators_to_update(struct cgraph *cpy,
                                                 struct cgraph *cg,
                                                 struct ges_op op,
