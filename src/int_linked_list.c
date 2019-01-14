@@ -62,7 +62,6 @@ struct ill * ill_search(struct ill *root, int key) {
     while (root) {
         if (root->key == key)
             return root;
-        else
         root = root->next;
     }
     return NULL; /* root is NULL */
@@ -96,12 +95,12 @@ void ill_print(struct ill *root)
 
 int ill_size(struct ill *root)
 {
-    int size = 0;
+    int n = 0;
     while (root) {
-        size++;
+        n++;
         root = root->next;
     }
-    return size;
+    return n;
 }
 
 void ill_delete(struct ill ** root, int key)
