@@ -1,6 +1,6 @@
 #include "headers/causalityRWrapper.h"
 #include "headers/causality.h"
-
+#include "headers/scores.h"
 /*
  * ccf_sort_wrapper takes in an R object, proccesses it down to the C level
  * and then runs C level sort on this lower level representation. In then takes
