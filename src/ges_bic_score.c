@@ -9,36 +9,64 @@
 static double calcluate_bic_diff(double rss_p, double rss_m, double penalty,
     int nobs)
 {
-        return nobs * log(rss_p / rss_m) + penalty * log(nobs) * 2;
+    return nobs * log(rss_p / rss_m) + penalty * log(nobs) * 2;
 }
 
-static int find(int node, int m, int *lbls) {
-    int i;
-    for (i = 0; i < m; ++i) {
-        if (lbls[i] == node)
-            break;
-    }
+/*
+ * find returns where x, a parent of y, is in the precalculated covariance matrix
+ * cov_xx. The ordering between the parents of y and the precalculated matrix
+ * need not be the same, and we need the ordering to be correct
+ */
+static int find(int x, int *lbls) {
+    int i = 0;
+    while (lbls[i] != x)
+        i++;
     return i;
 }
 
-static void construct_covariances(double *cov, double *gsm_cov_xx,
-                                               double *gsm_cov_xy, int *pars,
-                                               int m, int *lbls)
+static void construct_aug_cov_mxp(double *aug_cov_mxp, struct ges_score_mem gsm,
+                                                       int *x, int nx)
 {
-    double *cov_xx   = cov;
-    double *cov_xy   = cov + m * m;
-    double *cov_xy_t = cov + m * (m + 1);
-    for(int i = 0; i < m; ++i) {
-        cov_xy[i] = gsm_cov_xy[pars[i]];
-        int i_pc = find(pars[i], m, lbls);
-        for(int j = 0; j < m; ++j) {
-            int j_pc = find(pars[j], m, lbls);
-            cov_xx[i * m + j] = gsm_cov_xx[i_pc * m + j_pc];
+    double *cov_xx   = aug_cov_mxp;
+    double *cov_xy   = aug_cov_mxp + nx * nx;
+    double *cov_xy_t = aug_cov_mxp + nx * (nx + 1);
+    for (int i = 0; i < nx; ++i) {
+        cov_xy[i] = gsm.cov_xy[x[i]];
+        int i_gsm = find(x[i], gsm.lbls);
+        for (int j = 0; j < nx; ++j) {
+            int j_gsm = find(x[j], gsm.lbls);
+            cov_xx[i * nx + j] = gsm.cov_xx[i_gsm * gsm.m + j_gsm];
         }
     }
-    memcpy(cov_xy_t, cov_xy, m * sizeof(double));
+    memcpy(cov_xy_t, cov_xy, nx * sizeof(double));
 }
 
+static void construct_aug_cov_pxp(double *aug_cov_xpx, double *aug_cov_mxp,
+                                                       struct ges_score_mem gsm,
+                                                       int xp, int *x, int nx)
+{
+    double *cov_xpxxpx  = aug_cov_xpx;
+    double *cov_xpxy    = aug_cov_xpx + (nx + 1) * (nx + 1);
+    double *cov_xpxy_t  = aug_cov_xpx + (nx + 1) * ((nx + 1) + 1);
+
+    double *cov_xx = aug_cov_mxp;
+    double *cov_xy = aug_cov_mxp + nx * nx;
+    cov_xpxy[0] = gsm.cov_xy[xp];
+    memcpy(cov_xpxy + 1, cov_xy, nx * sizeof(double));
+    memcpy(cov_xpxy_t, cov_xpxy, (nx + 1) * sizeof(double));
+
+    /* calculate the covariance vector between y and x */
+    cov_xpxxpx[0] = 1.0f;
+    for (int i = 0; i < nx; ++i) {
+        int i_gsm = find(x[i], gsm.lbls);
+        cov_xpxxpx[i + 1] = cov_xpxxpx[(i + 1) * (nx + 1)] = gsm.cov_xpx[i_gsm];
+    }
+
+    for (int i = 0; i < nx; ++i) {
+        for (int j = 0; j < nx; ++j)
+            cov_xpxxpx[j + 1 + (i + 1) * (nx + 1)] = cov_xx[j + i * nx];
+    }
+}
 
 
 /* TODO */
@@ -47,32 +75,18 @@ double ges_bic_score(struct dataframe df, int xp, int y, int *x, int nx,
                                           struct ges_score_mem gsm)
 {
     double  penalty = args.fargs[0];
-    double *m_mem   = malloc(nx * (nx + 2) * sizeof(double));
-    if (m_mem == NULL)
+    double *aug_cov_mxp = malloc(nx * (nx + 2) * sizeof(double));
+    double *aug_cov_pxp = malloc((nx + 1) * ((nx + 1) + 2) * sizeof(double));
+    if (aug_cov_mxp == NULL)
         CAUSALITY_ERROR("Failed to allocate memory for BIC score\n");
-    double *p_mem = malloc((nx + 1) * ((nx + 1) + 2) * sizeof(double));
-    if (p_mem == NULL)
+    if (aug_cov_pxp == NULL)
         CAUSALITY_ERROR("Failed to allocate memory for BIC score\n");
-
-    construct_covariances(m_mem, gsm.cov_xx, gsm.cov_xy, x, gsm.m, gsm.lbls);
-    double *cov_xx_p     = p_mem;
-    double *cov_xy_p     = p_mem + (nx + 1) * (nx + 1);
-    double *cov_xy_p_t   = p_mem + (nx + 1) * (nx + 2);
-    memcpy(cov_xy_p + 1, m_mem + nx * nx, nx * sizeof(double));
-    memcpy(cov_xy_p_t, cov_xy_p, (nx + 1 ) * sizeof(double));
-
-    /* calculate the covariance vector between y and x */
-
-    for (int i = 0; i < nx; ++i) {
-        for (int j = 0; j < nx; ++j)
-            cov_xx_p[j + 1 + (i + 1) * (nx + 1)] = m_mem[j + i * nx];
-    }
-
-    double rss_p = calculate_rss(p_mem, nx + 1);
-    double rss_m = calculate_rss(m_mem, nx);
-
-    free(p_mem);
-    free(m_mem);
+    construct_aug_cov_mxp(aug_cov_mxp, gsm, x, nx);
+    construct_aug_cov_pxp(aug_cov_pxp, aug_cov_mxp, gsm, xp, x, nx);
+    double rss_p = calculate_rss(aug_cov_pxp, nx + 1);
+    double rss_m = calculate_rss(aug_cov_mxp, nx);
+    free(aug_cov_mxp);
+    free(aug_cov_pxp);
     return calcluate_bic_diff(rss_p, rss_m, penalty, df.nobs);
 }
 
@@ -115,9 +129,8 @@ void ges_bic_optimization2(int xp, struct ges_score *gs)
     double **df   = (double **) gs->df.df;
     int      nobs = gs->df.nobs;
     struct ges_score_mem gsm = gs->gsm;
-    double *x[gsm.m + 1];
-    x[0] = df[xp];
+    double *x[gsm.m];
     for (int i = 0; i < gsm.m; ++i)
-        x[i + 1] = df[gsm.lbls[i]];
-    fcov_xy(gs->gsm.cov_xpx, x, x[0], nobs, gsm.m + 1);
+        x[i] = df[gsm.lbls[i]];
+    fcov_xy(gs->gsm.cov_xpx, x, df[xp], nobs, gsm.m);
 }

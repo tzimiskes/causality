@@ -16,7 +16,7 @@ struct ges_score_mem {
     double *cov_xpx;
     int    *lbls;
     int     m;
-};
+}; /* 36 bytes */
 
 typedef double (*ges_score_func)(struct dataframe df, int x, int y, int *ypar,
                                                       int npar,
@@ -73,6 +73,7 @@ void reorient_and_determine_operators_to_update(struct cgraph *cpy,
                                                 struct ges_operator op,
                                                 int *nodes, int *n);
 /* functions that optimize ges_bic_score score */
-void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs);
+void ges_bic_optimization1(struct cgraph *cg, int y, int n,
+                                              struct ges_score *gs);
 void ges_bic_optimization2(int xp, struct ges_score *gs);
 #endif
