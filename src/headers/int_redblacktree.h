@@ -1,17 +1,22 @@
+#include "causality.h"
+
 #ifndef IRBT_H
 #define IRBT_H
 
-typedef struct irbt_node irbt_node;
-typedef irbt_node* irbt_ptr;
+struct irbt {
+    struct irbt * child[2];
+    int           key;
+    float         values [NUM_EDGES_STORED];
+};
 
-irbt_ptr irbt_insert(irbt_ptr root, int key, float* values, float weight);
-void irbt_print_tree(irbt_ptr root);
-void irbt_free(irbt_ptr root);
-irbt_ptr irbt_merge_trees(irbt_ptr dst, irbt_ptr src);
-int irbt_size(irbt_ptr root);
-int irbt_key(irbt_ptr root);
-float* irbt_values_ptr(irbt_ptr root);
-irbt_ptr irbt_left_child(irbt_ptr root);
-irbt_ptr irbt_right_child(irbt_ptr root);
-irbt_ptr* make_ptr_to_irbt(const int n);
+
+struct irbt * irbt_insert(struct irbt *root, int key, float *values, float weight);
+void irbt_print_tree(struct irbt *root);
+void irbt_free(struct irbt *root);
+struct irbt * irbt_merge_trees(struct irbt *dst, struct irbt *src);
+int irbt_size(struct irbt *root);
+int irbt_key(struct irbt *root);
+float * irbt_values_ptr(struct irbt * root);
+struct irbt * irbt_left_child(struct irbt *root);
+struct irbt * irbt_right_child(struct irbt *root);
 #endif

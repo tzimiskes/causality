@@ -28,13 +28,13 @@ static float ARR_CIRCLECIRCLE [11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
  */
 void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             const int n_rows , const int parent, int* index,
-                            irbt_ptr root, float sum_weights);
+                            struct irbt *root, float sum_weights);
 /*
  * FUNCTION_NAME takes in an edge (parent, child, edge) and then returns a
  * pointer to of the arrays above. That pointer is used to increment
  * the count of the particular edge type by 1 in the red black tree
  */
-void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge, float weight);
+void add_edge_to_irbt(struct irbt *** root, int parent, int child, int edge, float weight);
 
 /*
  * aggregate_cgraphs takes in a list of cgraphs and then reduces them to a new
@@ -52,16 +52,16 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
   for(int i = 0; i < n_graphs; ++i) {
     sum_weights += weights_ptr[i];
   }
-  irbt_ptr** trees = malloc(n_graphs * sizeof(irbt_ptr*));
+  struct irbt *** trees = malloc(n_graphs * sizeof(struct irbt **));
   // can parallelize
   for(int j = 0; j < n_graphs; ++j) {
 
     float weight = (float) weights_ptr[j];
     SEXP Cgraph = PROTECT(VECTOR_ELT(Cgraphs, j));
 
-    trees[j] = make_ptr_to_irbt(n_nodes);
+    trees[j] = calloc(n_nodes, sizeof(struct irbt *));
     // create alias for trees[j]
-    irbt_ptr* tree = trees[j];
+    struct irbt ** tree = trees[j];
 
     SEXP edges = PROTECT(VECTOR_ELT(Cgraph, EDGES));
     const int n_edges = nrows(edges);
@@ -86,10 +86,10 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
   }
   //reduce  all trees to the base tree, which is an alias for tree[0]
   // "easy" to parallelize
-  irbt_ptr* base = trees[0];
+  struct irbt ** base = trees[0];
   for(int i = 1; i < n_graphs; ++i) {
     // create alias for trees[i]
-    irbt_ptr* src = trees[i];
+    struct irbt ** src = trees[i];
     for( int j = 0; j < n_nodes; ++j) {
       base[j] = irbt_merge_trees(base[j], src[j]);
     }
@@ -133,15 +133,15 @@ SEXP cf_aggregate_cgraphs(SEXP Cgraphs, SEXP Weights) {
  */
 void convert_tree_to_matrix(double* const restrict matrix_ptr,
                             const int n_rows , const int parent, int* index,
-                            irbt_ptr root, float sum_weights)
+                            struct irbt *root, float sum_weights)
 {
   if( root != NULL) {
     double inv_sum_weights = 1.0f/((double) sum_weights);
-    matrix_ptr[*index + 0*n_rows] = parent + 1;
-    matrix_ptr[*index + 1*n_rows] = irbt_key(root) + 1;
+    matrix_ptr[*index + 0 * n_rows] = parent + 1;
+    matrix_ptr[*index + 1 * n_rows] = irbt_key(root) + 1;
     float* root_values_ptr = irbt_values_ptr(root);
     for(int i = 0; i < NUM_EDGES_STORED; ++i) {
-      matrix_ptr[*index + (i+2)*n_rows] = ((double) root_values_ptr[i]) * inv_sum_weights;
+      matrix_ptr[*index + (i + 2) * n_rows] = ((double) root_values_ptr[i]) * inv_sum_weights;
     }
   (*index)++;
   convert_tree_to_matrix(matrix_ptr, n_rows, parent, index,
@@ -151,8 +151,8 @@ void convert_tree_to_matrix(double* const restrict matrix_ptr,
   }
 }
 
-void add_edge_to_irbt(irbt_ptr** root, int parent, int child, int edge, float weight) {
-  float* array = NULL;
+void add_edge_to_irbt(struct irbt ***root, int parent, int child, int edge, float weight) {
+  float *array = NULL;
   // all these edges are undirected, so we just first check these
   switch(edge) {
     case UNDIRECTED: {
