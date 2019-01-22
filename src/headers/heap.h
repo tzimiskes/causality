@@ -1,22 +1,18 @@
 #ifndef HEAP_H
 #define HEAP_H
 
-struct heap {
-    double      *keys;
-    void       **data;
-    const void  *ext_data_loc;
-    int          ext_data_size;
-    int         *indices;
-    int          max_size;
-    int          size;
+struct ges_heap {
+    int                   max_size;
+    int                   size;
+    struct ges_operator **ext_op_ptrs;
+    struct ges_operator  *ext_ops;
+    int                  *indices;
 };
 
-struct heap * create_heap(const int max_size, const void *ext_data_loc,
-                                         const int ext_data_size);
-void          free_heap(struct heap *hp);
-void          build_heap(struct heap *hp);
-void        * peek_heap(struct heap *hp);
-void        * extract_heap(struct heap *hp, double *ds);
-void          insert_heap(struct heap *hp, double ds, void *p);
-void          remove_heap(struct heap *hp, int node);
+struct ges_heap * create_heap(const int max_size, struct ges_operator  *ext_ops);
+void          free_heap(struct ges_heap *hp);
+void          build_heap(struct ges_heap *hp);
+struct ges_operator * peek_heap(struct ges_heap *hp);
+void          insert_heap(struct ges_heap *hp, struct ges_operator *op);
+void          remove_heap(struct ges_heap *hp, int node);
 #endif

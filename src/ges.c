@@ -276,15 +276,8 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     int    nvar        = cg->n_nodes;
     double graph_score = 0.0f;
     /* TODO */
-    struct ges_operator *ops = calloc(nvar, sizeof(struct ges_operator));
-    struct heap   *heap    = create_heap(nvar, ops, sizeof(struct ges_operator));
-    double        *dscores = heap->keys;
-    void         **records = heap->data;
-    int           *indices = heap->indices;
-    for (int i = 0; i < nvar; ++i) {
-        records[i] = ops + i;
-        heap->indices[i] = i;
-    }
+    struct ges_operator *ops  = calloc(nvar, sizeof(struct ges_operator));
+    struct ges_heap     *heap = create_heap(nvar, ops);
     /* FES STEP 0: For all x,y score x --> y */
     for (int y = 0; y < nvar; ++y) {
         double min_score = DEFAULT_SCORE_DIFF;
@@ -299,7 +292,6 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
         }
         if (sc.gsf == ges_bic_score)
             free_ges_score_mem(sc.gsm);
-        dscores[y]        = min_score;
         ops[y].xp         = x;
         ops[y].y          = y;
         ops[y].score_diff = min_score;
@@ -312,11 +304,11 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     int           *nodes = mem;
     /* extract the operator with the best score from the heap */
     struct ges_operator *op;
-    while ((op = peek_heap(heap)) && op->score_diff <= 0.0f) {
+    while ((op = peek_heap(heap))->score_diff <= 0.0f) {
         if (!is_valid_insertion(cg, *op, mem)) {
             remove_heap(heap, op->y);
             update_insertion_operator(cg, op, sc);
-            insert_heap(heap, op->score_diff, op);
+            insert_heap(heap, op);
             continue;
         }
         graph_score += op->score_diff;
@@ -332,9 +324,10 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
         for (int i = 0; i < n; ++i)
             update_insertion_operator(cg, &new_ops[i], sc);
         for (int i = 0; i < n; ++i) {
-            ops[nodes[i]] = new_ops[i];
             remove_heap(heap, nodes[i]);
-            insert_heap(heap, ops[nodes[i]].score_diff, &ops[nodes[i]]);
+            ops[nodes[i]] = new_ops[i]; /* must come after remove_heap */
+            insert_heap(heap, &ops[nodes[i]]);
+
         }
         free(new_ops);
     }
@@ -344,17 +337,14 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
         op->y    = i;
         op->type = DELETION;
         update_deletion_operator(cg, op, sc);
-        records[i] = op;
-        indices[i] = i;
-        dscores[i] = op->score_diff;
     }
     build_heap(heap);
     /* BACKWARD EQUIVALENCE SEARCH (BES) */
-    while ((op = peek_heap(heap)) && (op->score_diff <= 0.0f)) {
+    while ((op = peek_heap(heap))->score_diff <= 0.0f) {
         if (!is_valid_deletion(cg, *op)) {
             remove_heap(heap, op->y);
             update_deletion_operator(cg, op, sc);
-            insert_heap(heap, op->score_diff, op);
+            insert_heap(heap, op);
             continue;
         }
         graph_score += op->score_diff;
@@ -370,13 +360,17 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
         for (int i = 0; i < n; ++i)
             update_deletion_operator(cg, &new_ops[i], sc);
         for (int i = 0; i < n; ++i) {
-            ops[nodes[i]] = new_ops[i];
             remove_heap(heap, nodes[i]);
-            insert_heap(heap, ops[nodes[i]].score_diff, &ops[nodes[i]]);
+            ops[nodes[i]] = new_ops[i];
+            insert_heap(heap, &ops[nodes[i]]);
         }
         free(new_ops);
     }
-    /* Barney says its time to clean up */
+    /* Clean up clean up
+     * everybody everywhere.
+     * Clean up clean up
+     * everybody do your share.
+     */
     free(mem);
     free_heap(heap);
     free_cgraph(cpy);
