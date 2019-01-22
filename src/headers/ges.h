@@ -39,7 +39,7 @@ struct ges_score {
 };
 
 struct ges_operator {
-    int    x;
+    int    xp;
     int    y;
     union {
         uint64_t t;
@@ -56,7 +56,6 @@ struct ges_operator {
 }; /* 64 bytes */
 
 /* memory utility functions */
-void free_ges_operator(struct ges_operator op);
 void free_ges_score_mem(struct ges_score_mem gsm);
 /* functions that deterimine whether or not a operators is legal */
 int  valid_fes_clique(struct cgraph *cg, struct ges_operator op);

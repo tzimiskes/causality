@@ -15,13 +15,6 @@
 #define IS_TAIL_NODE(t, node) ((t) & 1 << (node))
 #define IS_HEAD_NODE(h, node) ((h) & 1 << (node))
 
-void free_ges_operator(struct ges_operator op)
-{
-    free(op.naxy);
-    free(op.set);
-    free(op.parents);
-}
-
 void free_ges_score_mem(struct ges_score_mem gsm)
 {
     free(gsm.lbls);
@@ -129,7 +122,7 @@ int cycle_created(struct cgraph *cg, struct ges_operator op, int *mem)
         struct ill *p = cg->children[node];
         while (p) {
             /* If the next node is x we have found a cycle and can return 1 */
-            if (p->key == op.x)
+            if (p->key == op.xp)
                 return 1;
             if (!is_marked(p->key, marked)) {
                 mark(p->key, marked);
@@ -139,7 +132,7 @@ int cycle_created(struct cgraph *cg, struct ges_operator op, int *mem)
         }
         p = cg->spouses[node];
         while (p) {
-            if (p->key == op.x)
+            if (p->key == op.xp)
                 return 1;
             if (!is_marked(p->key, marked)) {
                 mark(p->key, marked);
@@ -165,7 +158,7 @@ void partition_neighbors(struct cgraph *cg, struct ges_operator *op)
     o.set       = malloc(n * sizeof(int));
     o.set_size  = 0;
     while (s) {
-        if (adjacent_in_cgraph(cg, o.x, s->key))
+        if (adjacent_in_cgraph(cg, o.xp, s->key))
             o.naxy[o.naxy_size++] = s->key;
         else
             o.set[o.set_size++] = s->key;
@@ -187,7 +180,7 @@ void calculate_naxy(struct cgraph *cg, struct ges_operator *op)
     o.set_size  = 0;
     o.set       = NULL;
     while (s) {
-        if (adjacent_in_cgraph(cg, o.x, s->key))
+        if (adjacent_in_cgraph(cg, o.xp, s->key))
             o.naxy[o.naxy_size++] = s->key;
         s = s->next;
     }
@@ -218,8 +211,8 @@ static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
                                                            int *n_nodes)
 {
     int n = 0;
-    visited[op.y] = 1;
-    visited[op.x] = 1;
+    visited[op.y]  = 1;
+    visited[op.xp] = 1;
     if (op.type == INSERTION) {
         for (int i = 0; i < op.set_size; ++i) {
             if (IS_TAIL_NODE(op.t, i))

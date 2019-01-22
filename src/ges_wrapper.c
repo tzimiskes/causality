@@ -82,18 +82,18 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
         free(data.df[i]);
     free(data.df);
     /* Create R causality.graph object from cg */
+    SEXP Output = PROTECT(allocVector(VECSXP, 2));
     SEXP Names  = PROTECT(getAttrib(Df, R_NamesSymbol));
-    SEXP Graph  = PROTECT(causalityGraphFromCgraph(cg, Names));
+    SET_VECTOR_ELT(Output, 0, causalityGraphFromCgraph(cg, Names));
+    SET_VECTOR_ELT(Output, 1, ScalarReal(graph_score));
+
     free_cgraph(cg);
     /* Set the output of GES to the class causality.pattern */
     SEXP Class = PROTECT(allocVector(STRSXP, 2));
     SET_STRING_ELT(Class, 0, mkChar("causality.pattern"));
     SET_STRING_ELT(Class, 1, mkChar("causality.graph"));
-    setAttrib(Graph, R_ClassSymbol, Class);
+    setAttrib(VECTOR_ELT(Output, 0), R_ClassSymbol, Class);
     /* Return the graph and its score */
-    SEXP Output = PROTECT(allocVector(VECSXP, 2));
-    SET_VECTOR_ELT(Output, 0, Graph);
-    SET_VECTOR_ELT(Output, 1, ScalarReal(graph_score));
-    UNPROTECT(4);
+    UNPROTECT(3);
     return Output;
 }
