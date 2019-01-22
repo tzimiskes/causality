@@ -1,5 +1,5 @@
 /* Author: Alexander Rix
- * Date  : 11/29/2018
+ * Date  : 1/22/2019
  * Description: ges.c contains a (partially optimized) version of
  * greedy equivalence search by Chickering. It is a score based
  * causal discovery algorithm that is correct in the the large sample
@@ -227,8 +227,8 @@ static void update_deletion_operator(struct cgraph *cg, struct ges_operator *op,
 }
 
 /*
- * apply_insertion_operator takes the ges_operator and adds the edge x --> y, and
- * then for all nodes in s, orients node --> y.
+ * apply_insertion_operator takes the ges_operator and adds the edge x --> y,
+ * and then for all nodes in s, orients node --> y.
  */
 static void apply_insertion_operator(struct cgraph *cg, struct ges_operator op)
 {
@@ -265,8 +265,15 @@ static void apply_deletion_operator(struct cgraph *cg, struct ges_operator op)
     }
 }
 
-/* TODO */
-double ccf_ges(struct ges_score sc, struct cgraph *cg)
+/*
+ * ccf_ges is a score based causal discovery algorithm that tries to find the
+ * pattern that generated dataset in ges_score. The algorithm inputs are the
+ * ges_score structure, score, and cg, a cgraph. score contains the dataset,
+ * function pointer to the scoring function, and other related information. cg
+ * is a point to an (empty, for now) causality graph that will be filled in by
+ * the time the algorithm terminates. ccf_ges returns the score of the pattern.
+ */
+double ccf_ges(struct ges_score score, struct cgraph *cg)
 {
     /*
     * The number of processors ges is going to use. Right now it is 1,
@@ -282,21 +289,23 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     for (int y = 0; y < nvar; ++y) {
         double min_score = DEFAULT_SCORE_DIFF;
         int    x         = -1;
-        apply_optimization1(cg, y, y, &sc);
+        apply_optimization1(cg, y, y, &score);
         for (int i = 0; i < y; ++i) {
-            double score_diff = sc.gsf(sc.df, i, y, NULL, 0, sc.args, sc.gsm);
+            double score_diff = score.gsf(score.df, i, y, NULL, 0, score.args,
+                                                    score.gsm);
             if (score_diff < min_score) {
                 min_score = score_diff;
                 x         = i;
             }
         }
-        if (sc.gsf == ges_bic_score)
-            free_ges_score_mem(sc.gsm);
+        if (score.gsf == ges_bic_score)
+            free_ges_score_mem(score.gsm);
         ops[y].xp         = x;
         ops[y].y          = y;
         ops[y].score_diff = min_score;
         ops[y].type       = INSERTION;
     }
+    /* TODO */
     build_heap(heap);
     /* FORWARD EQUIVALENCE SEARCH (FES) */
     struct cgraph *cpy   = copy_cgraph(cg);
@@ -307,7 +316,7 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
     while ((op = peek_heap(heap))->score_diff <= 0.0f) {
         if (!is_valid_insertion(cg, *op, mem)) {
             remove_heap(heap, op->y);
-            update_insertion_operator(cg, op, sc);
+            update_insertion_operator(cg, op, score);
             insert_heap(heap, op);
             continue;
         }
@@ -318,13 +327,13 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
         for (int i = 0; i < n; ++i) {
             new_ops[i] = ops[nodes[i]];
+            remove_heap(heap, nodes[i]);
             update_operator_info(cg, &new_ops[i]);
         }
         /* This step (updating) can be paralellized */
         for (int i = 0; i < n; ++i)
-            update_insertion_operator(cg, &new_ops[i], sc);
+            update_insertion_operator(cg, &new_ops[i], score);
         for (int i = 0; i < n; ++i) {
-            remove_heap(heap, nodes[i]);
             ops[nodes[i]] = new_ops[i]; /* must come after remove_heap */
             insert_heap(heap, &ops[nodes[i]]);
 
@@ -336,14 +345,14 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
         op       = ops + i;
         op->y    = i;
         op->type = DELETION;
-        update_deletion_operator(cg, op, sc);
+        update_deletion_operator(cg, op, score);
     }
     build_heap(heap);
     /* BACKWARD EQUIVALENCE SEARCH (BES) */
     while ((op = peek_heap(heap))->score_diff <= 0.0f) {
         if (!is_valid_deletion(cg, *op)) {
             remove_heap(heap, op->y);
-            update_deletion_operator(cg, op, sc);
+            update_deletion_operator(cg, op, score);
             insert_heap(heap, op);
             continue;
         }
@@ -354,13 +363,13 @@ double ccf_ges(struct ges_score sc, struct cgraph *cg)
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
         for (int i = 0; i < n; ++i) {
             new_ops[i] = ops[nodes[i]];
+            remove_heap(heap, nodes[i]);
             update_operator_info(cg, &new_ops[i]);
         }
         /* This step (update_operator) can be parallelized */
         for (int i = 0; i < n; ++i)
-            update_deletion_operator(cg, &new_ops[i], sc);
+            update_deletion_operator(cg, &new_ops[i], score);
         for (int i = 0; i < n; ++i) {
-            remove_heap(heap, nodes[i]);
             ops[nodes[i]] = new_ops[i];
             insert_heap(heap, &ops[nodes[i]]);
         }
