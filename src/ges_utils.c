@@ -12,8 +12,8 @@
 #include "headers/cgraph.h"
 #include "headers/ges.h"
 
-#define IS_TAIL_NODE(t, node) ((t) & 1 << (node))
-#define IS_HEAD_NODE(h, node) ((h) & 1 << (node))
+#define IS_TAIL_NODE(t, node) ((t) & 1LLU << (node))
+#define IS_HEAD_NODE(h, node) ((h) & 1LLU << (node))
 
 void free_ges_score_mem(struct ges_score_mem gsm)
 {
@@ -25,7 +25,7 @@ void free_ges_score_mem(struct ges_score_mem gsm)
 
 /*
  * valid_fes_clique checks to see if the set TAIL_SET U NAXY constructed from
- * (INSERTION)  the given operator forms a clique.
+ * the given (INSERTION) operator forms a clique.
  */
 int valid_fes_clique(struct cgraph *cg, struct ges_operator op)
 {

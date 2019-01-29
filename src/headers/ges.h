@@ -12,7 +12,7 @@
 
 struct ges_score_mem {
     double *cov_xy;
-    double *cov_xx;
+    double *cov_xx; /* m by m matrix */
     double *cov_xpx;
     int    *lbls;
     int     m;
@@ -51,7 +51,6 @@ struct ges_operator {
     int    n_parents;
     int    naxy_size;
     int    set_size;
-    int    type;
     double score_diff;
 }; /* 64 bytes */
 

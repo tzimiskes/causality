@@ -24,8 +24,8 @@
 
 #define DEFAULT_SCORE_DIFF 1.0f
 
-#define IS_TAIL_NODE(t, node) ((t) & 1 << (node))
-#define IS_HEAD_NODE(h, node) ((h) & 1 << (node))
+#define IS_TAIL_NODE(t, node) ((t) & 1LLU << (node))
+#define IS_HEAD_NODE(h, node) ((h) & 1LLU << (node))
 
 /*
  * is_valid_insertion returns whether or not applying the given insertion
@@ -58,7 +58,7 @@ static int is_valid_deletion(struct cgraph *cg, struct ges_operator op)
  */
 static void score_insertion_operator(struct cgraph *cg, struct ges_operator *op,
                                                         struct ges_score gs,
-                                                        int *cycle_mem)
+                                                        int *cycle_test_mem)
 {
     struct ges_operator o = *op;
     /* allocate enough memory on the stack to store all of Pa(y) U Naxy U S */
@@ -71,7 +71,7 @@ static void score_insertion_operator(struct cgraph *cg, struct ges_operator *op,
     /* iterate through the powerset of S via bit operations.  */
     uint64_t powerset_size = 1 << o.set_size; /* |P(S)|  = 2^|S| */
     for (o.t = 0; o.t < powerset_size; ++o.t) {
-        if (!is_valid_insertion(cg, o, cycle_mem))
+        if (!is_valid_insertion(cg, o, cycle_test_mem))
             continue;
         int py_naxy_t_size = py_naxy_size;
         for (int i = 0; i < o.set_size; ++i) {
@@ -158,8 +158,7 @@ static void update_insertion_operator(struct cgraph *cg, struct ges_operator *op
             continue;
         apply_optimization2(cg, x, &gs);
         struct ges_operator o = {x, y, {0}, NULL, NULL, op->parents,
-                                    op->n_parents, 0, 0, INSERTION,
-                                    DEFAULT_SCORE_DIFF};
+                                    op->n_parents, 0, 0, DEFAULT_SCORE_DIFF};
         /* Split y's neighbors into set (nonadj to x) and naxy (adj to x) */
         partition_neighbors(cg, &o);
         score_insertion_operator(cg, &o, gs, mem);
@@ -206,7 +205,7 @@ static void update_deletion_operator(struct cgraph *cg, struct ges_operator *op,
     for (int i = 0; i < n; ++i) {
         apply_optimization2(cg, nodes[i], &gs);
         struct ges_operator o = {nodes[i], y, {0}, NULL, NULL, op->parents,
-                                           op->n_parents, 0, 0, INSERTION,
+                                           op->n_parents, 0, 0,
                                            DEFAULT_SCORE_DIFF};
         /* Calculate the neighbors of y that are adjacent to x */
         calculate_naxy(cg, &o);
@@ -247,10 +246,19 @@ static void apply_insertion_operator(struct cgraph *cg, struct ges_operator op)
  */
 static void apply_deletion_operator(struct cgraph *cg, struct ges_operator op)
 {
-    if (edge_directed_in_cgraph(cg, op.xp, op.y))
+    if (edge_directed_in_cgraph(cg, op.xp, op.y)) {
+        printf("delete %i --> %i\n", op.xp, op.y);
         delete_edge_from_cgraph(cg, op.xp, op.y, DIRECTED);
-    else
+    }
+    else{
+        printf("delete %i --- %i\n", op.xp, op.y);
         delete_edge_from_cgraph(cg, op.xp, op.y, UNDIRECTED);
+    }
+
+    ill_print(cg->spouses[op.y]);
+    for (int i = 0; i < op.naxy_size; ++i)
+        printf("%i ", op.naxy[i]);
+    printf("\n");
     /* orient uncovered edges */
     for (int i = 0; i < op.naxy_size; ++i) {
         /*
@@ -258,8 +266,13 @@ static void apply_deletion_operator(struct cgraph *cg, struct ges_operator op)
          * not already. Then, orient the undirected edge y --- naxy[i]
          */
         if (IS_HEAD_NODE(op.h, i)) {
-            if (edge_undirected_in_cgraph(cg, op.xp, op.naxy[i]))
-                orient_undirected_edge(cg, op.xp , op.naxy[i]);
+            print_cgraph(cg);
+            printf("orient %i --> %i?\n", op.xp, op.naxy[i]);
+            if (edge_undirected_in_cgraph(cg, op.xp, op.naxy[i])) {
+                printf("yes\n");
+                orient_undirected_edge(cg, op.xp, op.naxy[i]);
+            }
+            printf("orient %i --> %i\n", op.y, op.naxy[i]);
             orient_undirected_edge(cg, op.y, op.naxy[i]);
         }
     }
@@ -303,7 +316,6 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         ops[y].xp         = x;
         ops[y].y          = y;
         ops[y].score_diff = min_score;
-        ops[y].type       = INSERTION;
     }
     /* TODO */
     build_heap(heap);
@@ -336,19 +348,19 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         for (int i = 0; i < n; ++i) {
             ops[nodes[i]] = new_ops[i]; /* must come after remove_heap */
             insert_heap(heap, &ops[nodes[i]]);
-
         }
         free(new_ops);
     }
     /* BES STEP 0 */
+    printf("BES0\n");
     for (int i = 0; i < nvar; ++i) {
         op       = ops + i;
         op->y    = i;
-        op->type = DELETION;
         update_deletion_operator(cg, op, score);
     }
     build_heap(heap);
     /* BACKWARD EQUIVALENCE SEARCH (BES) */
+    printf("BES\n");
     while ((op = peek_heap(heap))->score_diff <= 0.0f) {
         if (!is_valid_deletion(cg, *op)) {
             remove_heap(heap, op->y);
@@ -357,10 +369,14 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
             continue;
         }
         graph_score += op->score_diff;
+
         apply_deletion_operator(cg, *op);
         int n = 0;
         reorient_and_determine_operators_to_update(cpy, cg, *op, nodes, &n);
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
+        for (int i = 0; i < n; ++i)
+            printf("%i ", nodes[i]);
+        printf("\n");
         for (int i = 0; i < n; ++i) {
             new_ops[i] = ops[nodes[i]];
             remove_heap(heap, nodes[i]);

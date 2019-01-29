@@ -4,27 +4,27 @@
 #include "headers/causality.h"
 #include "headers/heap.h"
 
-struct ges_heap * create_heap(const int max_size, struct ges_operator *ext_ops)
+struct ges_heap * create_heap(int max_size, struct ges_operator *ext_ops)
 {
     struct ges_heap *hp = malloc(sizeof(struct ges_heap));
     hp->max_size    = max_size;
     hp->size        = max_size;
-    hp->ext_ops     = ext_ops;
-    hp->ext_op_ptrs = malloc(max_size * sizeof(struct ges_operator *));
+    hp->ops         = ext_ops;
+    hp->ops_ptrs    = malloc(max_size * sizeof(struct ges_operator *));
     hp->indices     = malloc(max_size * sizeof(int));
-    if (!hp->ext_op_ptrs || !hp->ext_ops) {
+    hp->score_diffs = malloc(max_size * sizeof(double));
+    if (!hp->indices || !hp->ops_ptrs) {
         CAUSALITY_ERROR("Failed to allocate memory for heap!\n");
         return NULL;
     }
-    for (int i = 0; i < max_size; ++i)
-        hp->ext_op_ptrs[i] = hp->ext_ops + i;
     return hp;
 }
 
 void free_heap(struct ges_heap *hp)
 {
-    free(hp->ext_op_ptrs);
+    free(hp->ops_ptrs);
     free(hp->indices);
+    free(hp->score_diffs);
     free(hp);
 }
 
@@ -43,29 +43,29 @@ static int right(int i)
     return i * 2 + 2;
 }
 
-static inline void swap(struct ges_heap *hp, int i, int j)
+static void swap(struct ges_heap *hp, int i, int j)
 {
-    struct ges_operator *p = hp->ext_op_ptrs[i];
-    hp->ext_op_ptrs[i]     = hp->ext_op_ptrs[j];
-    hp->ext_op_ptrs[j]     = p;
-    int ext_i = hp->ext_op_ptrs[i] - hp->ext_ops;
-    int ext_j = hp->ext_op_ptrs[j] - hp->ext_ops;
-    int k     = hp->indices[ext_i];
+    struct ges_operator *op = hp->ops_ptrs[i];
+    double score_diff       = hp->score_diffs[i];
+    int ext_i               = hp->ops_ptrs[i] - hp->ops;
+    int ext_j               = hp->ops_ptrs[j] - hp->ops;
+    int k                   = hp->indices[ext_i];
+    hp->ops_ptrs[i]    = hp->ops_ptrs[j];
+    hp->score_diffs[i] = hp->score_diffs[j];
+    hp->ops_ptrs[j]    = op;
+    hp->score_diffs[j] = score_diff;
     hp->indices[ext_i] = hp->indices[ext_j];
     hp->indices[ext_j] = k;
 }
 
-/* todo make non recursive */
-static inline void min_heapify(struct ges_heap *hp, int i)
+static void min_heapify(struct ges_heap *hp, int i)
 {
     int l   = left(i);
     int r   = right(i);
     int min = i;
-    if (l < hp->size && (hp->ext_op_ptrs[l]->score_diff <
-                            hp->ext_op_ptrs[min]->score_diff))
+    if (l < hp->size && (hp->score_diffs[l] < hp->score_diffs[min]))
         min = l;
-    if (r < hp->size && (hp->ext_op_ptrs[r]->score_diff <
-                            hp->ext_op_ptrs[min]->score_diff))
+    if (r < hp->size && (hp->score_diffs[r] < hp->score_diffs[min]))
         min = r;
     if (i != min) {
         swap(hp, i, min);
@@ -76,9 +76,11 @@ static inline void min_heapify(struct ges_heap *hp, int i)
 void build_heap(struct ges_heap *hp)
 {
     hp->size = hp->max_size;
+    struct ges_operator * ops = hp->ops;
     for (int i = 0; i < hp->size; ++i) {
-        hp->ext_op_ptrs[i] = hp->ext_ops + i;
         hp->indices[i]     = i;
+        hp->ops_ptrs[i]    = &ops[i];
+        hp->score_diffs[i] = ops[i].score_diff;
     }
     for (int i = (hp->size - 1) / 2; i >= 0; --i)
         min_heapify(hp, i);
@@ -86,25 +88,25 @@ void build_heap(struct ges_heap *hp)
 
 static void pop_heap(struct ges_heap *hp)
 {
-    hp->ext_op_ptrs[0] = hp->ext_op_ptrs[hp->size - 1];
-    int ext_i = hp->ext_op_ptrs[0] - hp->ext_ops;
-    hp->indices[ext_i] = 0;
     hp->size      -= 1;
+    struct ges_operator *op = hp->ops_ptrs[hp->size];
+    hp->ops_ptrs[0]         = op;
+    hp->indices[op->y]      = 0;
+    hp->score_diffs[0]      = op->score_diff;
     min_heapify(hp, 0);
 }
 
-struct ges_operator *peek_heap(struct ges_heap *hp)
+struct ges_operator * peek_heap(struct ges_heap *hp)
 {
     if (hp->size < 1)
         return NULL;
-    return hp->ext_op_ptrs[0];
+    return hp->ops_ptrs[0];
 }
 
 static void decrease_key(struct ges_heap *hp, int i, double score_diff)
 {
-    hp->ext_op_ptrs[i]->score_diff = score_diff;
-    while (i > 0 && (hp->ext_op_ptrs[i]->score_diff <
-                        hp->ext_op_ptrs[parent(i)]->score_diff)) {
+    hp->score_diffs[i] = score_diff;
+    while (i > 0 && (hp->score_diffs[i] < hp->score_diffs[parent(i)])) {
         swap(hp, parent(i), i);
         i = parent(i);
     }
@@ -112,12 +114,10 @@ static void decrease_key(struct ges_heap *hp, int i, double score_diff)
 
 void insert_heap(struct ges_heap *hp, struct ges_operator *op)
 {
-    double score_diff = op->score_diff;
-    op->score_diff = DBL_MAX;
-    hp->ext_op_ptrs[hp->size] = op;
-    int ext_i =  op - hp->ext_ops;
-    hp->indices[ext_i] = hp->size;
-    decrease_key(hp, hp->size, score_diff);
+    hp->indices[op->y] = hp->size;
+    hp->ops_ptrs[hp->size]    = op;
+    hp->score_diffs[hp->size] = DBL_MAX;
+    decrease_key(hp, hp->size, op->score_diff);
     hp->size += 1;
 }
 
@@ -126,4 +126,14 @@ void remove_heap(struct ges_heap *hp, int node)
 {
     decrease_key(hp, hp->indices[node], -DBL_MAX);
     pop_heap(hp);
+}
+
+void print_heap(struct ges_heap *hp)
+{
+    printf("heap contents\n");
+    for (int i = 0; i < hp->size; ++i)
+        printf("%i --> %i; %f; %i\n", hp->ops_ptrs[i]->xp, hp->ops_ptrs[i]->y,
+                                      hp->score_diffs[i],
+                                      hp->indices[hp->ops_ptrs[i]->y]);
+    printf("end\n");
 }

@@ -5,11 +5,8 @@
 #include "headers/cgraph.h"
 #include "headers/meek.h"
 
-#define DEBUG 0
-
-#ifndef DEBUG
-#define DEBUG 0
-#endif
+#define IS_TAIL_NODE(t, node) ((t) & 1LLU << (node))
+#define IS_HEAD_NODE(h, node) ((h) & 1LLU << (node))
 
 /* pointer linked list */
 struct pll {
@@ -42,48 +39,75 @@ static void insert_pll(struct pll **p, struct ill *l)
     struct pll *t = malloc(sizeof(struct pll));
     t->p    = l;
     t->next = NULL;
-    if(*p)
+    if (*p)
         t->next = *p;
     *p = t;
 }
 
-void reorient(struct cgraph *cg, struct ges_operator op, int *visited, int *n)
+void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited,
+                                     int *n)
 {
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;
     undirect_reversible_parents(op.y, cg, &stack, &compelled, visited, n);
     stack = ill_insert_front(stack, op.y, 0);
-    if (op.type == DELETION) {
-        for (int i = 0; i < op.naxy_size; ++i) {
-            if ((op.h & 1 << i) == 1 << i) {
-                undirect_reversible_parents(op.naxy[i], cg, &stack, &compelled,
-                                                        visited, n);
-                stack = ill_insert_front(stack, op.naxy[i], 0);
-            }
-        }
-        meek_rules(cg, op.y, &stack, &compelled, visited, n);
-        for (int i = 0; i < op.naxy_size; ++i) {
-            if ((op.h & 1 << i) == 1 << i)
-                meek_rules(cg, op.naxy[i], &stack, &compelled, visited, n);
-        }
-    }
-    else if (op.type == INSERTION)
-        meek_rules(cg, op.y, &stack, &compelled, visited, n);
+    meek_rules(cg, op.y, &stack, &compelled, visited, n);
     while (stack) {
         /* pop the top */
-        int node = stack->key;
-        struct ill *p = stack;
+        int         node = stack->key;
+        struct ill *p    = stack;
         stack = stack->next;
         free(p);
-        undirect_reversible_parents(node, cg, &stack, &compelled, visited,
-                                          n);
+        undirect_reversible_parents(node, cg, &stack, &compelled, visited, n);
         meek_rules(cg, node, &stack, &compelled, visited, n);
     }
     /*
      * now that we've completed the pdag, we need to clean up the mess we made
      * when we set the edge values to negative */
     struct pll *p;
-    while(compelled) {
+    while (compelled) {
+        compelled->p->value = -compelled->p->value;
+        p = compelled->next;
+        free(compelled);
+        compelled = p;
+    }
+}
+
+
+void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited,
+                                     int *n)
+{
+    struct pll *compelled = NULL;
+    struct ill *stack     = NULL;
+    undirect_reversible_parents(op.y, cg, &stack, &compelled, visited, n);
+    stack = ill_insert_front(stack, op.y, 0);
+    for (int i = 0; i < op.naxy_size; ++i) {
+        if (IS_HEAD_NODE(op.h, i)) {
+            undirect_reversible_parents(op.naxy[i], cg, &stack, &compelled,
+                                                        visited, n);
+            stack = ill_insert_front(stack, op.naxy[i], 0);
+        }
+    }
+    meek_rules(cg, op.y, &stack, &compelled, visited, n);
+    for (int i = 0; i < op.naxy_size; ++i) {
+        if (IS_HEAD_NODE(op.h, i))
+            meek_rules(cg, op.naxy[i], &stack, &compelled, visited, n);
+    }
+    while (stack) {
+        /* pop the top */
+        int node = stack->key;
+        struct ill *p = stack;
+        stack = stack->next;
+        free(p);
+        undirect_reversible_parents(node, cg, &stack, &compelled, visited, n);
+        meek_rules(cg, node, &stack, &compelled, visited, n);
+    }
+    /*
+     * now that we've completed the pdag, we need to clean up the mess we made
+     * when we set the edge values to negative
+     */
+    struct pll *p;
+    while (compelled) {
         compelled->p->value = -compelled->p->value;
         p = compelled->next;
         free(compelled);
@@ -141,7 +165,6 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
         if (p->value > 0) {
             node_modified = 1;
             unorient_directed_edge(cg, parent, node);
-
             /* if parent or node haven't been marked as visited, mark them */
             if (!visited[parent]) {
                 visited[parent] = 1;
