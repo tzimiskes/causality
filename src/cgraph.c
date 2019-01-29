@@ -301,13 +301,13 @@ void print_cgraph(struct cgraph *cg)
     for (int i = 0; i < cg->n_nodes; ++i) {
         struct ill *p = cg->parents[i];
         while (p) {
-            //Rprintf("%i --> %i, %i\n", p->key, i, p->value);
+            printf("%i --> %i\n", p->key, i);
             p = p->next;
         }
         p = cg->spouses[i];
         while (p) {
-            //if (p->key < i)
-            //    Rprintf("%i --- %i, %i\n", p->key, i, p->value);
+            if (p->key < i)
+                printf("%i --- %i\n", p->key, i);
             p = p->next;
         }
     }
