@@ -167,8 +167,8 @@ static void find_compelled(struct cgraph *cg, int *sort)
         /* otherwise, label all unknown edges reversable */
         else {
             /*
-             * we need to create a because unorient_directed_edge operates in
-             * place, which would mess up the pointer if there were no copy
+             * we need to create cpy because unorient_directed_edge operates in
+             * place, which would mess the parents[y] pointer
              */
             struct ill *cpy = copy_ill(parents[y]);
             p = cpy;
