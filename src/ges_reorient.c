@@ -17,22 +17,20 @@ struct pll {
 static void undirect_reversible_parents(int node, struct cgraph *cg,
                                                   struct ill **stack,
                                                   struct pll **compelled,
-                                                  int *visited, int *n_visited);
+                                                  int *visited);
 
 static void push_adjacents(int node, struct cgraph *cg, struct ill **stack);
 
 void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
-                                   struct pll **compelled, int *visited,
-                                   int *n_visited, meek_rule _meek_rule);
+                                         struct pll **compelled, int *visited,
+                                         meek_rule _meek_rule);
 
 
 static void meek_rules(struct cgraph *cg, int x, struct ill **stack,
-                                          struct pll **compelled, int *visited,
-                                          int *n_visited);
+                                          struct pll **compelled, int *visited);
 
 void orient(struct cgraph *cg, int x, int y, struct ill **stack,
-                               struct pll **compelled, int *visited,
-                               int *n_visited);
+                               struct pll **compelled, int *visited);
 
 static void insert_pll(struct pll **p, struct ill *l)
 {
@@ -44,22 +42,21 @@ static void insert_pll(struct pll **p, struct ill *l)
     *p = t;
 }
 
-void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited,
-                                     int *n)
+void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited)
 {
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;
-    undirect_reversible_parents(op.y, cg, &stack, &compelled, visited, n);
+    undirect_reversible_parents(op.y, cg, &stack, &compelled, visited);
     stack = ill_insert_front(stack, op.y, 0);
-    meek_rules(cg, op.y, &stack, &compelled, visited, n);
+    meek_rules(cg, op.y, &stack, &compelled, visited);
     while (stack) {
         /* pop the top */
         int         node = stack->key;
         struct ill *p    = stack;
         stack = stack->next;
         free(p);
-        undirect_reversible_parents(node, cg, &stack, &compelled, visited, n);
-        meek_rules(cg, node, &stack, &compelled, visited, n);
+        undirect_reversible_parents(node, cg, &stack, &compelled, visited);
+        meek_rules(cg, node, &stack, &compelled, visited);
     }
     /*
      * now that we've completed the pdag, we need to clean up the mess we made
@@ -74,24 +71,23 @@ void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited,
 }
 
 
-void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited,
-                                     int *n)
+void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited)
 {
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;
-    undirect_reversible_parents(op.y, cg, &stack, &compelled, visited, n);
+    undirect_reversible_parents(op.y, cg, &stack, &compelled, visited);
     stack = ill_insert_front(stack, op.y, 0);
     for (int i = 0; i < op.naxy_size; ++i) {
         if (IS_HEAD_NODE(op.h, i)) {
             undirect_reversible_parents(op.naxy[i], cg, &stack, &compelled,
-                                                        visited, n);
+                                                        visited);
             stack = ill_insert_front(stack, op.naxy[i], 0);
         }
     }
-    meek_rules(cg, op.y, &stack, &compelled, visited, n);
+    meek_rules(cg, op.y, &stack, &compelled, visited);
     for (int i = 0; i < op.naxy_size; ++i) {
         if (IS_HEAD_NODE(op.h, i))
-            meek_rules(cg, op.naxy[i], &stack, &compelled, visited, n);
+            meek_rules(cg, op.naxy[i], &stack, &compelled, visited);
     }
     while (stack) {
         /* pop the top */
@@ -99,8 +95,8 @@ void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited,
         struct ill *p = stack;
         stack = stack->next;
         free(p);
-        undirect_reversible_parents(node, cg, &stack, &compelled, visited, n);
-        meek_rules(cg, node, &stack, &compelled, visited, n);
+        undirect_reversible_parents(node, cg, &stack, &compelled, visited);
+        meek_rules(cg, node, &stack, &compelled, visited);
     }
     /*
      * now that we've completed the pdag, we need to clean up the mess we made
@@ -124,7 +120,7 @@ void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited,
 static void undirect_reversible_parents(int node, struct cgraph *cg,
                                                   struct ill **stack,
                                                   struct pll **compelled,
-                                                  int *visited,  int *n_visited)
+                                                  int *visited)
 {
     struct ill *reversible = NULL;
     struct ill *p1 = cg->parents[node];
@@ -166,14 +162,8 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
             node_modified = 1;
             unorient_directed_edge(cg, parent, node);
             /* if parent or node haven't been marked as visited, mark them */
-            if (!visited[parent]) {
-                visited[parent] = 1;
-                *n_visited     += 1;
-            }
-            if (!visited[node]) {
-                visited[node] = 1;
-                *n_visited   += 1;
-            }
+            visited[parent] = 1;
+            visited[node] = 1;
         }
         p = reversible;
         reversible = reversible->next;
@@ -206,8 +196,7 @@ static void push_adjacents(int node, struct cgraph *cg, struct ill **stack)
 }
 
 void orient(struct cgraph *cg, int x, int y, struct ill **stack,
-                                     struct pll **compelled, int *visited,
-                                     int *n_visited)
+                                     struct pll **compelled, int *visited)
 {
     orient_undirected_edge(cg, x, y);
     /* get the newly created edge. add it to complled, and mark it compelled */
@@ -215,21 +204,15 @@ void orient(struct cgraph *cg, int x, int y, struct ill **stack,
     p->value = -(p->value);
     insert_pll(compelled, p);
     /* if x or y are unvisited, marked them as visited */
-    if (!visited[x]) {
-        visited[x] = 1;
-        *n_visited     += 1;
-    }
-    if (!visited[y]) {
-        visited[y] = 1;
-        *n_visited   += 1;
-    }
+    visited[x] = 1;
+    visited[y] = 1;
     /* we need to look at y (again) now that we added a new compelled edge */
     *stack = ill_insert_front(*stack, y, 0);
 }
 
 void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
                                          struct pll **compelled, int *visited,
-                                         int *n_visited, meek_rule _meek_rule)
+                                         meek_rule _meek_rule)
 {
     /*
      * we need to create a copy of spouses incase an edge is
@@ -242,20 +225,19 @@ void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
     while(p) {
         int y = p->key;
         if(_meek_rule(cg, x, y))
-            orient(cg, x, y, stack, compelled, visited, n_visited);
+            orient(cg, x, y, stack, compelled, visited);
         else if(_meek_rule(cg, y, x))
-            orient(cg, y, x, stack, compelled, visited, n_visited);
+            orient(cg, y, x, stack, compelled, visited);
         p = p->next;
     }
     ill_free(cpy);
 }
 
 void meek_rules(struct cgraph *cg, int x, struct ill **stack,
-                                     struct pll **compelled, int *visited,
-                                     int *n_visited)
+                                     struct pll **compelled, int *visited)
 {
-    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek_rule1);
-    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek_rule2);
-    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek_rule3);
-    apply_rule_local(cg, x, stack, compelled, visited, n_visited, meek_rule4);
+    apply_rule_local(cg, x, stack, compelled, visited, meek_rule1);
+    apply_rule_local(cg, x, stack, compelled, visited, meek_rule2);
+    apply_rule_local(cg, x, stack, compelled, visited, meek_rule3);
+    apply_rule_local(cg, x, stack, compelled, visited, meek_rule4);
 }

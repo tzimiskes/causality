@@ -145,23 +145,21 @@ static void update_operator_info(struct cgraph *cg, struct ges_operator *op)
 }
 
 static void update_insertion_operator(struct cgraph *cg, struct ges_operator *op,
-                                                         struct ges_score gs)
+                                                         struct ges_score gs,
+                                                         int *cycle_test_mem)
 {
     op->score_diff = DEFAULT_SCORE_DIFF;
-    /* preallocate memory for cycle_created */
-    int *mem = malloc(cg->n_nodes * 2 * sizeof(int));
     /* precalculate the covariances common to all calculations */
-    int y = op->y;
-    apply_optimization1(cg, y, cg->n_nodes, &gs);
+    apply_optimization1(cg, op->y, cg->n_nodes, &gs);
     for (int x = 0; x < cg->n_nodes; ++x) {
-        if (x == y || adjacent_in_cgraph(cg, x, y))
+        if (x == op->y || adjacent_in_cgraph(cg, x, op->y))
             continue;
         apply_optimization2(cg, x, &gs);
-        struct ges_operator o = {x, y, {0}, NULL, NULL, op->parents,
+        struct ges_operator o = {x, op->y, {0}, NULL, NULL, op->parents,
                                     op->n_parents, 0, 0, DEFAULT_SCORE_DIFF};
         /* Split y's neighbors into set (nonadj to x) and naxy (adj to x) */
         partition_neighbors(cg, &o);
-        score_insertion_operator(cg, &o, gs, mem);
+        score_insertion_operator(cg, &o, gs, cycle_test_mem);
         if (o.score_diff < op->score_diff) {
             free(op->set);
             free(op->naxy);
@@ -172,7 +170,6 @@ static void update_insertion_operator(struct cgraph *cg, struct ges_operator *op
             free(o.naxy);
         }
     }
-    free(mem);
     if (gs.gsf == ges_bic_score)
         free_ges_score_mem(gs.gsm);
 }
@@ -283,7 +280,7 @@ static void apply_deletion_operator(struct cgraph *cg, struct ges_operator op)
  * pattern that generated dataset in ges_score. The algorithm inputs are the
  * ges_score structure, score, and cg, a cgraph. score contains the dataset,
  * function pointer to the scoring function, and other related information. cg
- * is a point to an (empty, for now) causality graph that will be filled in by
+ * is a pointer to an (empty, for now) causality graph that will be filled in by
  * the time the algorithm terminates. ccf_ges returns the score of the pattern.
  */
 double ccf_ges(struct ges_score score, struct cgraph *cg)
@@ -292,7 +289,7 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
     * The number of processors ges is going to use. Right now it is 1,
     * but this will eventually be passed in as an argument to ges
     */
-    int nprocs = 1;
+    int    nprocs      = 1;
     int    nvar        = cg->n_nodes;
     double graph_score = 0.0f;
     /* TODO */
@@ -301,52 +298,53 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
     /* FES STEP 0: For all x,y score x --> y */
     for (int y = 0; y < nvar; ++y) {
         double min_score = DEFAULT_SCORE_DIFF;
-        int    x         = -1;
+        int    xp        = -1;
         apply_optimization1(cg, y, y, &score);
-        for (int i = 0; i < y; ++i) {
-            double score_diff = score.gsf(score.df, i, y, NULL, 0, score.args,
+        for (int x = 0; x < y; ++x) {
+            double score_diff = score.gsf(score.df, x, y, NULL, 0, score.args,
                                                     score.gsm);
             if (score_diff < min_score) {
                 min_score = score_diff;
-                x         = i;
+                xp         = x;
             }
         }
         if (score.gsf == ges_bic_score)
             free_ges_score_mem(score.gsm);
-        ops[y].xp         = x;
+        ops[y].xp         = xp;
         ops[y].y          = y;
         ops[y].score_diff = min_score;
     }
     /* TODO */
     build_heap(heap);
     /* FORWARD EQUIVALENCE SEARCH (FES) */
-    struct cgraph *cpy   = copy_cgraph(cg);
-    int           *mem   = malloc(nvar * 2 * nprocs * sizeof(int));
-    int           *nodes = mem;
+    struct cgraph *cpy            = copy_cgraph(cg);
+    int           *cycle_test_mem = malloc(nvar * 2 * nprocs * sizeof(int));
+    int           *nodes          = cycle_test_mem;
     /* extract the operator with the best score from the heap */
     struct ges_operator *op;
     while ((op = peek_heap(heap))->score_diff <= 0.0f) {
-        if (!is_valid_insertion(cg, *op, mem)) {
+        if (!is_valid_insertion(cg, *op, cycle_test_mem)) {
             remove_heap(heap, op->y);
-            update_insertion_operator(cg, op, score);
+            update_insertion_operator(cg, op, score, cycle_test_mem);
             insert_heap(heap, op);
             continue;
         }
         graph_score += op->score_diff;
         apply_insertion_operator(cg, *op);
         int n = 0;
-        reorient_and_determine_operators_to_update(cpy, cg, *op, nodes, &n);
+        reorient_and_determine_insertion_operators_to_update(cpy, cg, *op,
+                                                                  nodes, &n);
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
         for (int i = 0; i < n; ++i) {
             new_ops[i] = ops[nodes[i]];
             remove_heap(heap, nodes[i]);
             update_operator_info(cg, &new_ops[i]);
         }
-        /* This step (updating) can be paralellized */
+        /* This step (updating) can be parallelized*/
         for (int i = 0; i < n; ++i)
-            update_insertion_operator(cg, &new_ops[i], score);
+            update_insertion_operator(cg, &new_ops[i], score, cycle_test_mem);
         for (int i = 0; i < n; ++i) {
-            ops[nodes[i]] = new_ops[i]; /* must come after remove_heap */
+            ops[nodes[i]] = new_ops[i];
             insert_heap(heap, &ops[nodes[i]]);
         }
         free(new_ops);
@@ -369,10 +367,10 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
             continue;
         }
         graph_score += op->score_diff;
-
         apply_deletion_operator(cg, *op);
         int n = 0;
-        reorient_and_determine_operators_to_update(cpy, cg, *op, nodes, &n);
+        reorient_and_determine_deletion_operators_to_update(cpy, cg, *op,
+                                                                 nodes, &n);
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
         for (int i = 0; i < n; ++i)
             printf("%i ", nodes[i]);
@@ -396,7 +394,7 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
      * Clean up clean up
      * everybody do your share.
      */
-    free(mem);
+    free(cycle_test_mem);
     free_heap(heap);
     free_cgraph(cpy);
     for (int i = 0; i < nvar; ++i) {

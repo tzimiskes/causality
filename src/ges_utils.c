@@ -202,30 +202,30 @@ void calculate_parents(struct cgraph *cg, struct ges_operator *op)
     }
 }
 
-/* TODO */
-static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
-                                                           struct ges_operator op,
-                                                           int *visited,
-                                                           int n_visited,
-                                                           int *nodes,
-                                                           int *n_nodes)
+/*
+* reorient_and_determine_operators_to_update reorients the cgraph after
+* applying a ges operator (insertion or deletion). It also passes along the
+* information from the reorient functions in ges_reorient.c to
+* deterimine_nodes_to_recalc to get the nodes and the number of nodes
+* we need to recalculate.
+*/
+void reorient_and_determine_insertion_operators_to_update(struct cgraph *cpy,
+                                                          struct cgraph *cg,
+                                                          struct ges_operator op,
+                                                          int *nodes, int *n)
 {
-    int n = 0;
+    int n_nodes = cg->n_nodes;
+    int m       = 0;
+    int *visited  = nodes + n_nodes;
+    memset(visited, 0, n_nodes * sizeof(int));
+    reorient_fes(cg, op, visited);
     visited[op.y]  = 1;
     visited[op.xp] = 1;
-    if (op.type == INSERTION) {
-        for (int i = 0; i < op.set_size; ++i) {
-            if (IS_TAIL_NODE(op.t, i))
+    for (int i = 0; i < op.set_size; ++i) {
+        if (IS_TAIL_NODE(op.t, i))
                 visited[op.set[i]] = 1;
-        }
     }
-    else {
-        for (int i = 0; i < op.naxy_size; ++i) {
-            if (IS_HEAD_NODE(op.h, i))
-                visited[op.naxy[i]] = 1;
-        }
-    }
-    for (int i = 0; i < cg->n_nodes; ++i) {
+    for (int i = 0; i < n_nodes; ++i) {
         if (!visited[i])
             continue;
         if (!identical_in_cgraphs(cg, cpy, i)) {
@@ -233,34 +233,52 @@ static void deterimine_nodes_to_recalc(struct cgraph *cpy, struct cgraph *cg,
             cpy->parents[i] = copy_ill(cg->parents[i]);
             ill_free(cpy->spouses[i]);
             cpy->spouses[i] = copy_ill(cg->spouses[i]);
-            n++;
+            m++;
         }
         else
             visited[i] = 0;
     }
     int j = 0;
-    for (int i = 0; i < cg->n_nodes; ++i) {
+    for (int i = 0; i < n_nodes; ++i) {
         if (visited[i])
             nodes[j++] = i;
     }
-    *n_nodes = n;
+    *n = m;
 }
 
-/*
- * reorient_and_determine_operators_to_update reorients the cgraph after
- * applying a ges operator (insertion or deletion). It also passes along the
- * information from the reorient functions in ges_reorient.c to
- * deterimine_nodes_to_recalc to get the nodes and the number of nodes
- * we need to recalculate.
- */
-void reorient_and_determine_operators_to_update(struct cgraph *cpy,
-                                                struct cgraph *cg,
-                                                struct ges_operator op,
-                                                int *nodes, int *n)
+void reorient_and_determine_deletion_operators_to_update(struct cgraph *cpy,
+                                                         struct cgraph *cg,
+                                                         struct ges_operator op,
+                                                         int *nodes, int *n)
 {
-    int n_visited = 0;
-    int *visited  = nodes + cg->n_nodes;
-    memset(visited, 0, cg->n_nodes * sizeof (int));
-    reorient(cg, op, visited, &n_visited);
-    deterimine_nodes_to_recalc(cpy, cg, op, visited, n_visited, nodes, n);
+    int  n_nodes = cg->n_nodes;
+    int  m       = 0;
+    int *visited = nodes + n_nodes;
+    memset(visited, 0, n_nodes * sizeof(int));
+    reorient_bes(cg, op, visited);
+    visited[op.y]  = 1;
+    visited[op.xp] = 1;
+    for (int i = 0; i < op.naxy_size; ++i) {
+        if (IS_HEAD_NODE(op.h, i))
+            visited[op.naxy[i]] = 1;
+    }
+    for (int i = 0; i < n_nodes; ++i) {
+        if (!visited[i])
+            continue;
+        if (!identical_in_cgraphs(cg, cpy, i)) {
+            ill_free(cpy->parents[i]);
+            cpy->parents[i] = copy_ill(cg->parents[i]);
+            ill_free(cpy->spouses[i]);
+            cpy->spouses[i] = copy_ill(cg->spouses[i]);
+            m++;
+        }
+        else
+            visited[i] = 0;
+    }
+    int j = 0;
+    for (int i = 0; i < n_nodes; ++i) {
+        if (visited[i])
+            nodes[j++] = i;
+    }
+    *n = m;
 }
