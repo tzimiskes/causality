@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "headers/causality.h"
 #include "headers/int_linked_list.h"
@@ -44,6 +45,7 @@ static void insert_pll(struct pll **p, struct ill *l)
 
 void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited)
 {
+    memset(visited, 0, cg->n_nodes * sizeof(int));
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;
     undirect_reversible_parents(op.y, cg, &stack, &compelled, visited);
@@ -73,6 +75,7 @@ void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited)
 
 void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited)
 {
+    memset(visited, 0, cg->n_nodes * sizeof(int));
     struct pll *compelled = NULL;
     struct ill *stack     = NULL;
     undirect_reversible_parents(op.y, cg, &stack, &compelled, visited);

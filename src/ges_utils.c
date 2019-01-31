@@ -27,27 +27,28 @@ void free_ges_score_mem(struct ges_score_mem gsm)
  * valid_fes_clique checks to see if the set TAIL_SET U NAXY constructed from
  * the given (INSERTION) operator forms a clique.
  */
-int valid_fes_clique(struct cgraph *cg, struct ges_operator op)
+int valid_fes_clique(struct cgraph *cg, struct ges_operator *op)
 {
-    for (int i = 0; i < op.naxy_size; ++i) {
+    struct ges_operator o = *op;
+    for (int i = 0; i < o.naxy_size; ++i) {
         for (int j = 0; j < i; ++j) {
-            if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j]))
+            if (!adjacent_in_cgraph(cg, o.naxy[i], o.naxy[j]))
                 return 0;
         }
-        for (int j = 0; j < op.set_size; ++j) {
-            if (!IS_TAIL_NODE(op.t, j))
+        for (int j = 0; j < o.set_size; ++j) {
+            if (!IS_TAIL_NODE(o.t, j))
                 continue;
-            if (!adjacent_in_cgraph(cg, op.naxy[i], op.set[j]))
+            if (!adjacent_in_cgraph(cg, o.naxy[i], o.set[j]))
                 return 0;
         }
     }
-    for (int i = 0; i < op.set_size; ++i) {
-        if (!IS_TAIL_NODE(op.t, i))
+    for (int i = 0; i < o.set_size; ++i) {
+        if (!IS_TAIL_NODE(o.t, i))
             continue;
         for (int j = 0; j < i; ++j) {
-            if (!IS_TAIL_NODE(op.t, j))
+            if (!IS_TAIL_NODE(o.t, j))
                 continue;
-            if (!adjacent_in_cgraph(cg, op.set[i], op.set[j]))
+            if (!adjacent_in_cgraph(cg, o.set[i], o.set[j]))
                 return 0;
         }
     }
@@ -57,15 +58,16 @@ int valid_fes_clique(struct cgraph *cg, struct ges_operator op)
  * valid_fes_clique checks to see if the given ges operator's NAXY/H
  * forms a clique.
  */
-int valid_bes_clique(struct cgraph *cg, struct ges_operator op)
+int valid_bes_clique(struct cgraph *cg, struct ges_operator *op)
 {
-    for (int i = 0; i < op.naxy_size; ++i) {
-        if (IS_HEAD_NODE(op.h, i))
+    struct ges_operator o = *op;
+    for (int i = 0; i < o.naxy_size; ++i) {
+        if (IS_HEAD_NODE(o.h, i))
             continue;
         for (int j = 0; j < i; ++j) {
-            if (IS_HEAD_NODE(op.h, j))
+            if (IS_HEAD_NODE(o.h, j))
                 continue;
-            if (!adjacent_in_cgraph(cg, op.naxy[i], op.naxy[j])) {
+            if (!adjacent_in_cgraph(cg, o.naxy[i], o.naxy[j])) {
                 return 0;
             }
         }
@@ -93,7 +95,7 @@ static inline void mark(int i, unsigned char *marked)
  * would create a cycle in cg. This is the second validity test for the
  * forward equivalence search of GES. mem is passed in as an optimization.
  */
-int cycle_created(struct cgraph *cg, struct ges_operator op, int *mem)
+int cycle_created(struct cgraph *cg, struct ges_operator *op, int *mem)
 {
     /*
      * First, we grab memory from mem and use it for recording whether or not
@@ -106,23 +108,23 @@ int cycle_created(struct cgraph *cg, struct ges_operator op, int *mem)
      * if they are unmarked, so marking every node in s_u_naxy accomplishes
      * this (ie ignores the path because it goes into s_u_naxy).
      */
-    for (int i = 0; i < op.naxy_size; ++i)
-        mark(op.naxy[i], marked);
-    for (int i = 0; i < op.set_size; ++i) {
-        if ((op.t & 1 << i)== 1 << i)
-            mark(op.set[i], marked);
+    for (int i = 0; i < op->naxy_size; ++i)
+        mark(op->naxy[i], marked);
+    for (int i = 0; i < op->set_size; ++i) {
+        if (IS_TAIL_NODE(op->t, i))
+            mark(op->set[i], marked);
     }
     /* Grab memory from mem to use as a queue. We don't need to zero this. */
     int *queue      = mem + cg->n_nodes;
     int  queue_size = 1;
-    queue[0] = op.y;
+    queue[0] = op->y;
     for (int i = 0; i < queue_size; ++i) {
         int node = queue[i];
         /* Add the node's unmarked spouses and children to the queue */
         struct ill *p = cg->children[node];
         while (p) {
             /* If the next node is x we have found a cycle and can return 1 */
-            if (p->key == op.xp)
+            if (p->key == op->xp)
                 return 1;
             if (!is_marked(p->key, marked)) {
                 mark(p->key, marked);
@@ -132,7 +134,7 @@ int cycle_created(struct cgraph *cg, struct ges_operator op, int *mem)
         }
         p = cg->spouses[node];
         while (p) {
-            if (p->key == op.xp)
+            if (p->key == op->xp)
                 return 1;
             if (!is_marked(p->key, marked)) {
                 mark(p->key, marked);
@@ -209,21 +211,18 @@ void calculate_parents(struct cgraph *cg, struct ges_operator *op)
 * deterimine_nodes_to_recalc to get the nodes and the number of nodes
 * we need to recalculate.
 */
-void reorient_and_determine_insertion_operators_to_update(struct cgraph *cpy,
-                                                          struct cgraph *cg,
-                                                          struct ges_operator op,
-                                                          int *nodes, int *n)
+int determine_insertion_operators_to_update(int *nodes, struct cgraph *cpy,
+                                                        struct cgraph *cg,
+                                                        struct ges_operator *op,
+                                                        int *visited)
 {
     int n_nodes = cg->n_nodes;
-    int m       = 0;
-    int *visited  = nodes + n_nodes;
-    memset(visited, 0, n_nodes * sizeof(int));
-    reorient_fes(cg, op, visited);
-    visited[op.y]  = 1;
-    visited[op.xp] = 1;
-    for (int i = 0; i < op.set_size; ++i) {
-        if (IS_TAIL_NODE(op.t, i))
-                visited[op.set[i]] = 1;
+    int n = 0;
+    visited[op->y]  = 1;
+    visited[op->xp] = 1;
+    for (int i = 0; i < op->set_size; ++i) {
+        if (IS_TAIL_NODE(op->t, i))
+                visited[op->set[i]] = 1;
     }
     for (int i = 0; i < n_nodes; ++i) {
         if (!visited[i])
@@ -233,34 +232,24 @@ void reorient_and_determine_insertion_operators_to_update(struct cgraph *cpy,
             cpy->parents[i] = copy_ill(cg->parents[i]);
             ill_free(cpy->spouses[i]);
             cpy->spouses[i] = copy_ill(cg->spouses[i]);
-            m++;
+            nodes[n++] = i;
         }
-        else
-            visited[i] = 0;
     }
-    int j = 0;
-    for (int i = 0; i < n_nodes; ++i) {
-        if (visited[i])
-            nodes[j++] = i;
-    }
-    *n = m;
+    return n;
 }
 
-void reorient_and_determine_deletion_operators_to_update(struct cgraph *cpy,
-                                                         struct cgraph *cg,
-                                                         struct ges_operator op,
-                                                         int *nodes, int *n)
+int determine_deletion_operators_to_update(int *nodes, struct cgraph *cpy,
+                                                       struct cgraph *cg,
+                                                       struct ges_operator *op,
+                                                       int *visited)
 {
     int  n_nodes = cg->n_nodes;
-    int  m       = 0;
-    int *visited = nodes + n_nodes;
-    memset(visited, 0, n_nodes * sizeof(int));
-    reorient_bes(cg, op, visited);
-    visited[op.y]  = 1;
-    visited[op.xp] = 1;
-    for (int i = 0; i < op.naxy_size; ++i) {
-        if (IS_HEAD_NODE(op.h, i))
-            visited[op.naxy[i]] = 1;
+    int  n       = 0;
+    visited[op->y]  = 1;
+    visited[op->xp] = 1;
+    for (int i = 0; i < op->naxy_size; ++i) {
+        if (IS_HEAD_NODE(op->h, i))
+            visited[op->naxy[i]] = 1;
     }
     for (int i = 0; i < n_nodes; ++i) {
         if (!visited[i])
@@ -270,7 +259,7 @@ void reorient_and_determine_deletion_operators_to_update(struct cgraph *cpy,
             cpy->parents[i] = copy_ill(cg->parents[i]);
             ill_free(cpy->spouses[i]);
             cpy->spouses[i] = copy_ill(cg->spouses[i]);
-            m++;
+            n++;
         }
         else
             visited[i] = 0;
@@ -280,5 +269,5 @@ void reorient_and_determine_deletion_operators_to_update(struct cgraph *cpy,
         if (visited[i])
             nodes[j++] = i;
     }
-    *n = m;
+    return n;
 }
