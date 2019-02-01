@@ -39,7 +39,7 @@ struct dataframe prepare_df(SEXP Df, SEXP States)
             memcpy(df.df[i], INTEGER(Df_i), df.nobs * sizeof(int));
         }
         else {
-            df.df[i] = malloc(df.nobs * sizeof(double));
+            posix_memalign(&df.df[i], 32, df.nobs * sizeof(double));
             memcpy(df.df[i], REAL(Df_i), df.nobs * sizeof(double));
             normalize(df.df[i], df.nobs);
         }

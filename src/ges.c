@@ -57,7 +57,7 @@ static int is_valid_deletion(struct cgraph *cg, struct ges_operator *op)
  * The function also modifies op by setting the score_diff field to the best
  * score difference. If there is no valid T, then op is unmodified.
  */
-static void score_insertion_operator(struct cgraph *cg, struct ges_operator *op,
+void score_insertion_operator(struct cgraph *cg, struct ges_operator *op,
                                                         struct ges_score gs,
                                                         int *cycle_test_mem)
 {
@@ -125,14 +125,14 @@ void score_deletion_operator(struct cgraph *cg, struct ges_operator *op,
     }
 }
 
-static void apply_optimization1(struct cgraph *cg, int y, int n,
+void apply_optimization1(struct cgraph *cg, int y, int n,
                                                    struct ges_score *gs)
 {
     if (gs->gsf == ges_bic_score)
         return ges_bic_optimization1(cg, y, n, gs);
 }
 
-static void apply_optimization2(struct cgraph *cg, int x, struct ges_score *gs)
+void apply_optimization2(struct cgraph *cg, int x, struct ges_score *gs)
 {
     if (gs->gsf == ges_bic_score)
         return ges_bic_optimization2(x, gs);
@@ -145,7 +145,7 @@ static void update_operator_info(struct cgraph *cg, struct ges_operator *op)
 
 }
 
-static void update_insertion_operator(struct cgraph *cg, struct ges_operator *op,
+void update_insertion_operator(struct cgraph *cg, struct ges_operator *op,
                                                          struct ges_score gs,
                                                          int *cycle_test_mem)
 {
@@ -176,7 +176,7 @@ static void update_insertion_operator(struct cgraph *cg, struct ges_operator *op
 }
 
 
-static void update_deletion_operator(struct cgraph *cg, struct ges_operator *op,
+void update_deletion_operator(struct cgraph *cg, struct ges_operator *op,
                                                         struct ges_score gs)
 {
     op->score_diff = DEFAULT_SCORE_DIFF;
@@ -281,19 +281,20 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
     struct ges_heap     *heap = create_heap(nvar, ops);
     /* FES STEP 0: For all x,y score x --> y */
     for (int y = 0; y < nvar; ++y) {
+        struct ges_score local_score = score;
         double min_score = DEFAULT_SCORE_DIFF;
         int    xp        = -1;
-        apply_optimization1(cg, y, y, &score);
+        apply_optimization1(cg, y, y, &local_score);
         for (int x = 0; x < y; ++x) {
             double score_diff = score.gsf(score.df, x, y, NULL, 0, score.args,
-                                                    score.gsm);
+                                                    local_score.gsm);
             if (score_diff < min_score) {
                 min_score = score_diff;
                 xp         = x;
             }
         }
         if (score.gsf == ges_bic_score)
-            free_ges_score_mem(score.gsm);
+            free_ges_score_mem(local_score.gsm);
         ops[y].xp         = xp;
         ops[y].y          = y;
         ops[y].score_diff = min_score;
@@ -324,7 +325,6 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         for (int i = 0; i < n; ++i) {
             new_ops[i] = ops[nodes[i]];
             remove_heap(heap, nodes[i]);
-            /* recalculates what the parents of the operator are */
             update_operator_info(cg, &new_ops[i]);
         }
         /* This step (updating) can be parallelized*/
