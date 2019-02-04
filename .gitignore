@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 ..Rcheck/
-src/*.o
+src/**/*.o
 src/*.so
 src/*.dll
 .clang_complete
