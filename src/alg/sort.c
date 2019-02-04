@@ -9,9 +9,9 @@
 #include <setjmp.h> /* for error handling */
 #include <stdlib.h>
 
-#include "headers/causality.h"
-#include "headers/cgraph.h"
-#include "headers/int_linked_list.h"
+#include "../headers/causality.h"
+#include "../headers/cgraph.h"
+#include "../headers/int_linked_list.h"
 
 #define UNMARKED   0
 #define MARKED     1

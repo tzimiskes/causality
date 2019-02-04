@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
-#include "headers/causality.h"
-#include "headers/int_linked_list.h"
+#include "../headers/causality.h"
+#include "../headers/int_linked_list.h"
 
 static struct ill * ill_instantiate(int key, int value)
 {

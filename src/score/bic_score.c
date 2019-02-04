@@ -13,9 +13,9 @@
 /* R interface to LAPACK */
 #include <R_ext/Lapack.h>
 
-#include "headers/causality.h"
-#include "headers/dataframe.h"
-#include "headers/scores.h"
+#include "../headers/causality.h"
+#include "../headers/dataframe.h"
+#include "../headers/scores.h"
 
 #define ERROR_THRESH     1e-9
 
@@ -140,7 +140,7 @@ void fcov_xx(double *cov_xx, double **x, int n, int m)
  {
      y = __builtin_assume_aligned(y, 16);
      double inv_nm1 = 1.0f / (n - 1.0f);
-    // #pragma omp parallel for num_threads(4) if (m > 10)
+     #pragma omp parallel for num_threads(2) if (m > 8)
      for (int i = 0; i < m; ++i) {
          double * x_i = __builtin_assume_aligned(x[i], 16);
          double sum = 0.0f;

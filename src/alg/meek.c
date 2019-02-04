@@ -8,10 +8,10 @@
 
 #include <stdlib.h>
 
-#include "headers/causality.h"
-#include "headers/int_linked_list.h"
-#include "headers/cgraph.h"
-#include "headers/meek.h"
+#include "../headers/causality.h"
+#include "../headers/int_linked_list.h"
+#include "../headers/cgraph.h"
+#include "../headers/meek.h"
 
 void ccf_meek(struct cgraph *cg);
 void apply_rule(struct cgraph *cg, int x, struct ill **stack,

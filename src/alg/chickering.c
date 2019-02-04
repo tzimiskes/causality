@@ -9,9 +9,9 @@
 
 #include <stdlib.h>
 
-#include "headers/causality.h"
-#include "headers/cgraph.h"
-#include "headers/int_linked_list.h"
+#include "../headers/causality.h"
+#include "../headers/cgraph.h"
+#include "../headers/int_linked_list.h"
 
 #define UNKNOWN   -1
 #define COMPELLED  1 /* This means directed */

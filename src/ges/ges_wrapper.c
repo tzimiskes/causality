@@ -1,9 +1,9 @@
-#include "headers/causalityRWrapper.h"
-#include "headers/causality.h"
-#include "headers/cgraph.h"
-#include "headers/dataframe.h"
-#include "headers/scores.h"
-#include "headers/ges.h"
+#include "../headers/causalityRWrapper.h"
+#include "../headers/causality.h"
+#include "../headers/cgraph.h"
+#include "../headers/dataframe.h"
+#include "../headers/scores.h"
+#include "../headers/ges.h"
 
 /*
  * normalize continuous variables to help speed up scoring of continuous
@@ -48,8 +48,8 @@ struct dataframe prepare_df(SEXP Df, SEXP States)
 }
 
 
-SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
-                              SEXP FloatingArgs, SEXP IntegerArgs)
+SEXP causalityGES(SEXP Df, SEXP ScoreType, SEXP States,
+                           SEXP FloatingArgs, SEXP IntegerArgs)
 {
     /*
      * calculate the integer arguments and floating point arguments for the
@@ -84,7 +84,7 @@ SEXP ccf_ges_wrapper(SEXP Df, SEXP ScoreType, SEXP States,
     /* Create R causality.graph object from cg */
     SEXP Output = PROTECT(allocVector(VECSXP, 2));
     SEXP Names  = PROTECT(getAttrib(Df, R_NamesSymbol));
-    SET_VECTOR_ELT(Output, 0, causalityGraphFromCgraph(cg, Names));
+    SET_VECTOR_ELT(Output, 0, causality_graph_from_cgraph(cg, Names));
     SET_VECTOR_ELT(Output, 1, ScalarReal(graph_score));
 
     free_cgraph(cg);

@@ -12,11 +12,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "headers/causality.h"
-#include "headers/cgraph.h"
-#include "headers/heap.h"
-#include "headers/dataframe.h"
-#include "headers/ges.h"
+#include "../headers/causality.h"
+#include "../headers/cgraph.h"
+#include "../headers/heap.h"
+#include "../headers/dataframe.h"
+#include "../headers/ges.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -327,7 +327,7 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
             remove_heap(heap, nodes[i]);
             update_operator_info(cg, &new_ops[i]);
         }
-        /* This step (updating) can be parallelized*/
+        /* This step (updating) can be parallelized */
         for (int i = 0; i < n; ++i)
             update_insertion_operator(cg, &new_ops[i], score, cycle_test_mem);
         for (int i = 0; i < n; ++i) {

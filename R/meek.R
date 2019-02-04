@@ -27,7 +27,7 @@
 #'
 #' Pearl, Judea. Causality. Cambridge university press, 2009.
 #' @export
-#' @useDynLib causality ccf_meek_wrapper
+#' @useDynLib causality causalityMeek
 meek <- function(graph) {
   if (!is.cgraph(graph))
     stop("Input is not a cgraph")
@@ -38,7 +38,7 @@ meek <- function(graph) {
     stop("The meek rules can only be run on nonlatent acylic graphs.")
 
   # maybe check to see if it has a dag extension first?
-  graph <- .Call("ccf_meek_wrapper", graph)
+  graph <- .Call("causalityMeek", graph)
   if (is_valid_dag(graph))
     class(graph) <- .DAG_CLASS
   else if(is_valid_pattern(graph))

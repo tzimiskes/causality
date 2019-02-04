@@ -2,8 +2,8 @@
 #include <float.h>
 #include <math.h>
 #include <time.h>
-#include "headers/causality.h"
-#include "headers/causalityRWrapper.h"
+#include "../headers/causality.h"
+#include "../headers/causalityRWrapper.h"
 
 
 SEXP causalityFruchtermanReingold(SEXP graph, SEXP nIterations, SEXP height,

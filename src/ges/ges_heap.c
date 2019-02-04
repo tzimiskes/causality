@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <float.h>
 
-#include "headers/causality.h"
-#include "headers/heap.h"
+#include "../headers/causality.h"
+#include "../headers/heap.h"
 
 struct ges_heap * create_heap(int max_size, struct ges_operator *ext_ops)
 {

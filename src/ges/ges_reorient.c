@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "headers/causality.h"
-#include "headers/int_linked_list.h"
-#include "headers/cgraph.h"
-#include "headers/meek.h"
+#include "../headers/causality.h"
+#include "../headers/int_linked_list.h"
+#include "../headers/cgraph.h"
+#include "../headers/meek.h"
 
 #define IS_TAIL_NODE(t, node) ((t) & 1LLU << (node))
 #define IS_HEAD_NODE(h, node) ((h) & 1LLU << (node))

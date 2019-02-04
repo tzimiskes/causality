@@ -1,5 +1,5 @@
 #' @export
-#' @useDynLib causality ccf_ges_wrapper
+#' @useDynLib causality causalityGES
 ges <- function(df, score = c("bic", "bdue"), penalty = 1.0, sample.prior = 1.0,
                     structure.prior = 1.0)
 {
@@ -59,12 +59,10 @@ ges <- function(df, score = c("bic", "bdue"), penalty = 1.0, sample.prior = 1.0,
                        structure.prior = structure.prior
                   )
         )
-  ges.out <- .Call("ccf_ges_wrapper", df, score, dimensions, floating.args,
+  ges.out <- .Call("causalityGES", df, score, dimensions, floating.args,
                                     integer.args)
   names(ges.out) <- c("graph", "graph.score")
-  ges.out$graph$adjacencies <- .calculate_adjacencies(ges.out$graph$edges,
-                                                      ges.out$graph$nodes)
-  # add additonal diagnostic info
+  # # add additonal diagnostic info
   ges.out$score.func      <- score
   ges.out$score.func.args <- score.func.args
   return(ges.out)

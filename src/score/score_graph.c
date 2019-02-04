@@ -8,9 +8,9 @@
 
 #include <stdlib.h>
 
-#include "headers/causality.h"
-#include "headers/dataframe.h"
-#include "headers/scores.h"
+#include "../headers/causality.h"
+#include "../headers/dataframe.h"
+#include "../headers/scores.h"
 
 /*
  * score_graph calculates the (BIC-like) score of a graph using a causality

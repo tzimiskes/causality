@@ -1,4 +1,34 @@
-  PKG_CPPFLAGS = -Iheaders
-  PKG_CFLAGS   = $(SHLIB_OPENMP_CFLAGS)
-  PKG_LIBS     = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) \
+PKG_CFLAGS   = $(SHLIB_OPENMP_CFLAGS) -ffast-math
+PKG_LIBS     = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) \
    $(SHLIB_OPENMP_CFLAGS)
+
+GES.OBJS=ges/ges.o ges/ges_reorient.o ges/ges_utils.o ges/ges_bic_score.o \
+    ges/ges_heap.o ges/ges_wrapper.o
+
+SCORE.OBJS=score/bdeu_score.o score/score_graph.o score/bic_score.o
+
+ALG.OBJS=alg/meek.o alg/sort.o alg/chickering.o alg/pdx.o alg/cgraph.o \
+    alg/int_ll.o alg/fruchterman_reingold.o
+
+AGG.OBJS=aggregate/aggregate_graphs.o aggregate/int_rbt.o
+
+RINTERFACE.OBJS=rinterface/causality.o rinterface/causalityRInterface.o
+
+
+OBJECTS= $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
+    $(RINTERFACE.OBJS)
+
+.PHONY: all score/bic_score.o
+all: $(SHLIB)
+$(SHLIB) : score/bic_score.o
+
+score/bic_score.o:
+	@(cd score && $(MAKE) bic_score.o \
+             CC="$(CC)" CPPFLAGS="-I$(R_HOME)/include" CFLAGS="$(CPICFLAGS)")
+
+before: clean
+
+clean:
+	rm -f $(OBJECTS)
+
+after:

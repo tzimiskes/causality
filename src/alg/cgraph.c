@@ -1,9 +1,8 @@
 #include <stdlib.h>
 
-#include "headers/causality.h"
-#include "headers/int_linked_list.h"
-#include "headers/edgetypes.h"
-#include "headers/cgraph.h"
+#include "../headers/causality.h"
+#include "../headers/int_linked_list.h"
+#include "../headers/cgraph.h"
 
 struct cgraph *create_cgraph(int n_nodes)
 {

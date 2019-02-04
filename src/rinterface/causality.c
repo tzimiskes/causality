@@ -1,5 +1,5 @@
-#include "headers/causality.h"
-#include "headers/causalityRWrapper.h"
+#include "../headers/causality.h"
+#include "../headers/causalityRWrapper.h"
 
 const char *DIRECTED_STR      = "-->";
 const char *UNDIRECTED_STR    = "---";
@@ -80,15 +80,12 @@ void calcluateEdgesFromCgraph(struct cgraph *cg, SEXP Graph)
     UNPROTECT(2);
 }
 
-SEXP causalityGraphFromCgraph(struct cgraph *cg, SEXP Nodes)
+SEXP create_causality_graph(int n_nedges, int n_nodes, SEXP Nodes)
 {
-    int  n_nodes  = cg->n_nodes;
-    int  n_edges  = cg->n_edges;
-    /* Allocate memory for the causality graph */
     SEXP Graph = PROTECT(allocVector(VECSXP, 3));
     SET_VECTOR_ELT(Graph, NODES,       duplicate(Nodes));
-    SET_VECTOR_ELT(Graph, EDGES,       allocMatrix(STRSXP, n_edges, 3));
-    SET_VECTOR_ELT(Graph, ADJACENCIES, R_NilValue);
+    SET_VECTOR_ELT(Graph, EDGES,       allocMatrix(STRSXP, n_nedges, 3));
+    SET_VECTOR_ELT(Graph, ADJACENCIES, allocVector(VECSXP, n_nodes));
     /* Names stores the names of the elements of Graph */
     SEXP Names = PROTECT(allocVector(STRSXP, 3));
     SET_STRING_ELT(Names, NODES,       mkChar(NODES_STR));
@@ -100,39 +97,82 @@ SEXP causalityGraphFromCgraph(struct cgraph *cg, SEXP Nodes)
     SEXP Class = PROTECT(allocVector(STRSXP, 1));
     SET_STRING_ELT(Class, 0, mkChar(CAUSALITY_GRAPH_CLASS));
     setAttrib(Graph, R_ClassSymbol, Class);
+    UNPROTECT(1);
+    return Graph;
+}
+
+struct cgraph * cgraph_from_causality_graph(SEXP Graph)
+{
+    int *edges   = calculateEdgesPtr(Graph);
+    int  n_nodes = length(VECTOR_ELT(Graph, NODES));
+    int  n_edges = nrows(VECTOR_ELT(Graph, EDGES));
+    struct cgraph *cg = create_cgraph(n_nodes);
+    fill_in_cgraph(cg, n_edges, edges);
+    free(edges);
+    return cg;
+}
+
+
+SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP Nodes)
+{
+    int  n_nodes  = cg->n_nodes;
+    int  n_edges  = cg->n_edges;
+    SEXP Graph = PROTECT(create_causality_graph(n_edges, n_nodes, Nodes));
     /* Now, fill in the edge matrix */
-    SEXP Edges = VECTOR_ELT(Graph, EDGES);
-    struct ill **parents = cg->parents;
-    struct ill **spouses = cg->spouses;
+    SEXP Edges       = VECTOR_ELT(Graph, EDGES);
+    SEXP Adjacencies = VECTOR_ELT(Graph, ADJACENCIES);
+    struct ill **parents  = cg->parents;
+    struct ill **spouses  = cg->spouses;
+    struct ill **children = cg->children;
+    /*
+     * optimization to speed up filling in the edge matrix. This is safe because
+     * all of the nodes are already registered in R's global (string(?)) pool.
+     */
+    void ** nodes = malloc(n_nodes * sizeof(void *));
+    for (int i = 0; i < n_nodes; ++i)
+        nodes[i] = STRING_ELT(Nodes, i);
     /* indices for parent, child, edge columns */
     int     p_i   = 0;
     int     c_i   = n_edges;
     int     e_i   = 2 * n_edges;
-    void ** nodes = malloc(n_nodes * sizeof(void *));
-    for (int i = 0; i < n_nodes; ++i)
-        nodes[i] = STRING_ELT(Nodes, i);
     for (int i = 0; i < n_nodes; ++i) {
+        int node  = i;
         struct ill *p      = parents[i];
-        int         child  = i;
+        struct ill *s      = spouses[i];
+        struct ill *c      = children[i];
+        int n_adjs = ill_size(p) + ill_size(s) + ill_size(c);
+        int adj_i  = 0;
+        if (n_adjs)
+            SET_VECTOR_ELT(Adjacencies, i, allocVector(STRSXP, n_adjs));
+        else
+            SET_VECTOR_ELT(Adjacencies, i, R_NilValue);
+        SEXP node_adjacents = VECTOR_ELT(Adjacencies, i);
         while (p) {
             int parent = p->key;
             int edge   = p->value;
-            SET_STRING_ELT(Edges, p_i++, nodes[parent]);
-            SET_STRING_ELT(Edges, c_i++, nodes[child]);
+            SET_STRING_ELT(node_adjacents, adj_i++, nodes[parent]);
+            SET_STRING_ELT(Edges,          p_i++,   nodes[parent]);
+            SET_STRING_ELT(Edges,          c_i++,   nodes[node]);
+            /* edge might not registered */
             SET_STRING_ELT(Edges, e_i++, mkChar(edge_to_char(edge)));
             p = p->next;
         }
-        p = spouses[i];
-        while (p) {
-            int parent = p->key;
-            int edge   = p->value;
-            /* this is to prevent an undirected edge from appearing twice. */
-            if (child < parent) {
-                SET_STRING_ELT(Edges, p_i++, nodes[parent]);
-                SET_STRING_ELT(Edges, c_i++, nodes[child]);
+        while (s) {
+            int spouse = s->key;
+            int edge   = s->value;
+            /* to prevent an undirected edge from appearing twice. */
+            SET_STRING_ELT(node_adjacents, adj_i++, nodes[spouse]);
+            if (node < spouse) {
+                SET_STRING_ELT(Edges, p_i++, nodes[spouse]);
+                SET_STRING_ELT(Edges, c_i++, nodes[node]);
                 SET_STRING_ELT(Edges, e_i++, mkChar(edge_to_char(edge)));
             }
-            p = p->next;
+            s = s->next;
+        }
+        while (c) {
+            int child = c->key;
+            SET_STRING_ELT(node_adjacents, adj_i++, nodes[child]);
+            c = c->next;
         }
     }
     free(nodes);

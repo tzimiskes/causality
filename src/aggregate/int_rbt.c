@@ -5,10 +5,9 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "headers/causality.h"
-#include "headers/causalityRWrapper.h"
-#include "headers/edgetypes.h"
-#include "headers/int_redblacktree.h"
+#include "../headers/causality.h"
+#include "../headers/causalityRWrapper.h"
+#include "../headers/int_redblacktree.h"
 
 #define LEFT 0
 #define RIGHT 1
@@ -47,7 +46,7 @@ int irbt_key(struct irbt *node)
     return ABS(node->key) - 1;
 }
 
-inline struct irbt * irbt_instantiate_node(int key, float *values, float weight)
+static struct irbt * irbt_instantiate_node(int key, float *values, float weight)
 {
     struct irbt *tmp = malloc(sizeof(struct irbt));
     if (tmp == NULL)

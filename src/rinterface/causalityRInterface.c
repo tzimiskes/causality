@@ -1,47 +1,34 @@
-#include "headers/causalityRWrapper.h"
-#include "headers/causality.h"
-#include "headers/scores.h"
+#include "../headers/causalityRWrapper.h"
+#include "../headers/causality.h"
+#include "../headers/scores.h"
+
 /*
- * ccf_sort_wrapper takes in an R object, proccesses it down to the C level
+ * causalitySort takes in an R object, proccesses it down to the C level
  * and then runs C level sort on this lower level representation. In then takes
- * the output of ccf_sort and turns it back into an R object.
+ * the output of ccf_sort and turns it back into an R object. ccf_sort returns
+ * NULL if graph doesn't have a sort. In that case, we return R_NilValue
+ * (aka R's version of NULL)
  */
 SEXP causalitySort(SEXP Graph)
 {
-    int *edges   = calculateEdgesPtr(Graph);
-    int  n_nodes = length(VECTOR_ELT(Graph, NODES));
-    int  n_edges = nrows(VECTOR_ELT(Graph, EDGES));
-    struct cgraph *cg = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges);
-    free(edges);
-    /*
-     * ccf_sort returns NULL if graph doesn't have a sort. In that case,
-     * we return R_NilValue (aka R's version of NULL)
-     */
+    struct cgraph *cg = cgraph_from_causality_graph(Graph);
     int *sort = ccf_sort(cg);
     free_cgraph(cg);
     if (sort == NULL)
         return R_NilValue;
-    /* grab the R structure that holds the Nodes (Char * vector) of the Graph */
-    SEXP Nodes  = PROTECT(VECTOR_ELT(Graph, NODES));
-    /* allocate memory for the output */
-    SEXP Output = PROTECT(allocVector(STRSXP, n_nodes));
+    SEXP Nodes  = VECTOR_ELT(Graph, NODES);
+    SEXP Sorted = PROTECT(allocVector(STRSXP, cg->n_nodes));
     /* convert C level output to R level output */
-    for (int i = 0; i < n_nodes; ++i)
-        SET_STRING_ELT(Output, i, STRING_ELT(Nodes, sort[i]));
+    for (int i = 0; i < cg->n_nodes; ++i)
+        SET_STRING_ELT(Sorted, i, STRING_ELT(Nodes, sort[i]));
     free(sort);
-    UNPROTECT(2);
-    return Output;
+    UNPROTECT(1);
+    return Sorted;
 }
 
 SEXP causalityPDX(SEXP Pdag)
 {
-    int           *edges   = calculateEdgesPtr(Pdag);
-    int            n_nodes = length(VECTOR_ELT(Pdag,NODES));
-    int            n_edges = nrows(VECTOR_ELT(Pdag, EDGES));
-    struct cgraph *cg      = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges);
-    free(edges);
+    struct cgraph *cg = cgraph_from_causality_graph(Pdag);
     cg = ccf_pdx(cg);
     if (cg == NULL)
         return R_NilValue;
@@ -55,12 +42,7 @@ SEXP causalityPDX(SEXP Pdag)
 SEXP causalityScoreGraph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
                                      SEXP FloatingArgs, SEXP IntegerArgs)
 {
-    int    *edges   = calculateEdgesPtr(Graph);
-    int     n_nodes = length(VECTOR_ELT(Graph, NODES));
-    int     n_edges = nrows(VECTOR_ELT(Graph, EDGES));
-    struct cgraph *cg      = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges);
-    free(edges);
+    struct cgraph *cg = cgraph_from_causality_graph(Graph);
     struct score_args args = {NULL, NULL};
     score_func score;
     if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
@@ -106,12 +88,7 @@ SEXP causalityScoreGraph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
 
 SEXP causalityChickering(SEXP Graph)
 {
-    int           *edges   = calculateEdgesPtr(Graph);
-    int            n_nodes = length(VECTOR_ELT(Graph, NODES));
-    int            n_edges = nrows(VECTOR_ELT(Graph, EDGES));
-    struct cgraph *cg      = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges);
-    free(edges);
+    struct cgraph *cg = cgraph_from_causality_graph(Graph);
     ccf_chickering(cg);
     SEXP Pattern = PROTECT(duplicate(Graph));
     calcluateEdgesFromCgraph(cg, Pattern);
@@ -120,14 +97,9 @@ SEXP causalityChickering(SEXP Graph)
     return Pattern;
 }
 
-SEXP ccf_meek_wrapper(SEXP Graph)
+SEXP causalityMeek(SEXP Graph)
 {
-     int           *edges   = calculateEdgesPtr(Graph);
-     int            n_nodes = length(VECTOR_ELT(Graph, NODES));
-     int            n_edges = nrows(VECTOR_ELT(Graph, EDGES));
-     struct cgraph *cg      = create_cgraph(n_nodes);
-     fill_in_cgraph(cg, n_edges, edges);
-     free(edges);
+     struct cgraph *cg = cgraph_from_causality_graph(Graph);
      ccf_meek(cg);
      SEXP Pattern = PROTECT(duplicate(Graph));
      calcluateEdgesFromCgraph(cg, Pattern);
