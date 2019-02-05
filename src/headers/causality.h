@@ -8,11 +8,12 @@
 
 #ifdef CAUSALITY_R_H
 #define CAUSALITY_PRINT(s) Rprintf("%s\n", s);
+#define CAUSALITY_ERROR(s) Rprintf("Error: %s\n", s);
 #else
 #define CAUSALITY_PRINT(s) printf("%s\n", s);
+#define CAUSALITY_ERROR(s) fprintf(stderr, "%s\n", s);
 #endif
 
-#define CAUSALITY_ERROR(s) fprintf(stderr, "%s\n", s);
 
 #define DIRECTED      1 /* -->               */
 #define UNDIRECTED    2 /* ---               */

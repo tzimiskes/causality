@@ -10,7 +10,8 @@ Description: Learn causal graphs, stabilize graph learning algorithms
     and use graphs to make inferences on how the world works.
 License: GPL-3
 Encoding: UTF-8
+Needs : compilation
 LazyData: true
-Depends: R (>= 3.1.0), readr, MASS
+Depends: R (>= 3.1.0),
 Suggests: testthat, lavaan
 RoxygenNote: 6.1.1
