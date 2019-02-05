@@ -27,7 +27,7 @@ struct ges_heap * create_heap(int max_size, struct ges_operator *ext_ops)
         return NULL;
     }
     hp->score_diffs = malloc(max_size * sizeof(double));
-    if (hp->score_diffs) {
+    if (hp->score_diffs == NULL) {
         CAUSALITY_ERROR("Failed to allocate memory for score_diffs!\n");
         free_heap(hp);
         return NULL;
