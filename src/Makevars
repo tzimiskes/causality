@@ -1,4 +1,4 @@
-PKG_CFLAGS   = $(SHLIB_OPENMP_CFLAGS) 
+PKG_CFLAGS   = $(SHLIB_OPENMP_CFLAGS)
 PKG_LIBS     = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) \
    $(SHLIB_OPENMP_CFLAGS)
 
@@ -13,11 +13,11 @@ ALG.OBJS=alg/meek.o alg/sort.o alg/chickering.o alg/pdx.o alg/cgraph.o \
 
 AGG.OBJS=aggregate/aggregate_graphs.o aggregate/int_rbt.o
 
-RINTERFACE.OBJS=rinterface/causality.o rinterface/causalityRInterface.o
+INTERFACE.OBJS=interface/causalityr.o interface/wrappers.o
 
 
 OBJECTS= $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
-    $(RINTERFACE.OBJS)
+    $(INTERFACE.OBJS)
 
 all: $(SHLIB) clean
 
