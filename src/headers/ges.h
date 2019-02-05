@@ -24,9 +24,9 @@ double ges_bdeu_score(struct dataframe data, int x, int y, int *ypar, int npar,
                                              struct score_args args,
                                              struct ges_score_mem gsm);
 
-double ges_bic_score(struct dataframe data, int x, int y, int *ypar, int npar,
-                                            struct score_args args,
-                                            struct ges_score_mem gsm);
+double ges_bic_score(struct dataframe df, int xp, int y, int *x, int nx,
+                                          struct score_args args,
+                                          struct ges_score_mem gsm);
 
 struct ges_score {
     ges_score_func       gsf;

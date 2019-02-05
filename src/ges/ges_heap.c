@@ -6,15 +6,30 @@
 
 struct ges_heap * create_heap(int max_size, struct ges_operator *ext_ops)
 {
-    struct ges_heap *hp = malloc(sizeof(struct ges_heap));
+    struct ges_heap *hp = calloc(1, sizeof(struct ges_heap));
+    if (hp == NULL) {
+        CAUSALITY_ERROR("Failed to allocate memory for heap structure!\n");
+        return NULL;
+    }
     hp->max_size    = max_size;
     hp->size        = max_size;
     hp->ops         = ext_ops;
     hp->ops_ptrs    = malloc(max_size * sizeof(struct ges_operator *));
-    hp->indices     = malloc(max_size * sizeof(int));
+    if (hp->ops_ptrs == NULL) {
+        CAUSALITY_ERROR("Failed to allocate memory for op_ptrs!\n");
+        free_heap(hp);
+        return NULL;
+    }
+    hp->indices = malloc(max_size * sizeof(int));
+    if (hp->indices == NULL) {
+        CAUSALITY_ERROR("Failed to allocate memory for indices!\n");
+        free_heap(hp);
+        return NULL;
+    }
     hp->score_diffs = malloc(max_size * sizeof(double));
-    if (!hp->indices || !hp->ops_ptrs) {
-        CAUSALITY_ERROR("Failed to allocate memory for heap!\n");
+    if (hp->score_diffs) {
+        CAUSALITY_ERROR("Failed to allocate memory for score_diffs!\n");
+        free_heap(hp);
         return NULL;
     }
     return hp;

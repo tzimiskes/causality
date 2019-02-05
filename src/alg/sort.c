@@ -17,7 +17,7 @@
 #define MARKED     1
 #define TEMPORARY -1
 
-static void visit(int node, int *marked, int *n_unmarked,
+static void visit(int node, int *marked, int *stack_index,
                             struct ill **children, int *sort);
 
 /*

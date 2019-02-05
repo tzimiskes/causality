@@ -156,10 +156,9 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
      * node and its adjacents to the stack
      */
     int node_modified = 0;
-    struct ill *p;
     while (reversible) {
         int parent = reversible->key;
-        p = ill_search(cg->parents[node], parent);
+        struct ill *p = ill_search(cg->parents[node], parent);
         /* if the value is positive, the edge isn't compelled */
         if (p->value > 0) {
             node_modified = 1;
