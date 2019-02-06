@@ -39,9 +39,9 @@ meek <- function(graph) {
 
   # maybe check to see if it has a dag extension first?
   graph <- .Call("causalityMeek", graph)
-  if (is_valid_dag(graph))
+  if (suppressWarnings(is_valid_dag(graph)))
     class(graph) <- .DAG_CLASS
-  else if(is_valid_pattern(graph))
+  else if(suppressWarnings(is_valid_pattern(graph)))
     class(graph) <- .PATTERN_CLASS
   return(graph)
 }

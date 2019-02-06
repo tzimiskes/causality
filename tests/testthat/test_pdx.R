@@ -57,5 +57,5 @@ test_that("chordal DAGs become undirected", {
                              "Erk",  "Akt",  "---"), ncol = 3, byrow = T),
             validate = F)
 
-  expect_equal(shd(pdx(sachs.pattern), chickering(sachs.dag)), 0)
+  expect_equal(shd(chickering(pdx(sachs.pattern)), sachs.pattern), 0)
 })

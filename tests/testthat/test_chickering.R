@@ -82,5 +82,5 @@ sachs.pattern <-
                            "Erk",  "Akt",  "---"), ncol = 3, byrow = T),
           validate = F)
 
-  expect_equal(shd(sachs.dag, chickering(sachs.dag)), 0)
+  expect_equal(shd(sachs.pattern, chickering(sachs.dag)), 0)
 })
