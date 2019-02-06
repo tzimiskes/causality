@@ -300,13 +300,13 @@ void print_cgraph(struct cgraph *cg)
     for (int i = 0; i < cg->n_nodes; ++i) {
         struct ill *p = cg->parents[i];
         while (p) {
-            printf("%i --> %i\n", p->key, i);
+            CAUSALITY_PRINT("%i --> %i\n", p->key, i);
             p = p->next;
         }
         p = cg->spouses[i];
         while (p) {
             if (p->key < i)
-                printf("%i --- %i\n", p->key, i);
+                CAUSALITY_PRINT("%i --- %i\n", p->key, i);
             p = p->next;
         }
     }

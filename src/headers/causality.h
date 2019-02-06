@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "cgraph.h"
 #include "ges.h"
@@ -6,12 +7,13 @@
 #ifndef CAUSALITY_H
 #define CAUSALITY_H
 
-#ifdef CAUSALITY_R_H
-#define CAUSALITY_PRINT(s) Rprintf("%s\n", s);
-#define CAUSALITY_ERROR(s) Rprintf("Error: %s\n", s);
+#ifdef CAUSALITY_R
+#include <R.h>
+#define CAUSALITY_PRINT(...) Rprintf(__VA_ARGS__)
+#define CAUSALITY_ERROR(...) Rprintf(__VA_ARGS__)
 #else
-#define CAUSALITY_PRINT(s) printf("%s\n", s);
-#define CAUSALITY_ERROR(s) fprintf(stderr, "%s\n", s);
+#define CAUSALITY_PRINT(...) printf(__VA_ARGS__)
+#define CAUSALITY_ERROR(...) fprintf(stderr, __VA_ARGS__)
 #endif
 
 

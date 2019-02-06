@@ -39,13 +39,13 @@ int * ccf_sort(struct cgraph *cg)
     /* create an array to signify whether or not a node has been marked, */
     int *marked  = calloc(n_nodes, sizeof(int));
     if (marked == NULL) {
-        CAUSALITY_ERROR("Failed to allocate memory for marked in ccf_sort\n")
+        CAUSALITY_ERROR("Failed to allocate memory for marked in ccf_sort\n");
         return NULL;
     }
 
     int *sort = malloc(n_nodes * sizeof(int));
     if (sort == NULL) {
-        CAUSALITY_ERROR("Failed to allocate memory for sort in ccf_sort\n")
+        CAUSALITY_ERROR("Failed to allocate memory for sort in ccf_sort\n");
         free(marked);
         return NULL;
     }

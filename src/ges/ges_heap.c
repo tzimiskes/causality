@@ -145,10 +145,10 @@ void remove_heap(struct ges_heap *hp, int node)
 
 void print_heap(struct ges_heap *hp)
 {
-    printf("heap contents\n");
+    CAUSALITY_PRINT("heap contents\n");
     for (int i = 0; i < hp->size; ++i)
-        printf("%i --> %i; %f; %i\n", hp->ops_ptrs[i]->xp, hp->ops_ptrs[i]->y,
+        CAUSALITY_PRINT("%i --> %i; %f; %i\n", hp->ops_ptrs[i]->xp, hp->ops_ptrs[i]->y,
                                       hp->score_diffs[i],
                                       hp->indices[hp->ops_ptrs[i]->y]);
-    printf("end\n");
+    CAUSALITY_PRINT("end\n");
 }
