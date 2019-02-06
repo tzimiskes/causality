@@ -55,8 +55,10 @@
 #' is_valid_cgraph(graph)
 #'
 #' # you can coerce graphs from package \code{bnlearn} to causality.graphs
-#' library(bnlearn)
-#' sachs <- as.cgraph(mmhc(sachs.df))
+#' \dontrun{
+#'   library(bnlearn)
+#'   sachs <- as.cgraph(mmhc(sachs.df))
+#' }
 #' @references
 #'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
@@ -179,9 +181,11 @@ is.cgraph <- function(graph) {
 }
 
 # Casusality Graph summary -----------------------------------------------------
-#' @details \code{summary} provides basic summary statistics about the graph,
+#' @usage \\method{summary}{causality.graph}(object, ...)
+#' @param object A causality.graph
+#' @param ... additional (unused) arguments to pass to \code{summary}
+#' @details \code{summary} provides basic summary statistics about \code{graph},
 #'   like average degree, max degree, number of directed/undirected eges etc.
-#' @usage summary(graph)
 #' @rdname cgraph
 #' @export
 summary.causality.graph <- function(object, ...) {
@@ -202,9 +206,11 @@ summary.causality.graph <- function(object, ...) {
 
 # Causality Graph as.cgraph Functions ------------------------------------------
 #' Coerce a graph to a Causality Graph
+#' @param graph A (non causality.graph) graph you'd like to attempt to convert
+#'   into a causality.graph
 #' @details \code{as.cgraph} is an S3 generic that attempts to convert a not
-#' causality.cgraph to a "causalality.graph". It currently supports turning "bn"
-#' objects and r-causal objects to "causality.graphs".
+#'   causality.cgraph to a "causalality.graph". It currently supports turning
+#'   "bn" objects and r-causal objects to "causality.graphs".
 #' @usage as.cgraph(graph)
 #' @return \code{as.cgraph} returns a causality graph object, or throws an error
 #' @seealso See \code{\link{cgraph}} for the documentation of object

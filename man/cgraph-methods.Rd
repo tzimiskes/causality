@@ -11,19 +11,19 @@
 \alias{children}
 \title{Causality graph methods}
 \usage{
-is.cyclic(cgraph)
+is.cyclic(graph)
 
 is.acyclic(graph)
 
-is.directed(cgraph)
+is.directed(graph)
 
-is.nonlatent(cgraph)
+is.nonlatent(graph)
 
-is.latent(cgraph)
+is.latent(graph)
 
-parents(cgraph)
+parents(graph)
 
-children(cgraph)
+children(graph)
 }
 \arguments{
 \item{graph}{a causality.graph}

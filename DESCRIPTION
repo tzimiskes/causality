@@ -13,5 +13,5 @@ Encoding: UTF-8
 Needs : compilation
 LazyData: true
 Depends: R (>= 3.1.0),
-Suggests: testthat, lavaan
+Suggests: testthat, lavaan, bnlearn
 RoxygenNote: 6.1.1

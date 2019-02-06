@@ -1,5 +1,4 @@
 #' @useDynLib causality causalityFruchtermanReingold
-#' @export
 export_tikz <- function(cgraph, file = stdout(), iterations = 10, height = 3,
                                 width = 3)
 {

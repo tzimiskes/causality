@@ -4,6 +4,7 @@
 #' Causality DAGS
 #'
 #' Create, test, or manipulate objects of type "causality.dag"
+#' @param nodes A character array of node names
 #' @param edges A \eqn{m x 3} character matrix. Each row is an edge in the form
 #'   of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid
 #'   edge types are listed below

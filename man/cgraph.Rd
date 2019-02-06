@@ -13,7 +13,7 @@ is_valid_cgraph(graph)
 
 is.cgraph(graph)
 
-summary(graph)
+\\method{summary}{causality.graph}(object, ...)
 }
 \arguments{
 \item{nodes}{A character array of node names}
@@ -26,6 +26,10 @@ edge types are listed below}
 if the cgraph is valid before returning it. Default is \code{TRUE}}
 
 \item{graph}{A graph to coerced or tested}
+
+\item{object}{A causality.graph}
+
+\item{...}{additional (unused) arguments to pass to \code{summary}}
 }
 \value{
 \code{cgraph} returns object of class "causality.graph", or an error
@@ -73,7 +77,7 @@ A causality-graph consists of three things
 \code{is.cgraph} tests whether or not an object has the class
   causality.graph
 
-\code{summary} provides basic summary statistics about the graph,
+\code{summary} provides basic summary statistics about \code{graph},
   like average degree, max degree, number of directed/undirected eges etc.
 }
 \examples{
@@ -89,8 +93,10 @@ graph <- cgraph(nodes, edges)
 is_valid_cgraph(graph)
 
 # you can coerce graphs from package \\code{bnlearn} to causality.graphs
-library(bnlearn)
-sachs <- as.cgraph(mmhc(sachs.df))
+\dontrun{
+  library(bnlearn)
+  sachs <- as.cgraph(mmhc(sachs.df))
+}
 }
 \references{
 Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,

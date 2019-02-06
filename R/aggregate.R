@@ -1,5 +1,6 @@
 #' @export
-aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df = NULL)
+aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"),
+                                      df = NULL)
 {
   if(!is.list(cgraphs))
     stop("dags is not as list")
@@ -21,10 +22,10 @@ aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"), df 
     bs.weights <- rep(1, length(cgraphs))
   }
   if (method == "bayesian") {
-    df <- as.data.frame(lapply(df, function(x) { (x - mean(x))/sd(x) }))
+    df <- as.data.frame(lapply(df, function(x) { (x - mean(x))/stats::sd(x) }))
     for (i in 1:length(cgraphs)) {
       graph <- as.dag(cgraphs[[i]])
-      bs.weights[i] <- score_graph(graph, df)
+      bs.weights[i] <- score(graph, df)
     }
     bs.weights <- exp(-.5*(bs.weights - min(bs.weights)))
   }

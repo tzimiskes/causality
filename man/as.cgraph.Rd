@@ -48,6 +48,10 @@ as.cgraph(graph)
 
 \method{as.cgraph}{fci}(graph)
 }
+\arguments{
+\item{graph}{A (non causality.graph) graph you'd like to attempt to convert
+into a causality.graph}
+}
 \value{
 \code{as.cgraph} returns a causality graph object, or throws an error
 }
@@ -56,8 +60,8 @@ Coerce a graph to a Causality Graph
 }
 \details{
 \code{as.cgraph} is an S3 generic that attempts to convert a not
-causality.cgraph to a "causalality.graph". It currently supports turning "bn"
-objects and r-causal objects to "causality.graphs".
+  causality.cgraph to a "causalality.graph". It currently supports turning
+  "bn" objects and r-causal objects to "causality.graphs".
 }
 \seealso{
 See \code{\link{cgraph}} for the documentation of object
