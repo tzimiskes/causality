@@ -1,24 +1,26 @@
-PKG_CPPFLAGS = -DCAUSALITY_R -I.
+PKG_CPPFLAGS = -DCAUSALITY_R -I. -Icausality
 PKG_CFLAGS   = $(SHLIB_OPENMP_CFLAGS)
 PKG_LIBS     = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) \
    $(SHLIB_OPENMP_CFLAGS)
 
-GES.OBJS=ges/ges.o ges/ges_reorient.o ges/ges_utils.o ges/ges_bic_score.o \
-    ges/ges_heap.o
+GES.OBJS = causality/ges/ges.o causality/ges/ges_reorient.o \
+    causality/ges/ges_utils.o causality/ges/ges_bic_score.o \
+    causality/ges/ges_heap.o
 
-SCORE.OBJS=score/bdeu_score.o score/score_graph.o score/bic_score.o  \
-    score/linearalg.o
+SCORE.OBJS = causality/scores/bdeu_score.o causality/scores/score_graph.o \
+    causality/scores/bic_score.o causality/scores/linearalg.o
 
-ALG.OBJS=alg/meek.o alg/sort.o alg/chickering.o alg/pdx.o alg/cgraph.o \
-    alg/int_ll.o
+ALG.OBJS = causality/algorithms/meek.o causality/algorithms/sort.o \
+    causality/algorithms/chickering.o causality/algorithms/pdx.o
 
-AGG.OBJS=aggregate/aggregate_graphs.o aggregate/int_rbt.o
+CGRAPH.OBJS = causality/cgraph/cgraph.o causality/cgraph/int_ll.o
 
-RCAUSALITY.OBJS=R_causality/R_causality.o R_causality/R_causality_wrappers.o \
+AGG.OBJS = causality/aggregate/aggregate_graphs.o causality/aggregate/int_rbt.o
+
+RCAUSALITY.OBJS = R_causality/R_causality.o R_causality/R_causality_wrappers.o \
     R_causality/R_causality_ges_wrapper.o
 
-
-OBJECTS= $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
+OBJECTS = $(CGRAPH.OBJS) $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
     $(RCAUSALITY.OBJS)
 
 all: $(SHLIB) clean

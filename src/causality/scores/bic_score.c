@@ -13,9 +13,9 @@
 /* R interface to LAPACK */
 #include <R_ext/Lapack.h>
 
-#include "../headers/causality.h"
-#include "../headers/dataframe.h"
-#include "../headers/scores.h"
+#include <causality.h>
+#include <dataframe.h>
+#include <scores/scores.h>
 
 #define ERROR_THRESH     1e-9
 

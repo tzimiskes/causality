@@ -1,9 +1,10 @@
 #include <R_causality/R_causality.h>
-#include "../headers/causality.h"
-#include "../headers/cgraph.h"
-#include "../headers/dataframe.h"
-#include "../headers/scores.h"
-#include "../ges/ges_internal.h"
+
+#include <causality.h>
+#include <dataframe.h>
+#include <cgraph/cgraph.h>
+#include <scores/scores.h>
+#include <ges/ges_internal.h>
 
 /*
  * normalize continuous variables to help speed up scoring of continuous
@@ -75,7 +76,7 @@ SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States,
      */
     struct ges_score score = {ges_score, {0}, data, {fargs, iargs}};
     struct cgraph *cg      = create_cgraph(data.nvar);
-    /* run ges */
+    /* run GES! */
     double graph_score     = ccf_ges(score, cg);
     /* free dataframe */
     for(int i = 0; i < data.nvar; ++i)

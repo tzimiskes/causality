@@ -12,11 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../headers/causality.h"
-#include "../headers/cgraph.h"
-#include "heap.h"
-#include "../headers/dataframe.h"
-#include "ges_internal.h"
+#include <causality.h>
+#include <cgraph/cgraph.h>
+#include <dataframe.h>
+
+#include <ges/heap.h>
+#include <ges/ges_internal.h>
 
 #ifdef _OPENMP
 #include <omp.h>

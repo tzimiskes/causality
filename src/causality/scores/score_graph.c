@@ -8,8 +8,8 @@
 
 #include <stdlib.h>
 
-#include "../headers/causality.h"
-#include "../headers/dataframe.h"
+#include <causality.h>
+#include <dataframe.h>
 #include <scores/scores.h>
 
 /*

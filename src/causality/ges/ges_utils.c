@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../headers/cgraph.h"
-#include "ges_internal.h"
+#include <cgraph/cgraph.h>
+#include <ges/ges_internal.h>
 
 void free_ges_score_mem(struct ges_score_mem gsm)
 {

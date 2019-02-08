@@ -2,9 +2,9 @@
 #include <math.h>
 #include <string.h>
 
+#include <causality.h>
 #include <ges/ges_internal.h>
-#include <scores/scores.h">
-#include "../headers/causality.h"
+#include <scores/scores.h>
 
 static double calcluate_bic_diff(double rss_p, double rss_m, double penalty,
     int nobs)

@@ -1,6 +1,6 @@
 #include <R_causality/R_causality.h>
-#include "../headers/causality.h"
-#include "../headers/scores.h"
+#include <causality.h>
+#include <scores/scores.h>
 
 /*
  * causalitySort takes in an R object, proccesses it down to the C level

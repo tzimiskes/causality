@@ -2,7 +2,7 @@
 #include <float.h>
 #include <math.h>
 #include <time.h>
-#include "../headers/causality.h"
+#include <causality.h>
 #include <R_causality/R_causality.h>
 
 

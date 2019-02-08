@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "../ges/ges_internal.h"
-#include "cgraph.h"
-#include "dataframe.h"
-#include "scores.h"
+#include <ges/ges_internal.h>
+#include <scores/scores.h>
+
 #ifndef CAUSALITY_H
 #define CAUSALITY_H
 

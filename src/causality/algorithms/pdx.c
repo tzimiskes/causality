@@ -9,9 +9,9 @@
 
 #include <stdlib.h>
 
-#include "../headers/causality.h"
-#include "../headers/cgraph.h"
-#include "../headers/int_linked_list.h"
+#include <causality.h>
+#include <cgraph/cgraph.h>
+#include <cgraph/int_linked_list.h>
 
 /* create a circular linked list to iterate through */
 struct cll {

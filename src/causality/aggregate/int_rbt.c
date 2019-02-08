@@ -5,13 +5,11 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "../headers/causality.h"
-#include "../headers/int_redblacktree.h"
+#include <causality.h>
+#include <aggregate/int_redblacktree.h>
 
 #define LEFT 0
 #define RIGHT 1
-
-
 
 static inline int IS_RED(struct irbt *node)
 {

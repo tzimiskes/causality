@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../headers/causality.h"
-#include "../headers/int_linked_list.h"
-#include "../headers/cgraph.h"
-#include "../headers/meek.h"
+#include <causality.h>
+#include <cgraph/cgraph.h>
+#include <cgraph/int_linked_list.h>
+#include <algorithms/meek.h>
 
 /* pointer linked list */
 struct pll {

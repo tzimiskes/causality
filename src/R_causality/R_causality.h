@@ -5,7 +5,7 @@
 #include <R.h>
 #include <Rinternals.h>
 
-#include "../headers/cgraph.h"
+#include <cgraph/cgraph.h>
 
 #define NODES       0
 #define ADJACENCIES 1

@@ -1,7 +1,7 @@
 #ifndef CGRAPH_H_
 #define CGRAPH_H_
 
-#include "int_linked_list.h"
+#include <cgraph/int_linked_list.h>
 
 #define UNDEFINED  0
 
