@@ -1,5 +1,5 @@
 #include "../headers/causality.h"
-#include "r_causality.h"
+#include <R_causality/R_causality.h>
 
 const char *DIRECTED_STR      = "-->";
 const char *UNDIRECTED_STR    = "---";

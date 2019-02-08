@@ -10,7 +10,7 @@
 
 #include "../headers/causality.h"
 #include "../headers/dataframe.h"
-#include "../headers/scores.h"
+#include <scores/scores.h>
 
 /*
  * score_graph calculates the (BIC-like) score of a graph using a causality

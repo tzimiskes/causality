@@ -1,4 +1,4 @@
-PKG_CPPFLAGS = -DCAUSALITY_R
+PKG_CPPFLAGS = -DCAUSALITY_R -I.
 PKG_CFLAGS   = $(SHLIB_OPENMP_CFLAGS)
 PKG_LIBS     = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) \
    $(SHLIB_OPENMP_CFLAGS)
@@ -10,16 +10,16 @@ SCORE.OBJS=score/bdeu_score.o score/score_graph.o score/bic_score.o  \
     score/linearalg.o
 
 ALG.OBJS=alg/meek.o alg/sort.o alg/chickering.o alg/pdx.o alg/cgraph.o \
-    alg/int_ll.o alg/fruchterman_reingold.o
+    alg/int_ll.o
 
 AGG.OBJS=aggregate/aggregate_graphs.o aggregate/int_rbt.o
 
-INTERFACE.OBJS=interface/r_causality.o interface/wrappers.o  \
-    interface/ges_wrapper.o
+RCAUSALITY.OBJS=R_causality/R_causality.o R_causality/R_causality_wrappers.o \
+    R_causality/R_causality_ges_wrapper.o
 
 
 OBJECTS= $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
-    $(INTERFACE.OBJS)
+    $(RCAUSALITY.OBJS)
 
 all: $(SHLIB) clean
 

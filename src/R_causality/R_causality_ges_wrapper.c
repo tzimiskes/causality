@@ -1,4 +1,4 @@
-#include "r_causality.h"
+#include <R_causality/R_causality.h>
 #include "../headers/causality.h"
 #include "../headers/cgraph.h"
 #include "../headers/dataframe.h"

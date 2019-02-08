@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #include "../headers/cgraph.h"
-#include "../headers/scores.h"
+#include <scores/scores.h>
 #include "../headers/dataframe.h"
 
 #ifndef GES_H
@@ -69,6 +69,16 @@ struct ges_operator {
     double score_diff;
 };
 */
+
+static inline int IS_TAIL_NODE(uint64_t t, int node)
+{
+    return t & (1LLU << node);
+}
+
+static inline int IS_HEAD_NODE(uint64_t h, int node)
+{
+    return h & (1LLU << node);
+}
 
 /* memory utility functions */
 void free_ges_score_mem(struct ges_score_mem gsm);

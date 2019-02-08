@@ -111,23 +111,3 @@ double calculate_rss(double *cov, int m)
         rss = DBL_MAX;
     return rss;
 }
-
-/*
- * fcov_xy calculates the covariance matrix between random variable vector x.
- */
-void fcov_xx(double *cov_xx, double **x, int n, int m)
-{
-    int    u           = 1;
-    double inv_nminus1 = 1.0f / (n - 1.0f);
-    for (int i = 0; i < m; ++i) {
-        for (int j = i; j < m; ++j) {
-            if (i == j)
-                cov_xx[j + m * i] = 1.0f;
-            else {
-                cov_xx[j + m * i] = F77_CALL(ddot)(&n, x[i], &u, x[j],
-                    &u) * inv_nminus1;
-                cov_xx[i + m * j] = cov_xx[j + m * i];
-            }
-        }
-    }
-}

@@ -24,9 +24,6 @@
 
 #define DEFAULT_SCORE_DIFF 1.0f
 
-#define IS_TAIL_NODE(t, node) ((t) & 1LLU << (node))
-#define IS_HEAD_NODE(h, node) ((h) & 1LLU << (node))
-
 /*
  * is_valid_insertion returns whether or not applying the given insertion
  * operator, op, is valid. It checks to see if T U NaXY forms a clique and

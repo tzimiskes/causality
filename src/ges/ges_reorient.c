@@ -6,9 +6,6 @@
 #include "../headers/cgraph.h"
 #include "../headers/meek.h"
 
-#define IS_TAIL_NODE(t, node) ((t) & 1LLU << (node))
-#define IS_HEAD_NODE(h, node) ((h) & 1LLU << (node))
-
 /* pointer linked list */
 struct pll {
     struct ill *p;

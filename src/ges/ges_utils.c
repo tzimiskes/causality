@@ -12,9 +12,6 @@
 #include "../headers/cgraph.h"
 #include "ges_internal.h"
 
-#define IS_TAIL_NODE(t, node) ((t) & 1LLU << (node))
-#define IS_HEAD_NODE(h, node) ((h) & 1LLU << (node))
-
 void free_ges_score_mem(struct ges_score_mem gsm)
 {
     free(gsm.lbls);

@@ -1,4 +1,4 @@
-#include "../interface/r_causality.h"
+#include <R_causality/R_causality.h>
 #include "../headers/causality.h"
 #include "../headers/int_redblacktree.h"
 

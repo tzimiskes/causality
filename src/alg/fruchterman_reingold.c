@@ -3,7 +3,7 @@
 #include <math.h>
 #include <time.h>
 #include "../headers/causality.h"
-#include "../interface/r_causality.h"
+#include <R_causality/R_causality.h>
 
 
 // SEXP causalityFruchtermanReingold(SEXP graph, SEXP nIterations, SEXP height,

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "../headers/dataframe.h"
+#include <headers/dataframe.h>
 #include "../headers/causality.h"
 #include "../headers/scores.h"
 
