@@ -2,7 +2,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "../headers/ges.h"
+#include "ges_internal.h"
 #include "../headers/scores.h"
 #include "../headers/causality.h"
 

@@ -1,8 +1,8 @@
 #include <stdint.h>
 
-#include "cgraph.h"
-#include "scores.h"
-#include "dataframe.h"
+#include "../headers/cgraph.h"
+#include "../headers/scores.h"
+#include "../headers/dataframe.h"
 
 #ifndef GES_H
 #define GES_H

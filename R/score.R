@@ -1,4 +1,4 @@
-#' @useDynLib causality causalityScoreGraph
+#' @useDynLib causality r_causality_score_graph
 #' @export
 score <- function(graph, df, score = c("bic", "bdue"), penalty = 1.0,
                              sample.prior = 1.0, structure.prior = 1.0)
@@ -47,7 +47,7 @@ score <- function(graph, df, score = c("bic", "bdue"), penalty = 1.0,
   }
   else if (score == "cg")
     stop("not implemented")
-  score <- .Call("causalityScoreGraph", graph, df, score, dimensions,
-                                        floating.args, integer.args)
+  score <- .Call("r_causality_score_graph", graph, df, score, dimensions,
+                                            floating.args, integer.args)
   return(score)
 }

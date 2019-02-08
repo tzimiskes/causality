@@ -14,9 +14,9 @@
 
 #include "../headers/causality.h"
 #include "../headers/cgraph.h"
-#include "../headers/heap.h"
+#include "heap.h"
 #include "../headers/dataframe.h"
-#include "../headers/ges.h"
+#include "ges_internal.h"
 
 #ifdef _OPENMP
 #include <omp.h>

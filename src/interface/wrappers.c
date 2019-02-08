@@ -1,4 +1,4 @@
-#include "../headers/causalityRWrapper.h"
+#include "r_causality.h"
 #include "../headers/causality.h"
 #include "../headers/scores.h"
 
@@ -9,38 +9,61 @@
  * NULL if graph doesn't have a sort. In that case, we return R_NilValue
  * (aka R's version of NULL)
  */
-SEXP causalitySort(SEXP Graph)
+SEXP r_causality_sort(SEXP graph)
 {
-    struct cgraph *cg = cgraph_from_causality_graph(Graph);
+    struct cgraph *cg = cgraph_from_causality_graph(graph);
+    /* Attempt to generate a topological sort of cg */
     int *sort = ccf_sort(cg);
     free_cgraph(cg);
     if (sort == NULL)
         return R_NilValue;
-    SEXP Nodes  = VECTOR_ELT(Graph, NODES);
-    SEXP Sorted = PROTECT(allocVector(STRSXP, cg->n_nodes));
+    SEXP nodes  = VECTOR_ELT(graph, NODES);
+    SEXP sorted = PROTECT(allocVector(STRSXP, cg->n_nodes));
     /* convert C level output to R level output */
     for (int i = 0; i < cg->n_nodes; ++i)
-        SET_STRING_ELT(Sorted, i, STRING_ELT(Nodes, sort[i]));
+        SET_STRING_ELT(sorted, i, STRING_ELT(nodes, sort[i]));
     free(sort);
     UNPROTECT(1);
-    return Sorted;
+    return sorted;
 }
 
-SEXP causalityPDX(SEXP Pdag)
+SEXP r_causality_pdx(SEXP pdag)
 {
-    struct cgraph *cg = cgraph_from_causality_graph(Pdag);
+    struct cgraph *cg = cgraph_from_causality_graph(pdag);
     cg = ccf_pdx(cg);
     if (cg == NULL)
         return R_NilValue;
-    SEXP Dag = PROTECT(duplicate(Pdag));
-    calcluateEdgesFromCgraph(cg, Dag);
+    SEXP nodes = VECTOR_ELT(pdag, NODES);
+    SEXP dag   = PROTECT(causality_graph_from_cgraph(cg, nodes));
     free_cgraph(cg);
     UNPROTECT(1);
-    return Dag;
+    return dag;
 }
 
-SEXP causalityScoreGraph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
-                                     SEXP FloatingArgs, SEXP IntegerArgs)
+SEXP r_causality_chickering(SEXP dag)
+{
+    struct cgraph *cg = cgraph_from_causality_graph(dag);
+    ccf_chickering(cg);
+    SEXP nodes   = VECTOR_ELT(dag, NODES);
+    SEXP pattern = PROTECT(causality_graph_from_cgraph(cg, nodes));
+    free_cgraph(cg);
+    UNPROTECT(1);
+    return pattern;
+}
+
+SEXP r_causality_meek(SEXP pdag)
+{
+    struct cgraph *cg = cgraph_from_causality_graph(pdag);
+    ccf_meek(cg);
+    SEXP nodes = VECTOR_ELT(pdag, NODES);
+    SEXP cpdag = PROTECT(causality_graph_from_cgraph(cg, nodes));
+    free_cgraph(cg);
+    UNPROTECT(1);
+    return cpdag;
+}
+
+SEXP r_causality_score_graph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
+                                         SEXP FloatingArgs, SEXP IntegerArgs)
 {
     struct cgraph *cg = cgraph_from_causality_graph(Graph);
     struct score_args args = {NULL, NULL};
@@ -84,26 +107,4 @@ SEXP causalityScoreGraph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
     free(df.df);
     free_cgraph(cg);
     return(ScalarReal(graph_score));
-}
-
-SEXP causalityChickering(SEXP Graph)
-{
-    struct cgraph *cg = cgraph_from_causality_graph(Graph);
-    ccf_chickering(cg);
-    SEXP Pattern = PROTECT(duplicate(Graph));
-    calcluateEdgesFromCgraph(cg, Pattern);
-    free_cgraph(cg);
-    UNPROTECT(1);
-    return Pattern;
-}
-
-SEXP causalityMeek(SEXP Graph)
-{
-     struct cgraph *cg = cgraph_from_causality_graph(Graph);
-     ccf_meek(cg);
-     SEXP Pattern = PROTECT(duplicate(Graph));
-     calcluateEdgesFromCgraph(cg, Pattern);
-     free_cgraph(cg);
-     UNPROTECT(1);
-     return Pattern;
 }

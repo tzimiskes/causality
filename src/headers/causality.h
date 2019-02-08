@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "../ges/ges_internal.h"
 #include "cgraph.h"
-#include "ges.h"
-
+#include "dataframe.h"
+#include "scores.h"
 #ifndef CAUSALITY_H
 #define CAUSALITY_H
 
+/* When compiling causality so it links to R, we want to print via the RAPI */
 #ifdef CAUSALITY_R
 #include <R.h>
 #define CAUSALITY_PRINT(...) Rprintf(__VA_ARGS__)
@@ -15,7 +17,6 @@
 #define CAUSALITY_PRINT(...) printf(__VA_ARGS__)
 #define CAUSALITY_ERROR(...) fprintf(stderr, __VA_ARGS__)
 #endif
-
 
 #define DIRECTED      1 /* -->               */
 #define UNDIRECTED    2 /* ---               */

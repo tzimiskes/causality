@@ -24,12 +24,12 @@
 #' \code{\link{as.pattern}}
 #' @references Cormen, Thomas H., et al. Introduction to Algorithms. The MIT
 #'   Press, 2014.
-#' @useDynLib causality causalitySort
+#' @useDynLib causality r_causality_sort
 #' @export
 sort.causality.graph <- function(x, decreasing = FALSE, ...) {
   if (!is.cgraph(x))
     stop("x must be a causality.graph")
-  output <- .Call("causalitySort", x)
+  output <- .Call("r_causality_meek", x)
   if (is.null(output)) {
     warning("x contains a cycle, returning NULL.")
     return(NULL)

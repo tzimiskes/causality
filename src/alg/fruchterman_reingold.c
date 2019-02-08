@@ -3,37 +3,37 @@
 #include <math.h>
 #include <time.h>
 #include "../headers/causality.h"
-#include "../headers/causalityRWrapper.h"
+#include "../interface/r_causality.h"
 
 
-SEXP causalityFruchtermanReingold(SEXP graph, SEXP nIterations, SEXP height,
-                                               SEXP width)
-{
-
-    int nNodes     = length(VECTOR_ELT(graph, NODES));
-    int nEdges     = nrows(VECTOR_ELT(graph, EDGES));
-    SEXP positions = PROTECT(allocMatrix(REALSXP, nNodes, 2));
-
-    int *edges = calculateEdgesPtr(graph);
-
-    ccf_fr_layout(REAL(positions), nNodes, edges, nEdges,
-                                              asReal(width), asReal(height),
-                                              asInteger(nIterations));
-    free(edges);
-    UNPROTECT(1);
-    return positions;
-}
+// SEXP causalityFruchtermanReingold(SEXP graph, SEXP nIterations, SEXP height,
+//                                                SEXP width)
+// {
+//
+//     int nNodes     = length(VECTOR_ELT(graph, NODES));
+//     int nEdges     = nrows(VECTOR_ELT(graph, EDGES));
+//     SEXP positions = PROTECT(allocMatrix(REALSXP, nNodes, 2));
+//
+//     int *edges = calculateEdgesPtr(graph);
+//
+//     ccf_fr_layout(REAL(positions), nNodes, edges, nEdges,
+//                                               asReal(width), asReal(height),
+//                                               asInteger(nIterations));
+//     free(edges);
+//     UNPROTECT(1);
+//     return positions;
+// }
 
 
 void ccf_uniform_rng(double *x, int n, double low, double high)
 {
-    #ifdef R_R_H
+    #ifdef CAUSALITY_R
     GetRNGstate();
     for (int i = 0; i < n; ++i)
         x[i] = low + (high - low) * unif_rand();
     PutRNGstate();
     #else
-    srand();
+    srand(0);
     for (int i = 0; i < n; ++i)
         x[i] = low  + (high - low) * rand()/ RAND_MAX;
     #endif

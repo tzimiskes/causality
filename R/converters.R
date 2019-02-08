@@ -12,9 +12,9 @@ chickering <- function(graph) {
   return(.chickering(graph))
 }
 
-#' @useDynLib causality causalityChickering
+#' @useDynLib causality r_causality_chickering
 .chickering <- function(dag) {
-  dag <- .Call("causalityChickering", dag)
+  dag <- .Call("r_causality_chickering", dag)
   class(dag) <- .PATTERN_CLASS
   return(dag)
 }
@@ -28,11 +28,11 @@ pdx <- function(graph) {
   return(.pdx(graph))
 }
 
-#' @useDynLib causality causalityPDX
+#' @useDynLib causality r_causality_pdx
 .pdx <- function(pdag) {
-  pdag <- .Call("causalityPDX", pdag)
+  pdag <- .Call("r_causality_pdx", pdag)
   if (is.null(pdag)) {
-    warning("graph lacks a DAG extension. Returning NULL")
+    warning("pdag lacks a DAG extension. Returning NULL")
     return(NULL)
   }
   class(pdag) <- .DAG_CLASS

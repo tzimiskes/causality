@@ -6,7 +6,6 @@
 #include <stddef.h>
 
 #include "../headers/causality.h"
-#include "../headers/causalityRWrapper.h"
 #include "../headers/int_redblacktree.h"
 
 #define LEFT 0
@@ -50,7 +49,7 @@ static struct irbt * irbt_instantiate_node(int key, float *values, float weight)
 {
     struct irbt *tmp = malloc(sizeof(struct irbt));
     if (tmp == NULL)
-        error("failed to allocate memory for rbt pointer\n");
+        CAUSALITY_ERROR("failed to allocate memory for rbt pointer\n");
     for (int i = 0; i < NUM_EDGES_STORED; ++i)
         tmp->values[i] = values[i] * weight;
     tmp->key          = key + 1;
@@ -117,10 +116,10 @@ struct irbt * irbt_insert(struct irbt *root, int key, float *values,
 void irbt_print_tree(struct irbt * root)
 {
     if(root != NULL) {
-        Rprintf("Key: %i Value(s):", irbt_key(root));
+        CAUSALITY_PRINT("Key: %i Value(s):", irbt_key(root));
         for(int i = 0; i < NUM_EDGES_STORED; ++i)
-            Rprintf(" %i" , root->values[i]);
-        Rprintf("\n");
+            CAUSALITY_PRINT("%f" , root->values[i]);
+        CAUSALITY_PRINT("\n");
         irbt_print_tree(root->child[LEFT]);
         irbt_print_tree(root->child[RIGHT]);
     }

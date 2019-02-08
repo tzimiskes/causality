@@ -1,5 +1,5 @@
 #' @export
-#' @useDynLib causality causalityGES
+#' @useDynLib causality r_causality_ges
 ges <- function(df, score = c("bic", "bdue"), penalty = 1.0, sample.prior = 1.0,
                     structure.prior = 1.0)
 {
@@ -59,7 +59,7 @@ ges <- function(df, score = c("bic", "bdue"), penalty = 1.0, sample.prior = 1.0,
                        structure.prior = structure.prior
                   )
         )
-  ges.out <- .Call("causalityGES", df, score, dimensions, floating.args,
+  ges.out <- .Call("r_causality_ges", df, score, dimensions, floating.args,
                                     integer.args)
   names(ges.out) <- c("graph", "graph.score")
   # # add additonal diagnostic info

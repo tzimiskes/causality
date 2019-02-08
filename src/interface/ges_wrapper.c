@@ -1,9 +1,9 @@
-#include "../headers/causalityRWrapper.h"
+#include "r_causality.h"
 #include "../headers/causality.h"
 #include "../headers/cgraph.h"
 #include "../headers/dataframe.h"
 #include "../headers/scores.h"
-#include "../headers/ges.h"
+#include "../ges/ges_internal.h"
 
 /*
  * normalize continuous variables to help speed up scoring of continuous
@@ -48,7 +48,7 @@ struct dataframe prepare_df(SEXP Df, SEXP States)
 }
 
 
-SEXP causalityGES(SEXP Df, SEXP ScoreType, SEXP States,
+SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States,
                            SEXP FloatingArgs, SEXP IntegerArgs)
 {
     /*
