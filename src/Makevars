@@ -8,7 +8,7 @@ GES.OBJS = causality/ges/ges.o causality/ges/ges_reorient.o \
     causality/ges/ges_heap.o
 
 SCORE.OBJS = causality/scores/bdeu_score.o causality/scores/score_graph.o \
-    causality/scores/bic_score.o causality/scores/linearalg.o
+    causality/scores/bic_score.o causality/scores/linearalgebra.o
 
 ALG.OBJS = causality/algorithms/meek.o causality/algorithms/sort.o \
     causality/algorithms/chickering.o causality/algorithms/pdx.o
@@ -25,8 +25,8 @@ OBJECTS = $(CGRAPH.OBJS) $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
 
 all: $(SHLIB) clean
 
-score/linearalg.o:
-	@(cd score && $(MAKE) linearalg.o \
+score/linearalgebra.o:
+	@(cd score && $(MAKE) linearalgebra.o \
         CC="$(CC)" CPPFLAGS="$(PKG_CPPFLAGS)" CFLAGS="$(CPICFLAGS)")
 
 clean:

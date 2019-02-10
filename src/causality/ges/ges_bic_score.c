@@ -4,7 +4,7 @@
 
 #include <causality.h>
 
-#include <scores/scores.h>
+#include <scores/linearalgebra.h>
 #include <ges/ges.h>
 #include <ges/ges_internal.h>
 
@@ -121,8 +121,8 @@ void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs
         x[i++]      = df[s->key];
         s           = s->next;
     }
-    fcov_xy(gsm.cov_xy, df, df[y], nobs, n);
-    fcov_xx(gsm.cov_xx, x, nobs, gsm.m);
+    dc_cov_xy(gsm.cov_xy, df, df[y], nobs, n);
+    dc_cov_xx(gsm.cov_xx, x, nobs, gsm.m);
     gs->gsm = gsm;
 }
 
@@ -134,5 +134,5 @@ void ges_bic_optimization2(int xp, struct ges_score *gs)
     double *x[gsm.m];
     for (int i = 0; i < gsm.m; ++i)
         x[i] = df[gsm.lbls[i]];
-    fcov_xy(gs->gsm.cov_xpx, x, df[xp], nobs, gsm.m);
+    dc_cov_xy(gs->gsm.cov_xpx, x, df[xp], nobs, gsm.m);
 }
