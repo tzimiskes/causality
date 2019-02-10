@@ -1,11 +1,11 @@
+#ifndef CAUSALITY_H
+#define CAUSALITY_H
+
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <ges/ges_internal.h>
+#include <ges/ges.h>
 #include <scores/scores.h>
-
-#ifndef CAUSALITY_H
-#define CAUSALITY_H
 
 /* When compiling causality so it links to R, we want to print via the RAPI */
 #ifdef CAUSALITY_R

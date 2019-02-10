@@ -1,6 +1,7 @@
-#include <dataframe.h>
 #ifndef SCORES_H
 #define SCORES_H
+
+#include <dataframe.h>
 
 #define BIC_SCORE "bic"
 #define BDEU_SCORE "bdeu"

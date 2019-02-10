@@ -16,8 +16,8 @@
 #include <cgraph/cgraph.h>
 #include <dataframe.h>
 
-#include <ges/heap.h>
 #include <ges/ges_internal.h>
+#include <ges/ges.h>
 
 #ifdef _OPENMP
 #include <omp.h>

@@ -2,7 +2,8 @@
 #include <float.h>
 
 #include <causality.h>
-#include <ges/heap.h>
+
+#include <ges/ges_internal.h>
 
 struct ges_heap * create_heap(int max_size, struct ges_operator *ext_ops)
 {

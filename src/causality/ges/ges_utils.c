@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <cgraph/cgraph.h>
+#include <ges/ges.h>
 #include <ges/ges_internal.h>
 
 void free_ges_score_mem(struct ges_score_mem gsm)

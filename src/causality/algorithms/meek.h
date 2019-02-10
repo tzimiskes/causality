@@ -1,7 +1,7 @@
-#include <cgraph/cgraph.h>
-
 #ifndef MEEK_H
 #define MEEK_H
+
+#include <cgraph/cgraph.h>
 
 typedef int (*meek_rule)(struct cgraph *cg, int x, int y);
 
