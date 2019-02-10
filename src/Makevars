@@ -5,7 +5,7 @@ PKG_LIBS     = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) \
 
 GES.OBJS = causality/ges/ges.o causality/ges/ges_reorient.o \
     causality/ges/ges_utils.o causality/ges/ges_bic_score.o \
-    causality/ges/ges_heap.o
+    causality/ges/ges_heap.o causality/ges/ges_bdeu_score.o
 
 SCORE.OBJS = causality/scores/bdeu_score.o causality/scores/score_graph.o \
     causality/scores/bic_score.o causality/scores/linearalgebra.o
