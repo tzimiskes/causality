@@ -16,6 +16,7 @@
 #include <causality.h>
 #include <dataframe.h>
 #include <scores/scores.h>
+#include <scores/linearalgebra.h>
 
 #define ERROR_THRESH     1e-9
 
@@ -41,8 +42,8 @@ double bic_score(struct dataframe data, int *xy, int npar,
     double *cov_xy = mem + (npar + 1) * (npar + 1);
     double *cov_xy_t = mem + (npar + 1) * (npar + 2);
     memcpy(cov_xy_t, cov_xy, npar * sizeof(double));
-    fcov_xx(cov_xx, _x, npar, nobs);
-    fcov_xy(cov_xy, _x, _y, npar, nobs);
+    dc_cov_xx(cov_xx, _x, npar, nobs);
+    dc_cov_xy(cov_xy, _x, _y, npar, nobs);
     double rss = calculate_rss(mem, npar);
     free(mem);
     return calcluate_bic(rss, penalty, nobs, npar);

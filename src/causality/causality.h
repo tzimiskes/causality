@@ -1,11 +1,11 @@
+#ifndef CAUSALITY_H
+#define CAUSALITY_H
+
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <ges/ges_internal.h>
+#include <ges/ges.h>
 #include <scores/scores.h>
-
-#ifndef CAUSALITY_H
-#define CAUSALITY_H
 
 /* When compiling causality so it links to R, we want to print via the RAPI */
 #ifdef CAUSALITY_R
@@ -32,9 +32,6 @@
 #define IS_DIRECTED(edge) ((edge) == DIRECTED || (edge) == CIRCLEARROW || \
                            (edge) == SQUIGGLEARROW || (edge) == PLUSPLUSARROW)
 
-
-/* Search algorithms */
-double ccf_ges(struct ges_score score, struct cgraph *cg);
 /* Graph manipulations */
 int           * ccf_sort(struct cgraph *cg);
 struct cgraph * ccf_pdx(struct cgraph *cg);

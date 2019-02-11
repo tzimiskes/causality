@@ -53,6 +53,7 @@ struct cgraph * cgraph_from_causality_graph(SEXP graph)
     for (int i = 2 * n_edges; i < 3 * n_edges; ++i)
         edges[i] = edge_to_int(CHAR(STRING_ELT(graph_edges, i)));
     struct cgraph *cg = create_cgraph(n_nodes);
+    CAUSALITY_PRINT("%p\n", cg);
     fill_in_cgraph(cg, n_edges, edges);
     free(edges);
     free(nodes);
@@ -128,7 +129,10 @@ SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP graph_nodes)
 
 int node_to_int(const char *node, const char **nodes)
 {
-    return node - nodes[0];
+    int i = 0;
+    while (strcmp(node, nodes[i]))
+        i++;
+    return i;
 }
 
 /* converts an edge string to an integer */

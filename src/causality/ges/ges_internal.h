@@ -1,39 +1,11 @@
-#include <stdint.h>
+#ifndef GES_INTERNAL_H
+#define GES_INTERNAL_H
 
+#include <stdint.h>
 #include <cgraph/cgraph.h>
 #include <scores/scores.h>
 #include <dataframe.h>
-
-#ifndef GES_H
-#define GES_H
-
-struct ges_score_mem {
-    double *cov_xy;
-    double *cov_xx; /* m by m matrix */
-    double *cov_xpx;
-    int    *lbls;
-    int     m;
-}; /* 36 bytes */
-
-typedef double (*ges_score_func)(struct dataframe df, int x, int y, int *ypar,
-                                                      int npar,
-                                                      struct score_args args,
-                                                      struct ges_score_mem gsm);
-
-double ges_bdeu_score(struct dataframe data, int x, int y, int *ypar, int npar,
-                                             struct score_args args,
-                                             struct ges_score_mem gsm);
-
-double ges_bic_score(struct dataframe df, int xp, int y, int *x, int nx,
-                                          struct score_args args,
-                                          struct ges_score_mem gsm);
-
-struct ges_score {
-    ges_score_func       gsf;
-    struct ges_score_mem gsm;
-    struct dataframe     df;
-    struct score_args    args;
-};
+#include <ges/ges.h>
 
 struct ges_operator {
     int    xp;
@@ -51,6 +23,14 @@ struct ges_operator {
     double score_diff;
 }; /* 64 bytes */
 
+struct ges_heap {
+    int                   max_size;
+    int                   size;
+    int                  *indices;
+    double               *score_diffs;
+    struct ges_operator  *ops;
+    struct ges_operator **ops_ptrs;
+};
 /*
 struct ges_operator {
     int    xp;
@@ -105,4 +85,14 @@ int determine_insertion_operators_to_update(int *nodes, struct cgraph *cpy,
 void ges_bic_optimization1(struct cgraph *cg, int y, int n,
                                               struct ges_score *gs);
 void ges_bic_optimization2(int xp, struct ges_score *gs);
+
+
+
+void free_heap(struct ges_heap *hp);
+void build_heap(struct ges_heap *hp);
+void insert_heap(struct ges_heap *hp, struct ges_operator *op);
+void remove_heap(struct ges_heap *hp, int node);
+struct ges_heap * create_heap(int max_size, struct ges_operator *ext_ops);
+struct ges_operator * peek_heap(struct ges_heap *hp);
+void print_heap(struct ges_heap *hp);
 #endif

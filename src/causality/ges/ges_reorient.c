@@ -2,9 +2,12 @@
 #include <string.h>
 
 #include <causality.h>
+
 #include <cgraph/cgraph.h>
 #include <cgraph/int_linked_list.h>
 #include <algorithms/meek.h>
+#include <ges/ges.h>
+#include <ges/ges_internal.h>
 
 /* pointer linked list */
 struct pll {

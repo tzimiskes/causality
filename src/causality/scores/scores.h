@@ -1,6 +1,7 @@
-#include <dataframe.h>
 #ifndef SCORES_H
 #define SCORES_H
+
+#include <dataframe.h>
 
 #define BIC_SCORE "bic"
 #define BDEU_SCORE "bdeu"
@@ -16,11 +17,8 @@ typedef double (*score_func)(struct dataframe df, int *xy, int npar,
 double bdeu_score(struct dataframe data, int *xy, int npar,
                                          struct score_args args);
 
-
 double bic_score(struct dataframe data, int *xy, int npar,
                                         struct score_args args);
 
-void   fcov_xx(double * restrict cov_xx, double **x, int n, int m);
-void   fcov_xy(double * restrict cov_xy, double **x, double *y, int n, int m);
 double calculate_rss(double *cov, int m);
 #endif
