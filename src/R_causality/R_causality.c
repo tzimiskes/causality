@@ -16,11 +16,6 @@ const char *ADJACENCIES_STR = "adjacencies";
 const char *CAUSALITY_GRAPH_CLASS   = "causality.graph";
 const char *CAUSALITY_PATTERN_CLASS = "causality.pattern";
 
-static int          edge_to_int(const char *edge);
-static const char * edge_to_char(int edge);
-static int          node_to_int(const char *node, const char **nodes);
-
-
 SEXP create_causality_graph(int n_edges, int n_nodes, SEXP nodes)
 {
     SEXP graph = PROTECT(allocVector(VECSXP, 3));
@@ -34,6 +29,7 @@ SEXP create_causality_graph(int n_edges, int n_nodes, SEXP nodes)
     SET_STRING_ELT(names, ADJACENCIES, mkChar(ADJACENCIES_STR));
     /* Set Names to be Graphs names attribute */
     setAttrib(graph, R_NamesSymbol, names);
+    setAttrib(VECTOR_ELT(graph, ADJACENCIES), R_NamesSymbol, duplicate(nodes));
     /* Similarly, we do the same with class */
     SEXP class = PROTECT(allocVector(STRSXP, 1));
     SET_STRING_ELT(class, 0, mkChar(CAUSALITY_GRAPH_CLASS));
@@ -46,7 +42,7 @@ struct cgraph * cgraph_from_causality_graph(SEXP graph)
 {
     int  n_nodes     = length(VECTOR_ELT(graph, NODES));
     SEXP graph_nodes = VECTOR_ELT(graph, NODES);
-    const char **nodes = malloc(n_nodes * sizeof(const char*));
+    const char **nodes = malloc(n_nodes * sizeof(const char *));
     for (int i = 0; i < n_nodes; ++i)
         nodes[i] = CHAR(STRING_ELT(graph_nodes, i));
     SEXP  graph_edges = VECTOR_ELT(graph, EDGES);
@@ -59,6 +55,7 @@ struct cgraph * cgraph_from_causality_graph(SEXP graph)
     struct cgraph *cg = create_cgraph(n_nodes);
     fill_in_cgraph(cg, n_edges, edges);
     free(edges);
+    free(nodes);
     return cg;
 }
 
@@ -129,13 +126,13 @@ SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP graph_nodes)
     return graph;
 }
 
-static int node_to_int(const char *node, const char **nodes)
+int node_to_int(const char *node, const char **nodes)
 {
     return node - nodes[0];
 }
 
 /* converts an edge string to an integer */
-static int edge_to_int(const char *edge)
+int edge_to_int(const char *edge)
 {
     if (!strcmp(edge, DIRECTED_STR))
         return DIRECTED;
@@ -155,7 +152,7 @@ static int edge_to_int(const char *edge)
 }
 
 /* convert edge int into an edge string */
-static const char * edge_to_char(int edge) {
+const char * edge_to_char(int edge) {
     switch (edge) {
     case DIRECTED:
         return DIRECTED_STR;

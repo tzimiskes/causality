@@ -20,6 +20,10 @@ SEXP r_causality_score_graph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
 SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States, SEXP FloatingArgs,
                            SEXP IntegerArgs);
 
+int          edge_to_int(const char *edge);
+const char * edge_to_char(int edge);
+int          node_to_int(const char *node, const char **nodes);
+
 int * calculate_edges_ptr(SEXP Graph);
 void calculate_edges_from_cgraph(struct cgraph *cg, SEXP graph);
 struct cgraph * cgraph_from_causality_graph(SEXP Graph);
