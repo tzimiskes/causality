@@ -53,7 +53,6 @@ struct cgraph * cgraph_from_causality_graph(SEXP graph)
     for (int i = 2 * n_edges; i < 3 * n_edges; ++i)
         edges[i] = edge_to_int(CHAR(STRING_ELT(graph_edges, i)));
     struct cgraph *cg = create_cgraph(n_nodes);
-    CAUSALITY_PRINT("%p\n", cg);
     fill_in_cgraph(cg, n_edges, edges);
     free(edges);
     free(nodes);

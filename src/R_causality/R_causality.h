@@ -19,7 +19,7 @@ SEXP r_causality_score_graph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
                                      SEXP FloatingArgs, SEXP IntegerArgs);
 SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States, SEXP FloatingArgs,
                            SEXP IntegerArgs);
-
+SEXP r_causality_aggregate_graphs(SEXP graphs, SEXP graph_weights);
 int          edge_to_int(const char *edge);
 const char * edge_to_char(int edge);
 int          node_to_int(const char *node, const char **nodes);

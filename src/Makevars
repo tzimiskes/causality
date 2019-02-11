@@ -15,10 +15,10 @@ ALG.OBJS = causality/algorithms/meek.o causality/algorithms/sort.o \
 
 CGRAPH.OBJS = causality/cgraph/cgraph.o causality/cgraph/int_ll.o
 
-AGG.OBJS = causality/aggregate/aggregate_graphs.o causality/aggregate/int_rbt.o
+AGG.OBJS = causality/aggregate/aggregate_graphs.o causality/aggregate/tree.o
 
 RCAUSALITY.OBJS = R_causality/R_causality.o R_causality/R_causality_wrappers.o \
-    R_causality/R_causality_ges_wrapper.o
+    R_causality/R_causality_ges_wrapper.o R_causality/R_causality_aggregate.o
 
 OBJECTS = $(CGRAPH.OBJS) $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
     $(RCAUSALITY.OBJS)

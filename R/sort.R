@@ -29,7 +29,7 @@
 sort.causality.graph <- function(x, decreasing = FALSE, ...) {
   if (!is.cgraph(x))
     stop("x must be a causality.graph")
-  output <- .Call("r_causality_meek", x)
+  output <- .Call("r_causality_sort", x)
   if (is.null(output)) {
     warning("x contains a cycle, returning NULL.")
     return(NULL)
