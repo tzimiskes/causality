@@ -14,8 +14,8 @@
 #include <cgraph/int_linked_list.h>
 
 #define UNKNOWN   -1
-#define COMPELLED  1 /* This means directed */
-#define REVERSABLE 2 /* This means undirected */
+#define COMPELLED  DIRECTED
+#define REVERSABLE UNDIRECTED
 
 static void order_edges(struct cgraph *cg, int *sort);
 static void insertion_sort(struct ill *list);

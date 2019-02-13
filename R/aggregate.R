@@ -1,59 +1,70 @@
+#' Aggregate a list of causality.graphs into a single object
+#'
+#' \code{aggregate_graphs} will combine \code{graphs} into an
+#' "aggregated.causality.graph" object which can be used for bootstrapping and
+#' jackknifing causal discovery algorithms among other things.
+#' @param graphs A list of causality.graphs. Each graph must have the same nodes.
+#' @param weights an optional vector of graph weights to be used in the
+#'   aggregation process. If weights is not supplied, it defaults to
+#'   \code{length(graphs)}. If weights is non NULL, the length of weights must
+#'   equal the length of graphs, the sum of weights must be greater than 0,
+#'   and each weight must be non-negative.
+#' @details
+#' TODO
+#' @examples
+#' TODO
+#' @author Alexander Rix
 #' @export
-aggregate_graphs <- function(cgraphs, method = c("frequentist", "bayesian"),
-                                      df = NULL)
+#' @useDynLib causality r_causality_aggregate_graphs
+aggregate_graphs <- function(graphs, weights = NULL)
 {
-  if(!is.list(cgraphs))
-    stop("dags is not as list")
-  if (length(cgraphs) == 1)
-    stop("dags is of length 1")
+  if (!is.list(graphs))
+    stop("graphs is not as list")
+  if (length(graphs) == 1)
+    stop("graphs has length 1")
+  if (sum(unlist(lapply(gs, is.cgraph))) < length(graphs))
+    stop("Every graph in graphs must be a causality.graph!")
+  if (is.null(weights)) {
+    weights <- rep(1, length(graphs))
+  }
+  else {
+  if (length(weights) != length(graphs))
+    stop("weights must have the same length as graphs")
+  if (sum(weights) <= 0)
+    stop("weights must sum up to a number greater than 0")
+  if (sum(weights >= 0) < length(weights))
+    stop("Each weight must be non negative")
+  }
 
-  base <- cgraphs[[1]]
+  graphs <- lapply(graphs, function(graph) {graph$nodes <- sort(graph$nodes)
+                                            graph})
+  base <- graphs[[1]]
   # see if all the graphs have the EXACT same nodes
-  same_nodes <- lapply(cgraphs, function(cgraph) {
-    isTRUE(all.equal(base$nodes, cgraph$nodes))
+  same_nodes <- lapply(graphs, function(graph) {
+    isTRUE(all.equal(base$nodes, graph$nodes))
   })
-  same_nodes <- isTRUE(all.equal(unlist(same_nodes), rep(T, length(cgraphs))))
+  same_nodes <- isTRUE(all.equal(unlist(same_nodes), rep(T, length(graphs))))
   if (!same_nodes)
     stop("Not all the graphs have the same nodes")
 
-  method <- match.arg(method)
-  bs.weights <- rep(0, length(cgraphs))
-  if (method == "frequentist") {
-    bs.weights <- rep(1, length(cgraphs))
-  }
-  if (method == "bayesian") {
-    df <- as.data.frame(lapply(df, function(x) { (x - mean(x))/stats::sd(x) }))
-    for (i in 1:length(cgraphs)) {
-      graph <- as.dag(cgraphs[[i]])
-      bs.weights[i] <- score(graph, df)
-    }
-    bs.weights <- exp(-.5*(bs.weights - min(bs.weights)))
-  }
-  bs.weights <- round(bs.weights, digits = 5)
-  cgraphs <- lapply(cgraphs, function(cgraph) {
-    .prepare_cgraph_for_call(cgraph, F, T, T)
-  })
-
-  table <- .Call("cf_aggregate_cgraphs", cgraphs, bs.weights)
-  table <- as.data.frame(table)
-
-  cgraph <- cgraphs[[1]]
-  table[[1]] <- cgraph$nodes[table[[1]]]
-  table[[2]] <- cgraph$nodes[table[[2]]]
-    names(table) <- c("node1","node2", "<--", "---", "-->", "<~~",
-                      "~~>", "<++", "++>","<-o", "o->", "<->", "o-o")
-
-  table <- table[, c(T, T, colSums(table[, -(1:2)]) != 0)]
-
-  output <- list(nodes = cgraph$nodes, table = table)
-  class(output) <- c("aggregated-cgraphs")
+  table <- .Call("r_causality_aggregate_graphs", graphs, weights)
+  acg <- data.frame(x = table[[1]], y = table[[2]], "<--" = table[[10]],
+                                    "-->" = table[[3]], "---" = table[[4]],
+                                    "<++" = table[[11]], "++>" = table[[5]],
+                                    "<~~" = table[[12]], "~~>" = table[[6]],
+                                    "<-o" = table[[13]], "o->" = table[[7]],
+                                    "o-o" = table[[8]], "<->" = table[[9]])
+  acg.names <- c("x", "y", "<--", "-->", "---", "<++", "++>", "<~~", "~~>", "<-o", "o->", "o-o", "<->")
+  names(acg) <- acg.names
+  output <- list(nodes = base$nodes, edge.table = acg)
+  class(output) <- c("aggregated.causality.graph")
   return(output)
 }
 
 #' @export
-vote <- function(aggregated.cgraphs) {
-  nodes     <- aggregated.cgraphs$nodes
-  table     <- aggregated.cgraphs$table
+vote <- function(aggregated.graphs) {
+  nodes     <- aggregated.graphs$nodes
+  table     <- aggregated.graphs$table
   table$" " <- 1 - rowSums(table[, -(1:2)])
 
   arrows <- names(table[, -(1:2)])[max.col(table[, -(1:2)])]
