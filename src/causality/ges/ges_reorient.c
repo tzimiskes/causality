@@ -142,7 +142,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
              * value negative.
              */
             if (x != z && !adjacent_in_cgraph(cg, x, z)) {
-                if (x > 0) {
+                if (p1->tag == UNTAGGED) {
                     p1->tag = TAG_COMPELLED;
                     insert_pll(compelled, p1);
                 }
@@ -151,7 +151,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
             p2 = p2->next;
         }
         reversible = ill_insert_front(reversible, x, 0);
-        NEXT_PARENT: ;
+        NEXT_PARENT:
         p1 = p1->next;
     }
     /*
@@ -162,8 +162,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
     while (reversible) {
         int parent = reversible->node;
         struct ill *p = ill_search(cg->parents[node], parent);
-        /* if the value is positive, the edge isn't compelled */
-        if (p->edge > 0) {
+        if (p->tag == UNTAGGED) {
             node_modified = 1;
             unorient_directed_edge(cg, parent, node);
             /* if parent or node haven't been marked as visited, mark them */
@@ -206,7 +205,7 @@ void orient(struct cgraph *cg, int x, int y, struct ill **stack,
     orient_undirected_edge(cg, x, y);
     /* get the newly created edge. add it to complled, and mark it compelled */
     struct ill *p = ill_search(cg->parents[y], x);
-    p->edge = TAG_COMPELLED;
+    p->tag = TAG_COMPELLED;
     insert_pll(compelled, p);
     /* if x or y are unvisited, marked them as visited */
     visited[x] = 1;
@@ -225,9 +224,7 @@ void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
      */
     struct ill *cpy = copy_ill(cg->spouses[x]);
     struct ill *p   = cpy;
-    if(!p)
-        return;
-    while(p) {
+    while (p) {
         int y = p->node;
         if(_meek_rule(cg, x, y))
             orient(cg, x, y, stack, compelled, visited);

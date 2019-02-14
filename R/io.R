@@ -37,7 +37,6 @@ write_causality_graph <- function(file, graph) {
     e <- graph$edges[i, 3]
     write(sprintf("%i. %s %s %s", i, x, e, y), file = file, append = T)
   }
-  cat('\n', file = file, append = T)
 }
 
 #' @rdname causality-IO
@@ -54,14 +53,19 @@ read_causality_graph <- function(file) {
         stop("file does not contain a compatible graph")
     tmp <- tmp[-(1:4)]
      edges <- c()
-     while (length(tmp) > 1) {
-         line <- tmp[1]
-         tmp  <- tmp[-1]
+     # process the file one line at a time
+     line <- tmp[1]
+     while (!is.na(line)) {
          line <- sub("[0-9]+\\. ", "", line)
          edge <- unlist(strsplit(line, split = " "))
-         if (is.na(sum(match(c(edge[1], edge[3]), nodes))))
+         if (is.na(sum(match(c(edge[1], edge[3]), nodes)))) {
+            print(edge)
             stop ("file contains a malformed causality graph")
+         }
         edges <- c(edges, c(edge[1], edge[3], edge[2]))
+        tmp  <- tmp[-1]
+        line <- tmp[1]
+        # print(line)
      }
      cgraph(nodes, matrix(edges, ncol = 3, byrow = T))
 }
