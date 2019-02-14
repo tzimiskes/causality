@@ -18,15 +18,15 @@ struct tree ** causality_aggregate_graphs(struct cgraph **cgs, int n_graphs,
         for (int x = 0; x < n_nodes; ++x) {
             struct ill *p = cg->parents[x];
             while (p) {
-                int y    = p->key;
-                int edge = p->value;
+                int y    = p->node;
+                int edge = p->edge;
                 insert_tree(&trees[x], y, reverse(x, y, edge), weight);
                 p = p->next;
             }
             p = cg->spouses[x];
             while (p) {
-                int y    = p->key;
-                int edge = p->value;
+                int y    = p->node;
+                int edge = p->edge;
                 if (x < y)
                     insert_tree(&trees[x], y, edge, weight);
                 p = p->next;

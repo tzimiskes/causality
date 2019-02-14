@@ -94,8 +94,8 @@ SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP graph_nodes)
             SET_VECTOR_ELT(adjacencies, i, R_NilValue);
         SEXP node_adjacents = VECTOR_ELT(adjacencies, i);
         while (p) {
-            int parent = p->key;
-            int edge   = p->value;
+            int parent = p->node;
+            int edge   = p->edge;
             SET_STRING_ELT(node_adjacents, adj_i++, nodes[parent]);
             SET_STRING_ELT(graph_edges,          p_i++,   nodes[parent]);
             SET_STRING_ELT(graph_edges,          c_i++,   nodes[node]);
@@ -104,8 +104,8 @@ SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP graph_nodes)
             p = p->next;
         }
         while (s) {
-            int spouse = s->key;
-            int edge   = s->value;
+            int spouse = s->node;
+            int edge   = s->edge;
             /* to prevent an undirected edge from appearing twice. */
             SET_STRING_ELT(node_adjacents, adj_i++, nodes[spouse]);
             if (node < spouse) {
@@ -116,7 +116,7 @@ SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP graph_nodes)
             s = s->next;
         }
         while (c) {
-            int child = c->key;
+            int child = c->node;
             SET_STRING_ELT(node_adjacents, adj_i++, nodes[child]);
             c = c->next;
         }

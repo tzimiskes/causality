@@ -188,12 +188,12 @@ void update_deletion_operator(struct cgraph *cg, struct ges_operator *op,
     struct ill *p     = cg->parents[y];
     int         i     = 0;
     while (p) {
-        nodes[i++] = p->key;
+        nodes[i++] = p->node;
         p          = p->next;
     }
     p = cg->spouses[y];
     while (p) {
-        nodes[i++] = p->key;
+        nodes[i++] = p->node;
         p          = p->next;
     }
     /* precalculate the covariances common to all calculations */

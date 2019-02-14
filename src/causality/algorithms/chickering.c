@@ -21,9 +21,9 @@ static void order_edges(struct cgraph *cg, int *sort);
 static void insertion_sort(struct ill *list);
 static void find_compelled(struct cgraph *cg, int *sort);
 
-void ccf_chickering(struct cgraph *cg)
+void causality_chickering(struct cgraph *cg)
 {
-    int *sort = ccf_sort(cg);
+    int *sort = causality_sort(cg);
     order_edges(cg, sort);
     find_compelled(cg, sort);
     free(sort);
@@ -52,7 +52,7 @@ static void order_edges(struct cgraph *cg, int *sort)
     for (int i = 0; i < n_nodes; ++i) {
         struct ill *p = parents[i];
         while (p) {
-            p->value = inv_sort[p->key];
+            p->edge = inv_sort[p->node];
             p        = p->next;
         }
         insertion_sort(parents[i]);
@@ -72,16 +72,16 @@ static void insertion_sort(struct ill *list)
         struct ill *top = list;
         struct ill *max = list;
         while (top) {
-            if (top->value > max->value)
+            if (top->edge > max->edge)
                 max = top;
             top = top->next;
         }
-        int list_key   = list->key;
-        int list_value = list->value;
-        list->key      = max->key;
-        list->value    = max->value;
-        max->key       = list_key;
-        max->value     = list_value;
+        int list_key   = list->node;
+        int list_value = list->edge;
+        list->node      = max->node;
+        list->edge    = max->edge;
+        max->node       = list_key;
+        max->edge     = list_value;
         list           = list->next;
     }
 }
@@ -97,7 +97,7 @@ static void find_compelled(struct cgraph *cg, int *sort)
     for (int i = 0; i < n_nodes; ++i) {
         struct ill *p = parents[i];
         while (p) {
-            p->value = UNKNOWN;
+            p->edge = UNKNOWN;
             p        = p->next;
         }
     }
@@ -114,7 +114,7 @@ static void find_compelled(struct cgraph *cg, int *sort)
         if (!yp)
             continue;
         /* Since y has parents, run stepts 5-8 */
-        int         x  = yp->key;
+        int         x  = yp->node;
         struct ill *xp = parents[x];
         /*
          * for each parent of x, w, where w -> x is compelled
@@ -122,19 +122,19 @@ static void find_compelled(struct cgraph *cg, int *sort)
          * or shielded collider (w -> x -> y and w -> x)
          */
         while (xp) { /* STEP 5 */
-            if (xp->value != COMPELLED)
+            if (xp->edge != COMPELLED)
                 goto NEXT;
-            int w = xp->key;
+            int w = xp->node;
             /* if true , w --> y , x;  x--> y form a shielded collider */
             if (edge_directed_in_cgraph(cg, w, y)) {
                 struct ill* p = ill_search(parents[y], w);
-                p->value = COMPELLED;
+                p->edge = COMPELLED;
             }
             /* otherwise it is a chain and parents of y are compelled */
             else {
                 struct ill *p = parents[y];
                 while (p) {
-                    p->value = COMPELLED;
+                    p->edge = COMPELLED;
                     p        = p->next;
                 }
                 goto EOFL; /* goto end of for loop */
@@ -149,7 +149,7 @@ static void find_compelled(struct cgraph *cg, int *sort)
         int unshielded_collider = 0;
         struct ill *p = parents[y];
         while (p) {
-            int z = p->key;
+            int z = p->node;
             if (z != x && !adjacent_in_cgraph(cg, z, x)) {
                 unshielded_collider = 1;
                 break;
@@ -160,7 +160,7 @@ static void find_compelled(struct cgraph *cg, int *sort)
         if (unshielded_collider) {
             p = parents[y];
             while (p) {
-                p->value = COMPELLED;
+                p->edge = COMPELLED;
                 p        = p->next;
             }
         }
@@ -173,8 +173,8 @@ static void find_compelled(struct cgraph *cg, int *sort)
             struct ill *cpy = copy_ill(parents[y]);
             p = cpy;
             while (p) {
-                if (p->value == UNKNOWN)
-                    unorient_directed_edge(cg, p->key, y);
+                if (p->edge == UNKNOWN)
+                    unorient_directed_edge(cg, p->node, y);
                 p = p->next;
             }
             free(cpy);

@@ -34,11 +34,11 @@ double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
         xy[n] = i; /* set y to i */
         int j = 0;
         while (p) {
-            xy[j++] = p->key;
+            xy[j++] = p->node;
             p = p->next;
         }
         while (s) {
-            xy[j++] = s->key;
+            xy[j++] = s->node;
             s = s->next;
         }
         graph_score += score(df, xy, n, args);

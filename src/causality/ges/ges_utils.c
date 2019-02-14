@@ -122,21 +122,21 @@ int cycle_created(struct cgraph *cg, struct ges_operator *op, int *mem)
         struct ill *p = cg->children[node];
         while (p) {
             /* If the next node is x we have found a cycle and can return 1 */
-            if (p->key == op->xp)
+            if (p->node == op->xp)
                 return 1;
-            if (!is_marked(p->key, marked)) {
-                mark(p->key, marked);
-                queue[queue_size++] = p->key;
+            if (!is_marked(p->node, marked)) {
+                mark(p->node, marked);
+                queue[queue_size++] = p->node;
             }
             p = p->next;
         }
         p = cg->spouses[node];
         while (p) {
-            if (p->key == op->xp)
+            if (p->node == op->xp)
                 return 1;
-            if (!is_marked(p->key, marked)) {
-                mark(p->key, marked);
-                queue[queue_size++] = p->key;
+            if (!is_marked(p->node, marked)) {
+                mark(p->node, marked);
+                queue[queue_size++] = p->node;
             }
             p = p->next;
         }
@@ -158,10 +158,10 @@ void partition_neighbors(struct cgraph *cg, struct ges_operator *op)
     o.set       = malloc(n * sizeof(int));
     o.set_size  = 0;
     while (s) {
-        if (adjacent_in_cgraph(cg, o.xp, s->key))
-            o.naxy[o.naxy_size++] = s->key;
+        if (adjacent_in_cgraph(cg, o.xp, s->node))
+            o.naxy[o.naxy_size++] = s->node;
         else
-            o.set[o.set_size++] = s->key;
+            o.set[o.set_size++] = s->node;
         s = s->next;
     }
     *op = o;
@@ -180,8 +180,8 @@ void calculate_naxy(struct cgraph *cg, struct ges_operator *op)
     o.set_size  = 0;
     o.set       = NULL;
     while (s) {
-        if (adjacent_in_cgraph(cg, o.xp, s->key))
-            o.naxy[o.naxy_size++] = s->key;
+        if (adjacent_in_cgraph(cg, o.xp, s->node))
+            o.naxy[o.naxy_size++] = s->node;
         s = s->next;
     }
     *op = o;
@@ -197,7 +197,7 @@ void calculate_parents(struct cgraph *cg, struct ges_operator *op)
     op->parents   = malloc(op->n_parents * sizeof(int));
     int i = 0;
     while (p) {
-        op->parents[i++] = p->key;
+        op->parents[i++] = p->node;
         p = p->next;
     }
 }

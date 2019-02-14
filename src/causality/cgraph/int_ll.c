@@ -8,9 +8,10 @@ static struct ill * ill_instantiate(int key, int value)
     struct ill *p = malloc(sizeof(struct ill));
     if (p == NULL)
         CAUSALITY_ERROR("Failed to instaniate linked list!\n");
-    p->key   =  key;
-    p->value = value;
-    p->next  = NULL;
+    p->node  =  key;
+    p->edge = value;
+    p->tag  = 0;
+    p->next = NULL;
     return p;
 }
 
@@ -43,7 +44,7 @@ struct ill * copy_ill(struct ill *root)
 {
     struct ill *copy = NULL;
     while (root) {
-        copy = ill_insert(copy, root->key, root->value);
+        copy = ill_insert(copy, root->node, root->edge);
         root = root->next;
     }
     return copy;
@@ -60,7 +61,7 @@ void ill_free(struct ill *root)
 
 struct ill * ill_search(struct ill *root, int key) {
     while (root) {
-        if (root->key == key)
+        if (root->node == key)
             return root;
         root = root->next;
     }
@@ -88,7 +89,7 @@ struct ill * create_ill_ptr(int n)
 void ill_print(struct ill *root)
 {
     while (root) {
-        printf("Key: %i Value: %i\n", root->key, root->value);
+        printf("Key: %i Value: %i\n", root->node, root->edge);
         root = root->next;
     }
 }
@@ -106,13 +107,13 @@ int ill_size(struct ill *root)
 void ill_delete(struct ill ** root, int key)
 {
     struct ill *p = *root;
-    if (p->key == key) {
+    if (p->node == key) {
         *root = (*root)->next;
         free(p);
         return;
     }
     while (p->next) {
-        if (p->next->key == key) {
+        if (p->next->node == key) {
             struct ill *p2 = p->next;
             p->next    = p->next->next;
             free(p2);

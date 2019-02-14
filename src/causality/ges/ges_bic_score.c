@@ -112,13 +112,13 @@ void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs
     /* fill in x */
     int i = 0;
     while (p) {
-        gsm.lbls[i] = p->key;
-        x[i++]      = df[p->key];
+        gsm.lbls[i] = p->node;
+        x[i++]      = df[p->node];
         p           = p->next;
     }
     while (s) {
-        gsm.lbls[i] = s->key;
-        x[i++]      = df[s->key];
+        gsm.lbls[i] = s->node;
+        x[i++]      = df[s->node];
         s           = s->next;
     }
     dc_cov_xy(gsm.cov_xy, df, df[y], nobs, n);

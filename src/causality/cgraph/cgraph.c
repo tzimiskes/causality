@@ -114,19 +114,19 @@ int adjacent_in_cgraph(struct cgraph *cg, int x, int y)
 {
     struct ill *p = cg->parents[x];
     while (p) {
-        if (p->key == y)
+        if (p->node == y)
             return 1;
         p = p->next;
     }
     p = cg->children[x];
     while (p) {
-        if (p->key == y)
+        if (p->node == y)
             return 1;
         p = p->next;
     }
     p = cg->spouses[x];
     while (p) {
-        if (p->key == y)
+        if (p->node == y)
             return 1;
         p = p->next;
     }
@@ -137,7 +137,7 @@ int edge_undirected_in_cgraph(struct cgraph *cg, int x, int y)
 {
     struct ill *p = cg->spouses[x];
     while (p) {
-        if (p->key == y)
+        if (p->node == y)
             return 1;
         p = p->next;
     }
@@ -148,7 +148,7 @@ int edge_directed_in_cgraph(struct cgraph *cg, int parent, int child)
 {
     struct ill *p = cg->children[parent];
     while (p) {
-        if (p->key == child)
+        if (p->node == child)
             return 1;
         p = p->next;
     }
@@ -163,7 +163,7 @@ int identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2, int node)
     while (s1) {
         struct ill *p = s2;
         while(p) {
-            if(s1->key == p->key)
+            if(s1->node == p->node)
                 goto S1_NEXT;
             p = p->next;
         }
@@ -175,7 +175,7 @@ int identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2, int node)
     while (s2) {
         struct ill *p = s1;
         while(p) {
-            if(s2->key == p->key)
+            if(s2->node == p->node)
                 goto S2_NEXT;
             p = p->next;
         }
@@ -188,7 +188,7 @@ int identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2, int node)
     while (p1) {
         struct ill *p = p2;
         while(p) {
-            if(p1->key == p->key)
+            if(p1->node == p->node)
                 goto P1_NEXT;
             p = p->next;
         }
@@ -200,7 +200,7 @@ int identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2, int node)
     while (p2) {
         struct ill *p = p1;
         while(p) {
-            if(p2->key == p->key)
+            if(p2->node == p->node)
                 goto P2_NEXT;
             p = p->next;
         }
@@ -214,14 +214,14 @@ int identical_in_cgraphs(struct cgraph *cg1, struct cgraph *cg2, int node)
 void orient_undirected_edge(struct cgraph *cg, int parent, int child)
 {
     struct ill *node = NULL;
-    if (cg->spouses[child]->key == parent) {
+    if (cg->spouses[child]->node == parent) {
         node = cg->spouses[child];
         cg->spouses[child] = cg->spouses[child]->next;
     }
     else {
         struct ill *spouses = cg->spouses[child];
         while (spouses->next) {
-            if (spouses->next->key == parent) {
+            if (spouses->next->node == parent) {
                 node = spouses->next;
                 spouses->next = spouses->next->next;
                 break;
@@ -230,17 +230,17 @@ void orient_undirected_edge(struct cgraph *cg, int parent, int child)
         }
     }
     node->next         = cg->parents[child];
-    node->value        = DIRECTED;
+    node->edge        = DIRECTED;
     cg->parents[child] = node;
     /* now we need to do the oher */
-    if (cg->spouses[parent]->key == child) {
+    if (cg->spouses[parent]->node == child) {
         node = cg->spouses[parent];
         cg->spouses[parent] = cg->spouses[parent]->next;
     }
     else {
         struct ill *spouses = cg->spouses[parent];
         while (spouses->next) {
-            if (spouses->next->key == child) {
+            if (spouses->next->node == child) {
                 node = spouses->next;
                 spouses->next = spouses->next->next;
                 break;
@@ -249,21 +249,21 @@ void orient_undirected_edge(struct cgraph *cg, int parent, int child)
         }
     }
     node->next           = cg->children[parent];
-    node->value          = DIRECTED;
+    node->edge          = DIRECTED;
     cg->children[parent] = node;
 }
 
 void unorient_directed_edge(struct cgraph *cg, int parent, int child)
 {
     struct ill *node = NULL;
-    if (cg->parents[child]->key == parent) {
+    if (cg->parents[child]->node == parent) {
         node = cg->parents[child];
         cg->parents[child] = cg->parents[child]->next;
     }
     else {
         struct ill *parents = cg->parents[child];
         while (parents->next) {
-            if (parents->next->key == parent) {
+            if (parents->next->node == parent) {
                 node          = parents->next;
                 parents->next = parents->next->next;
                 break;
@@ -272,17 +272,17 @@ void unorient_directed_edge(struct cgraph *cg, int parent, int child)
         }
     }
     node->next         = cg->spouses[child];
-    node->value        = UNDIRECTED;
+    node->edge        = UNDIRECTED;
     cg->spouses[child] = node;
     /* now we need to do the oher */
-    if (cg->children[parent]->key == child) {
+    if (cg->children[parent]->node == child) {
         node = cg->children[parent];
         cg->children[parent] = cg->children[parent]->next;
     }
     else {
         struct ill *children = cg->children[parent];
         while (children->next) {
-            if (children->next->key == child) {
+            if (children->next->node == child) {
                 node = children->next;
                 children->next = children->next->next;
                 break;
@@ -291,7 +291,7 @@ void unorient_directed_edge(struct cgraph *cg, int parent, int child)
         }
     }
     node->next          = cg->spouses[parent];
-    node->value         = UNDIRECTED;
+    node->edge         = UNDIRECTED;
     cg->spouses[parent] = node;
 }
 
@@ -300,13 +300,13 @@ void print_cgraph(struct cgraph *cg)
     for (int i = 0; i < cg->n_nodes; ++i) {
         struct ill *p = cg->parents[i];
         while (p) {
-            CAUSALITY_PRINT("%i --> %i\n", p->key, i);
+            CAUSALITY_PRINT("%i --> %i\n", p->node, i);
             p = p->next;
         }
         p = cg->spouses[i];
         while (p) {
-            if (p->key < i)
-                CAUSALITY_PRINT("%i --- %i\n", p->key, i);
+            if (p->node < i)
+                CAUSALITY_PRINT("%i --- %i\n", p->node, i);
             p = p->next;
         }
     }

@@ -13,7 +13,7 @@ SEXP r_causality_sort(SEXP graph)
 {
     struct cgraph *cg = cgraph_from_causality_graph(graph);
     /* Attempt to generate a topological sort of cg */
-    int *sort = ccf_sort(cg);
+    int *sort = causality_sort(cg);
     free_cgraph(cg);
     if (sort == NULL)
         return R_NilValue;
@@ -30,7 +30,7 @@ SEXP r_causality_sort(SEXP graph)
 SEXP r_causality_pdx(SEXP pdag)
 {
     struct cgraph *cg = cgraph_from_causality_graph(pdag);
-    cg = ccf_pdx(cg);
+    cg = causality_pdx(cg);
     if (cg == NULL)
         return R_NilValue;
     SEXP nodes = VECTOR_ELT(pdag, NODES);
@@ -43,7 +43,7 @@ SEXP r_causality_pdx(SEXP pdag)
 SEXP r_causality_chickering(SEXP dag)
 {
     struct cgraph *cg = cgraph_from_causality_graph(dag);
-    ccf_chickering(cg);
+    causality_chickering(cg);
     SEXP nodes   = VECTOR_ELT(dag, NODES);
     SEXP pattern = PROTECT(causality_graph_from_cgraph(cg, nodes));
     free_cgraph(cg);
@@ -54,7 +54,7 @@ SEXP r_causality_chickering(SEXP dag)
 SEXP r_causality_meek(SEXP pdag)
 {
     struct cgraph *cg = cgraph_from_causality_graph(pdag);
-    ccf_meek(cg);
+    causality_meek(cg);
     SEXP nodes = VECTOR_ELT(pdag, NODES);
     SEXP cpdag = PROTECT(causality_graph_from_cgraph(cg, nodes));
     free_cgraph(cg);

@@ -37,10 +37,10 @@
                            (edge) == SQUIGGLEARROW || (edge) == PLUSPLUSARROW)
 
 /* Graph manipulations */
-int           * ccf_sort(struct cgraph *cg);
-struct cgraph * ccf_pdx(struct cgraph *cg);
-void            ccf_chickering(struct cgraph *cg);
-void            ccf_meek(struct cgraph *cg);
+int           * causality_sort(struct cgraph *cg);
+struct cgraph * causality_pdx(struct cgraph *cg);
+void            causality_chickering(struct cgraph *cg);
+void            causality_meek(struct cgraph *cg);
 /* misc functions */
 struct tree ** causality_aggregate_graphs(struct cgraph **cgs, int n_graphs,
                                              double *weights);

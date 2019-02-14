@@ -3,9 +3,10 @@
 
 /* definition of each node in a linked list */
 struct ill {
-  struct ill *next;
-  int key;
-  int value;
+    int         node;
+    short       edge;
+    short       tag;
+    struct ill *next;
 };
 
 struct ill ** create_ptr_to_ill_ptr(int n);

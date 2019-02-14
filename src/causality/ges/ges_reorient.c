@@ -9,6 +9,9 @@
 #include <ges/ges.h>
 #include <ges/ges_internal.h>
 
+#define TAG_COMPELLED 1
+#define UNTAGGED      0
+
 /* pointer linked list */
 struct pll {
     struct ill *p;
@@ -53,7 +56,7 @@ void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited)
     meek_rules(cg, op.y, &stack, &compelled, visited);
     while (stack) {
         /* pop the top */
-        int         node = stack->key;
+        int         node = stack->node;
         struct ill *p    = stack;
         stack = stack->next;
         free(p);
@@ -65,7 +68,7 @@ void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited)
      * when we set the edge values to negative */
     struct pll *p;
     while (compelled) {
-        compelled->p->value = -compelled->p->value;
+        compelled->p->tag = UNTAGGED;
         p = compelled->next;
         free(compelled);
         compelled = p;
@@ -94,7 +97,7 @@ void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited)
     }
     while (stack) {
         /* pop the top */
-        int node = stack->key;
+        int node = stack->node;
         struct ill *p = stack;
         stack = stack->next;
         free(p);
@@ -107,7 +110,7 @@ void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited)
      */
     struct pll *p;
     while (compelled) {
-        compelled->p->value = -compelled->p->value;
+        compelled->p->tag = UNTAGGED;
         p = compelled->next;
         free(compelled);
         compelled = p;
@@ -129,10 +132,10 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
     struct ill *p1 = cg->parents[node];
     /* find all unshielded colliders on node */
     while (p1) {
-        int x = p1->key;
+        int x = p1->node;
         struct ill *p2 = cg->parents[node];
         while (p2) {
-            int z = p2->key;
+            int z = p2->node;
             /*
              * If there is an unshielded collider, and x is not already
              * compelled add the edge to the compelled edges list and make its
@@ -140,7 +143,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
              */
             if (x != z && !adjacent_in_cgraph(cg, x, z)) {
                 if (x > 0) {
-                    p1->value = -p1->value;
+                    p1->tag = TAG_COMPELLED;
                     insert_pll(compelled, p1);
                 }
                 goto NEXT_PARENT;
@@ -157,10 +160,10 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
      */
     int node_modified = 0;
     while (reversible) {
-        int parent = reversible->key;
+        int parent = reversible->node;
         struct ill *p = ill_search(cg->parents[node], parent);
         /* if the value is positive, the edge isn't compelled */
-        if (p->value > 0) {
+        if (p->edge > 0) {
             node_modified = 1;
             unorient_directed_edge(cg, parent, node);
             /* if parent or node haven't been marked as visited, mark them */
@@ -182,17 +185,17 @@ static void push_adjacents(int node, struct cgraph *cg, struct ill **stack)
         struct ill *p;
         p = cg->parents[node];
         while (p) {
-            *stack = ill_insert_front(*stack, p->key, 0);
+            *stack = ill_insert_front(*stack, p->node, 0);
             p = p->next;
         }
         p = cg->spouses[node];
         while (p) {
-            *stack = ill_insert_front(*stack, p->key, 0);
+            *stack = ill_insert_front(*stack, p->node, 0);
             p = p->next;
         }
         p = cg->spouses[node];
         while (p) {
-            *stack = ill_insert_front(*stack, p->key, 0);
+            *stack = ill_insert_front(*stack, p->node, 0);
             p = p->next;
         }
 }
@@ -203,7 +206,7 @@ void orient(struct cgraph *cg, int x, int y, struct ill **stack,
     orient_undirected_edge(cg, x, y);
     /* get the newly created edge. add it to complled, and mark it compelled */
     struct ill *p = ill_search(cg->parents[y], x);
-    p->value = -(p->value);
+    p->edge = TAG_COMPELLED;
     insert_pll(compelled, p);
     /* if x or y are unvisited, marked them as visited */
     visited[x] = 1;
@@ -225,7 +228,7 @@ void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
     if(!p)
         return;
     while(p) {
-        int y = p->key;
+        int y = p->node;
         if(_meek_rule(cg, x, y))
             orient(cg, x, y, stack, compelled, visited);
         else if(_meek_rule(cg, y, x))

@@ -22,7 +22,7 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  * the four meek rules
  * it currently returns an updated edge matrix
  */
-void ccf_meek(struct cgraph *cg)
+void causality_meek(struct cgraph *cg)
 {
     struct ill *stack = NULL;
     for (int i = 0; i < cg->n_nodes; ++i) {
@@ -31,7 +31,7 @@ void ccf_meek(struct cgraph *cg)
     }
     struct ill *p;
     while ((p = stack)) {
-        int node = p->key;
+        int node = p->node;
         apply_rule(cg, node, &stack, meek_rule1);
         apply_rule(cg, node, &stack, meek_rule2);
         apply_rule(cg, node, &stack, meek_rule3);
@@ -57,7 +57,7 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
     if(!p)
         return;
     while(p) {
-        int y = p->key;
+        int y = p->node;
         if (meek_rule(cg, x, y)) {
             orient_undirected_edge(cg, x, y);
             *stack = ill_insert(*stack, y, 0);
@@ -80,7 +80,7 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  {
      struct ill *xp = cg->parents[x];
      while (xp) {
-         int z = xp->key;
+         int z = xp->node;
          if (!adjacent_in_cgraph(cg, y, z)) {
              return 1;
          }
@@ -97,7 +97,7 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  {
      struct ill  *xc = cg->children[x];
      while (xc) {
-         int z = xc->key;
+         int z = xc->node;
          if (edge_directed_in_cgraph(cg, z, y))
              return 1;
          xc = xc->next;
@@ -114,12 +114,12 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  {
      struct ill *yp = cg->parents[y];
      while (yp) {
-         int z = yp->key;
+         int z = yp->node;
          if (!edge_undirected_in_cgraph(cg, z, x))
              goto NEXT_Y_PARENT;
          struct ill *yp_cpy = cg->parents[y];
          while (yp_cpy) {
-             int w = yp_cpy->key;
+             int w = yp_cpy->node;
              if (w != z && edge_undirected_in_cgraph(cg, w, x)) {
                 if (!adjacent_in_cgraph(cg, z, w))
                     return 1;
@@ -141,11 +141,11 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  {
      struct ill *yp = cg->parents[y];
      while (yp) {
-         int z = yp->key;
+         int z = yp->node;
          if (adjacent_in_cgraph(cg, x, z)) {
              struct ill *zp = cg->parents[z];
              while (zp) {
-                 int w = zp->key;
+                 int w = zp->node;
                  if (edge_undirected_in_cgraph(cg, w, x)) {
                     if (!adjacent_in_cgraph(cg, y, w))
                         return 1;

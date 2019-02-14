@@ -33,7 +33,7 @@ static jmp_buf FAIL_STATE;
  * (currently an integer linked list) of the edge list of an causality.graph,
  * and returns a pointer to the sorted (C level representation) of the nodes
  */
-int * ccf_sort(struct cgraph *cg)
+int * causality_sort(struct cgraph *cg)
 {
     int n_nodes = cg->n_nodes;
     /* create an array to signify whether or not a node has been marked, */
@@ -96,7 +96,7 @@ static void visit(int node, int *marked, int *stack_index,
         marked[node] = TEMPORARY;
         struct ill *child = children[node];
         while (child != NULL) {
-            visit(child->key, marked, stack_index, children, sort);
+            visit(child->node, marked, stack_index, children, sort);
             child = child->next;
         }
         marked[node]       = MARKED;

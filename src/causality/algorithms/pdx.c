@@ -36,18 +36,18 @@ static int is_clique(struct cll *node, struct cgraph *cg)
     struct ill *spouses = *(node->spouses);
     /* grab a spouse (undirected adjacent) */
     while (spouses) {
-        int          spouse = spouses->key;
+        int          spouse = spouses->node;
         struct ill *parents = *(node->parents);
         /* make sure spouse is adjacent to the parents of node */
         while (parents) {
-            if (!adjacent_in_cgraph(cg, spouse, parents->key))
+            if (!adjacent_in_cgraph(cg, spouse, parents->node))
                 return 0;
             parents = parents->next;
         }
         /* make sure spouse is adjacent to the other spouses of node */
         struct ill *p = *(node->spouses);
         while (p) {
-            int spouse2 = p->key;
+            int spouse2 = p->node;
             if (spouse2 != spouse && !adjacent_in_cgraph(cg, spouse, spouse2))
                 return 0;
             p = p->next;
@@ -66,7 +66,7 @@ static void orient_in_cgraph(struct cgraph *cg, int node)
     struct ill *cpy = copy_ill(cg->spouses[node]);
     struct ill *p   = cpy;
     while (p) {
-        orient_undirected_edge(cg, p->key, node);
+        orient_undirected_edge(cg, p->node, node);
         p = p->next;
     }
     free(cpy);
@@ -80,12 +80,12 @@ static void remove_node(struct cll *current, struct cll *nodes)
     /* delete all listings of node in its parents and spouses */
     struct ill *parents = *(current->parents);
     while (parents) {
-        ill_delete(nodes[parents->key].children, node);
+        ill_delete(nodes[parents->node].children, node);
         parents = parents->next;
     }
     struct ill *spouses = *(current->spouses);
     while (spouses) {
-        ill_delete(nodes[spouses->key].spouses, node);
+        ill_delete(nodes[spouses->node].spouses, node);
         spouses = spouses->next;
     }
 }
@@ -95,7 +95,7 @@ static void remove_node(struct cll *current, struct cll *nodes)
  * that is the dag extension of cg, or NULL. cg will be deallocated as a apart
  * of the algorithm.
  */
-struct cgraph * ccf_pdx(struct cgraph *cg)
+struct cgraph * causality_pdx(struct cgraph *cg)
 {
     int            n_nodes = cg->n_nodes;
     struct cgraph *cpy     = copy_cgraph(cg);
