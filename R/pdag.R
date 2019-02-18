@@ -46,6 +46,7 @@ is.pdag <-function(cgraph) {
     return(FALSE)
 }
 
+#' @export
 as.pdag <- function(cgraph) {
   if(!is.cgraph(cgraph))
     stop("Input is not a causality graph")

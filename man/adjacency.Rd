@@ -5,22 +5,22 @@
 \alias{adjacency_recall}
 \title{Adjacency Precision and Recall}
 \usage{
-adjacency_precision(cgraph1, cgraph2)
+adjacency_precision(x, y)
 
-adjacency_recall(cgraph1, cgraph2)
+adjacency_recall(x, y)
 }
 \arguments{
-\item{cgraph1}{A causality graph}
+\item{x}{A causality.graph}
 
-\item{cgraph2}{A causality graph}
+\item{y}{A causality.graph}
 }
 \value{
 Both \code{adjacency_precision} and \code{adjacency_recall} return a
   numeric between 0 and 1 with the following exceptions:
   \itemize{
-  \item \code{adjacency_precision} returns \code{NA} if \code{cgraph2}
+  \item \code{adjacency_precision} returns \code{NA} if \code{y}
     contains 0 adjacencies
-  \item \code{adjacency_recall} returns \code{NA} if \code{cgraph1}
+  \item \code{adjacency_recall} returns \code{NA} if \code{x}
     contains 0 adjacencies
   }
 }

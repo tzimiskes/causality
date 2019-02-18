@@ -2,8 +2,8 @@
 #'
 #' \code{shd} calculates the structural hamming distance (SHD) between two
 #' patterns
-#' @param pattern1 A causality pattern
-#' @param pattern2 A causality pattern that is being compared to \code{pattern1}
+#' @param x A causality.graph
+#' @param y A causality.graph \code{x}
 #' @return Length one numeric between 0 and \eqn{n^2}, where n is the number of
 #'   nodes. A distance of 0 implies that the patterns are the same
 #' @details \code{shd} takes in patterns and calculates the
@@ -20,29 +20,29 @@
 #' \code{\link{arrowhead_precision}}, \code{\link{arrowhead_recall}},
 #'   \code{\link{adjacency_precision}}, and \code{\link{adjacency_recall}}
 #' @export
-shd <- function(pattern1, pattern2) {
-  if (!is.cgraph(pattern1))
-    stop("pattern1 must be a cgraph")
-  if (!is.cgraph(pattern2))
-    stop("pattern2 must be a cgraph")
+shd <- function(x, y) {
+  if (!is.cgraph(x))
+    stop("x must be a causality.graph")
+  if (!is.cgraph(y))
+    stop("y must be a causality.graph")
 
-  # generate the adjacency list of the children of pattern1
+  # generate the adjacency list of the children of x
   pat1_children <- list()
-  for (i in 1:nrow(pattern1$edges)) {
-    pat1_edge <- pattern1$edges[i, ]
+  for (i in 1:nrow(x$edges)) {
+    pat1_edge <- x$edges[i, ]
     pat1_children[[pat1_edge[1]]][[pat1_edge[2]]] <- pat1_edge[3]
   }
-  # now, do the same for pattern2
+  # now, do the same for y
   pat2_children <- list()
-  for (j in 1:nrow(pattern2$edges)) {
-    pat2_edge <- pattern2$edges[j, ]
+  for (j in 1:nrow(y$edges)) {
+    pat2_edge <- y$edges[j, ]
     pat2_children[[pat2_edge[1]]][[pat2_edge[2]]] <- pat2_edge[3]
   }
   distance <- 0
-  # loop through the pattern1 edges to see if pattern1 is missing edges,
+  # loop through the x edges to see if x is missing edges,
   # or misoriented edges.
-  for (i in 1:nrow(pattern1$edges)) {
-    pat1_edge <- pattern1$edges[i, ]
+  for (i in 1:nrow(x$edges)) {
+    pat1_edge <- x$edges[i, ]
     node1 <- pat1_edge[1]
     node2 <- pat1_edge[2]
     edge  <- pat1_edge[3]
@@ -51,7 +51,7 @@ shd <- function(pattern1, pattern2) {
       if (edge == .DIRECTED) {
         distance <- distance + 1
       }
-      # if pattern1_edge is not of type -->, it is --- since
+      # if x_edge is not of type -->, it is --- since
       # (true_src, true_dst, ---) is not in true graph, we ned to check to see
       # if (true_dst, true_src, ---) is
       else {
@@ -61,14 +61,14 @@ shd <- function(pattern1, pattern2) {
           distance <- distance + 1
       }
       # pat2_edge is not null
-      # if the orientations don't match, pattern2_edge in not oriented in
+      # if the orientations don't match, y_edge in not oriented in
     } else if ( pat2_edge != edge) {
       distance <- distance + 1
     }
   }
-  # we only need to see if pattern2_edge is extra in the true patterns
-  for (i in 1:nrow(pattern2$edges)) {
-    pat2_edge <- pattern2$edges[i, ]
+  # we only need to see if y_edge is extra in the true patterns
+  for (i in 1:nrow(y$edges)) {
+    pat2_edge <- y$edges[i, ]
     node1 <- pat2_edge[1]
     node2 <- pat2_edge[2]
     pat1_edge <- as.list(pat1_children[[node1]])[[node2]]

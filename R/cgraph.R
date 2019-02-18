@@ -236,14 +236,24 @@ as.cgraph.default <- function(graph) {
 
 #' @rdname as.cgraph
 #' @export
-as.cgraph.bn <- function(graph) {
-  if (!(class(graph) == "bn"))
+as.cgraph.bn <- function(bn) {
+  if (!(class(bn) == "bn"))
     stop("Input is not of class bn!")
-
-  names <- names(graph$nodes)
-  # get the edges
-  edges <- cbind(unname(graph$arcs), rep(.DIRECTED, nrow(graph$arcs)))
-  return(cgraph(names, edges))
+  nodes <- names(bn$nodes)
+  edges <- c()
+  for (node in nodes) {
+    parents <- bn[["nodes"]][[node]][["parents"]]
+    children <- bn[["nodes"]][[node]][["children"]]
+    nbr <- bn[["nodes"]][[node]][["nbr"]]
+    spouses <- setdiff(nbr, c(parents, children))
+    for (parent in bn[["nodes"]][[node]][["parents"]])
+      edges <- c(edges, c(parent, node, .DIRECTED))
+    for (spouse in spouses) {
+      if (node < spouse)
+        edges <- c(edges, c(spouse, node, .UNDIRECTED))
+    }
+  }
+  return(cgraph(nodes, matrix(edges, ncol = 3, byrow = T)))
 }
 
 # rcausal uses different classes for each algorithm, this makes it necessary to

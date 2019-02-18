@@ -54,18 +54,18 @@ read_causality_graph <- function(file) {
     tmp <- tmp[-(1:4)]
      edges <- c()
      # process the file one line at a time
+     edges <- c()
      line <- tmp[1]
-     while (!is.na(line)) {
+     while (!is.na(line) && line != "") {
          line <- sub("[0-9]+\\. ", "", line)
          edge <- unlist(strsplit(line, split = " "))
          if (is.na(sum(match(c(edge[1], edge[3]), nodes)))) {
-            print(edge)
+            print(line)
             stop ("file contains a malformed causality graph")
          }
         edges <- c(edges, c(edge[1], edge[3], edge[2]))
         tmp  <- tmp[-1]
         line <- tmp[1]
-        # print(line)
      }
      cgraph(nodes, matrix(edges, ncol = 3, byrow = T))
 }
