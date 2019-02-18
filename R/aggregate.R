@@ -22,7 +22,7 @@ aggregate_graphs <- function(graphs, weights = NULL)
     stop("graphs is not as list")
   if (length(graphs) == 1)
     stop("graphs has length 1")
-  if (sum(unlist(lapply(gs, is.cgraph))) < length(graphs))
+  if (sum(unlist(lapply(graphs, is.cgraph))) != length(graphs))
     stop("Every graph in graphs must be a causality.graph!")
   if (is.null(weights)) {
     weights <- rep(1, length(graphs))
@@ -53,7 +53,7 @@ aggregate_graphs <- function(graphs, weights = NULL)
                                     "<++" = table[[11]], "++>" = table[[5]],
                                     "<~~" = table[[12]], "~~>" = table[[6]],
                                     "<-o" = table[[13]], "o->" = table[[7]],
-                                    "o-o" = table[[8]], "<->" = table[[9]])
+                                    "o-o" = table[[8]], "<->" = table[[9]], stringsAsFactors = F)
   acg.names <- c("x", "y", "<--", "-->", "---", "<++", "++>", "<~~", "~~>", "<-o", "o->", "o-o", "<->")
   names(acg) <- acg.names
   output <- list(nodes = base$nodes, edge.table = acg)
@@ -64,11 +64,9 @@ aggregate_graphs <- function(graphs, weights = NULL)
 #' @export
 vote <- function(aggregated.graphs) {
   nodes     <- aggregated.graphs$nodes
-  table     <- aggregated.graphs$table
+  table     <- aggregated.graphs$edge.table
   table$" " <- 1 - rowSums(table[, -(1:2)])
-
   arrows <- names(table[, -(1:2)])[max.col(table[, -(1:2)])]
-
   edge <- function(node1, node2, arrow) {
     if (arrow == "<--")
       return(c(node2, node1, "-->"))
@@ -84,6 +82,6 @@ vote <- function(aggregated.graphs) {
   }
   edges <- c()
   for (i in 1:length(arrows))
-    edges <- rbind(edges, edge(table[i, 1], table[i, 2], arrows[i]))
+    edges <- rbind(edges, edge(table$x[i], table$y[i], arrows[i]))
   return(cgraph(nodes, edges))
 }
