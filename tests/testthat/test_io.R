@@ -10,7 +10,7 @@ test_that("read_causality_graph works", {
 
 test_that("write_causality_graph works", {
   skip_on_cran()
-  write_causality_graph("/tmp/write.test", sachs.dag)
+  expect_warning(write_causality_graph("/tmp/write.test", sachs.dag))
   graph <- read_causality_graph("/tmp/write.test")
   expect_equal(shd(graph, sachs.dag), 0)
 })
