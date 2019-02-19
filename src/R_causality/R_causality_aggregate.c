@@ -40,7 +40,7 @@ SEXP r_causality_aggregate_graphs(SEXP graphs, SEXP graph_weights)
         cgs[i] = cgraph_from_causality_graph(VECTOR_ELT(graphs, i));
     }
     inv_sw = 1.0f /  inv_sw;
-    struct tree **trees = causality_aggregate_graphs(cgs, n_graphs, weights);
+    struct tree **trees = causality_aggregate_graphs(cgs, weights, n_graphs);
     int n_rows = 0;
     for (int i = 0; i < n_nodes; ++i)
         n_rows += tree_size(trees[i]);

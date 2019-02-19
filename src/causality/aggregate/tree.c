@@ -1,3 +1,10 @@
+/* Author: Alexander Rix
+ * Date  : 2/19/2019
+ * Description: tree.c contains a (partial -- no function to delete a node)
+ * implementation of a red black tree inspired by Eternally Confuzzled. It is
+ * used exclusively by aggregate_graphs.c
+ */
+
 #include <stdlib.h>
 
 #include <causality.h>
@@ -43,16 +50,19 @@ static void insert_recursive(struct tree **root, int node, int edge,
         int dir = node < (*root)->node;
         insert_recursive(&(*root)->children[dir], node, edge, weight);
         if ((*root)->children[dir]->color == RED) {
-            if ((*root)->children[!dir] && (*root)->children[!dir]->color == RED) {
+            struct tree *t = (*root)->children[!dir];
+            if (t && t->color == RED) {
                 (*root)->color = RED;
                 (*root)->children[LEFT]->color = BLACK;
                 (*root)->children[RIGHT]->color = BLACK;
             }
             else {
-                if ((*root)->children[dir]->children[dir] && (*root)->children[dir]->children[dir]->color == RED)
+                struct tree *t = (*root)->children[dir]->children[dir];
+                if (t && t->color == RED)
                     single_rotation(root, !dir);
-                else if ((*root)->children[dir]->children[!dir])
+                else if ((*root)->children[dir]->children[!dir]) {
                     double_rotation(root, !dir);
+                }
             }
         }
     }
@@ -66,11 +76,11 @@ void insert_tree(struct tree **root, int node, int edge, double weight)
 
 int tree_size(struct tree *root)
 {
-    if (root != NULL)
-        return 1 + tree_size(root->children[LEFT]) +
-            tree_size(root->children[RIGHT]);
-    else
+    if (root == NULL)
         return 0;
+    else
+        return 1 + tree_size(root->children[LEFT]) +
+                   tree_size(root->children[RIGHT]);
 }
 
 void free_tree(struct tree *root)

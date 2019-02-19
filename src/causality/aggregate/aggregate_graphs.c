@@ -1,3 +1,10 @@
+/* Author: Alexander Rix
+ * Date  : 2/19/2019
+ * Description: aggregate_graphs.c implements an algorithm to add multiple
+ * graphs together to create a single object that can be used to analyse the
+ * stability of graph learning algorithms, and also be used to implement
+ * bootstraping etc.
+ */
 
 #include <stdlib.h>
 
@@ -6,15 +13,23 @@
 
 static int reverse(int edge);
 
-struct tree ** causality_aggregate_graphs(struct cgraph **cgs, int n_graphs,
-                                          double *weights)
+/*
+* causality_aggregate_graphs takes in a list of cgraphs and weights and turns
+* them into a tree structure that can be converted into a graph or a matrix.
+* each edge in each graph is added to the tree. some edges will be reversed
+* (eg --> might become <--) to keep the table from becoming too long. This also
+* makes it easier to see if there's a preferred direction to edges. The reversal
+* is achieved by checking if x < y in the edge x --> y. Undirected edges are
+* only added when x < y to prevent double counting.
+*/
+struct tree ** causality_aggregate_graphs(struct cgraph **cgs, double *weights,
+                                                               int n_graphs)
 {
     int n_nodes = cgs[0]->n_nodes;
     struct tree **trees = calloc(n_nodes, sizeof(struct tree *));
-
     for (int i = 0; i < n_graphs; ++i) {
         struct cgraph *cg = cgs[i];
-        double weight = weights[i];
+        double weight     = weights[i];
         for (int x = 0; x < n_nodes; ++x) {
             struct ill *p = cg->parents[x];
             while (p) {
@@ -54,5 +69,5 @@ static int reverse(int edge)
         return CIRCLEARROW_REV;
     }
     CAUSALITY_ERROR("Unrecognized edgetype in causality_aggregate_graphs!\n");
-    return -9999; /* hopefully will cause a crash! */
+    return edge; /* hopefully will cause a crash! */
 }
