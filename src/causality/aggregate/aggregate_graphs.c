@@ -4,7 +4,7 @@
 #include <causality.h>
 #include <aggregate/tree.h>
 
-static int reverse(int x, int y, int edge);
+static int reverse(int edge);
 
 struct tree ** causality_aggregate_graphs(struct cgraph **cgs, int n_graphs,
                                           double *weights)
@@ -20,7 +20,10 @@ struct tree ** causality_aggregate_graphs(struct cgraph **cgs, int n_graphs,
             while (p) {
                 int y    = p->node;
                 int edge = p->edge;
-                insert_tree(&trees[x], y, reverse(x, y, edge), weight);
+                if (x < y)
+                    insert_tree(&trees[x], y, edge, weight);
+                else
+                    insert_tree(&trees[y], x, reverse(edge), weight);
                 p = p->next;
             }
             p = cg->spouses[x];
@@ -38,19 +41,17 @@ struct tree ** causality_aggregate_graphs(struct cgraph **cgs, int n_graphs,
     return trees;
 }
 
-static int reverse(int x, int y, int edge)
+static int reverse(int edge)
 {
     switch (edge) {
     case DIRECTED:
-        return x < y ? DIRECTED : DIRECTED_REV;
-    case UNDIRECTED:
-        return UNDIRECTED;
+        return DIRECTED_REV;
     case PLUSPLUSARROW:
-        return x < y ? PLUSPLUSARROW : PLUSPLUSARROW_REV;
+        return PLUSPLUSARROW_REV;
     case SQUIGGLEARROW:
-        return x < y ? SQUIGGLEARROW : SQUIGGLEARROW_REV;
+        return SQUIGGLEARROW_REV;
     case CIRCLEARROW:
-        return x < y ? CIRCLEARROW : CIRCLEARROW_REV;
+        return CIRCLEARROW_REV;
     }
     CAUSALITY_ERROR("Unrecognized edgetype in causality_aggregate_graphs!\n");
     return -9999; /* hopefully will cause a crash! */
