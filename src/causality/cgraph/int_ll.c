@@ -89,7 +89,7 @@ struct ill * create_ill_ptr(int n)
 void ill_print(struct ill *root)
 {
     while (root) {
-        printf("Key: %i Value: %i\n", root->node, root->edge);
+        CAUSALITY_PRINT("Key: %i Value: %i\n", root->node, root->edge);
         root = root->next;
     }
 }
