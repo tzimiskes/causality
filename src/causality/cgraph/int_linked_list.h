@@ -12,7 +12,7 @@ struct ill {
 struct ill ** create_ptr_to_ill_ptr(int n);
 struct ill  * create_ill_ptr(int n);
 void          ill_free(struct ill *root);
-struct ill  * ill_insert(struct ill *root, int key, int value);
+void insert_ell(struct ill **root, int key, int value);
 struct ill  * ill_insert_front(struct ill *root, int key, int value);
 struct ill  * copy_ill(struct ill *root);
 struct ill  * ill_search(struct ill *root, int key);

@@ -60,11 +60,11 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
         int y = p->node;
         if (meek_rule(cg, x, y)) {
             orient_undirected_edge(cg, x, y);
-            *stack = ill_insert(*stack, y, 0);
+            insert_ell(stack, y, 0);
         }
         else if (meek_rule(cg, y, x)) {
             orient_undirected_edge(cg, y, x);
-            *stack = ill_insert(*stack, x, 0);
+            insert_ell(stack, x, 0);
         }
         p = p->next;
     }
@@ -73,18 +73,18 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
 
 /*
  * meek rule one:
- * look for chain node3 --> node1 --- node2, where !adj(node3, node2). If so,
- * orient node1 --> node2
+ * look for chain z --> x --- y, where !adj(y, z). If so,
+ * orient x --> y
  */
  int meek_rule1(struct cgraph *cg, int x, int y)
  {
-     struct ill *xp = cg->parents[x];
-     while (xp) {
-         int z = xp->node;
+     struct ill *p = cg->parents[x];
+     while (p) {
+         int z = p->node;
          if (!adjacent_in_cgraph(cg, y, z)) {
              return 1;
          }
-         xp = xp->next;
+         p = p->next;
      }
      return 0;
  }
@@ -95,12 +95,12 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  */
  int meek_rule2(struct cgraph *cg, int x, int y)
  {
-     struct ill  *xc = cg->children[x];
-     while (xc) {
-         int z = xc->node;
+     struct ill  *c = cg->children[x];
+     while (c) {
+         int z = c->node;
          if (edge_directed_in_cgraph(cg, z, y))
              return 1;
-         xc = xc->next;
+         c = c->next;
      }
      return 0;
  }

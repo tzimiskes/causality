@@ -33,12 +33,12 @@ void fill_in_cgraph(struct cgraph *cg, int n_edges, int *edges)
         int y = node2[i];
         int edge  = edge_type[i];
         if (IS_DIRECTED(edge)) {
-            children[x] = ill_insert(children[x], y, edge);
-            parents[y]  = ill_insert(parents[y],  x, edge);
+            insert_ell(&children[x], y, edge);
+            insert_ell(&parents[y],  x, edge);
         }
         else {
-            spouses[x]  = ill_insert(spouses[x],  y, edge);
-            spouses[y]  = ill_insert(spouses[y],  x, edge);
+            insert_ell(&spouses[x],  y, edge);
+            insert_ell(&spouses[y],  x, edge);
         }
     }
     cg->n_edges = n_edges;
@@ -68,12 +68,12 @@ void add_edge_to_cgraph(struct cgraph *cg, int node1, int node2, int edge)
     struct ill **children  = cg->children;
     struct ill **spouses   = cg->spouses;
     if (IS_DIRECTED(edge)) {
-        children[node1] = ill_insert(children[node1], node2, edge);
-        parents[node2]  = ill_insert(parents[node2],  node1, edge);
+        insert_ell(&children[node1], node2, edge);
+        insert_ell(&parents[node2],  node1, edge);
     }
     else {
-        spouses[node1] = ill_insert(spouses[node1], node2, edge);
-        spouses[node2] = ill_insert(spouses[node2], node1, edge);
+        insert_ell(&spouses[node1], node2, edge);
+        insert_ell(&spouses[node2], node1, edge);
     }
     cg->n_edges++;
 }

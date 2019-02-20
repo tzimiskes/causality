@@ -15,16 +15,15 @@ static struct ill * ill_instantiate(int key, int value)
     return p;
 }
 
-struct ill * ill_insert(struct ill *root, int key, int value)
+void insert_ell(struct ill **root, int node, int edge)
 {
-    if (root == NULL)
-        return(ill_instantiate(key, value));
+    if (*root == NULL)
+        *root = ill_instantiate(node, edge);
     else {
-        struct ill *p = root;
+        struct ill *p = *root;
         while (p->next)
             p = p->next;
-        p->next = ill_instantiate(key, value);
-        return(root);
+        p->next = ill_instantiate(node, edge);
     }
 }
 
@@ -44,7 +43,7 @@ struct ill * copy_ill(struct ill *root)
 {
     struct ill *copy = NULL;
     while (root) {
-        copy = ill_insert(copy, root->node, root->edge);
+        insert_ell(&copy, root->node, root->edge);
         root = root->next;
     }
     return copy;
