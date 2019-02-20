@@ -18,7 +18,7 @@
 #define REVERSABLE UNDIRECTED
 
 static void order_edges(struct cgraph *cg, int *sort);
-static void insertion_sort(struct ill *list);
+static void insertion_sort(struct ill *list, int *inv_sort);
 static void find_compelled(struct cgraph *cg, int *sort);
 
 void causality_chickering(struct cgraph *cg)
@@ -49,14 +49,8 @@ static void order_edges(struct cgraph *cg, int *sort)
      * declared unknown.
      */
     struct ill **parents = cg->parents;
-    for (int i = 0; i < n_nodes; ++i) {
-        struct ill *p = parents[i];
-        while (p) {
-            p->edge = inv_sort[p->node];
-            p        = p->next;
-        }
-        insertion_sort(parents[i]);
-    }
+    for (int i = 0; i < n_nodes; ++i)
+        insertion_sort(parents[i], inv_sort);
     free(inv_sort);
 }
 
@@ -66,22 +60,19 @@ static void order_edges(struct cgraph *cg, int *sort)
  * faster because the average degree of causal graphs is 2-5, and insertion sort
  * is faster than merge sort until we hit 10-50 elements.
  */
-static void insertion_sort(struct ill *list)
+static void insertion_sort(struct ill *list, int *inv_sort)
 {
     while (list) {
         struct ill *top = list;
         struct ill *max = list;
         while (top) {
-            if (top->edge > max->edge)
+            if (inv_sort[top->node] > inv_sort[max->node])
                 max = top;
             top = top->next;
         }
-        int list_key   = list->node;
-        int list_value = list->edge;
-        list->node      = max->node;
-        list->edge    = max->edge;
-        max->node       = list_key;
-        max->edge     = list_value;
+        int list_node  = list->node;
+        list->node     = max->node;
+        max->node      = list_node;
         list           = list->next;
     }
 }
