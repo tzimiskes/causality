@@ -132,6 +132,8 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
     struct ill *p1 = cg->parents[node];
     /* find all unshielded colliders on node */
     while (p1) {
+        if (p1->tag == TAG_COMPELLED)
+            goto NEXT_PARENT;
         int x = p1->node;
         struct ill *p2 = cg->parents[node];
         while (p2) {
@@ -145,6 +147,10 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
                 if (p1->tag == UNTAGGED) {
                     p1->tag = TAG_COMPELLED;
                     insert_pll(compelled, p1);
+                }
+                if (p2->tag == UNTAGGED) {
+                    p2->tag = TAG_COMPELLED;
+                    insert_pll(compelled, p2);
                 }
                 goto NEXT_PARENT;
             }
@@ -167,7 +173,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
             unorient_directed_edge(cg, parent, node);
             /* if parent or node haven't been marked as visited, mark them */
             visited[parent] = 1;
-            visited[node] = 1;
+            visited[node]   = 1;
         }
         p = reversible;
         reversible = reversible->next;
@@ -192,13 +198,19 @@ static void push_adjacents(int node, struct cgraph *cg, struct ill **stack)
             *stack = ill_insert_front(*stack, p->node, 0);
             p = p->next;
         }
-        p = cg->spouses[node];
+        p = cg->children[node];
         while (p) {
             *stack = ill_insert_front(*stack, p->node, 0);
             p = p->next;
         }
 }
 
+/*
+ * orient takes the undirected edge x --- y and orients it x --> y. The edge is
+ * tagged compelled and added to the compelled list. We have made a change to x
+ * and y so we mark them down as visited. y is added to the stack to see what
+ * effect the newly oriented edge has.
+ */
 void orient(struct cgraph *cg, int x, int y, struct ill **stack,
                                      struct pll **compelled, int *visited)
 {
@@ -214,21 +226,21 @@ void orient(struct cgraph *cg, int x, int y, struct ill **stack,
     *stack = ill_insert_front(*stack, y, 0);
 }
 
-void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
-                                         struct pll **compelled, int *visited,
-                                         meek_rule _meek_rule)
+static void apply_rule_locally(struct cgraph *cg, int x, struct ill **stack,
+                               struct pll **compelled, int *visited,
+                               meek_rule meek_rule)
 {
     /*
-     * we need to create a copy of spouses incase an edge is
+     * we need to create a copy of spouses in case an edge is
      * oriented -- orientation occurs "in place."
      */
     struct ill *cpy = copy_ill(cg->spouses[x]);
     struct ill *p   = cpy;
     while (p) {
         int y = p->node;
-        if(_meek_rule(cg, x, y))
+        if(meek_rule(cg, x, y))
             orient(cg, x, y, stack, compelled, visited);
-        else if(_meek_rule(cg, y, x))
+        else if(meek_rule(cg, y, x))
             orient(cg, y, x, stack, compelled, visited);
         p = p->next;
     }
@@ -238,8 +250,8 @@ void apply_rule_local(struct cgraph *cg, int x, struct ill **stack,
 void meek_rules(struct cgraph *cg, int x, struct ill **stack,
                                      struct pll **compelled, int *visited)
 {
-    apply_rule_local(cg, x, stack, compelled, visited, meek_rule1);
-    apply_rule_local(cg, x, stack, compelled, visited, meek_rule2);
-    apply_rule_local(cg, x, stack, compelled, visited, meek_rule3);
-    apply_rule_local(cg, x, stack, compelled, visited, meek_rule4);
+    apply_rule_locally(cg, x, stack, compelled, visited, meek_rule1);
+    apply_rule_locally(cg, x, stack, compelled, visited, meek_rule2);
+    apply_rule_locally(cg, x, stack, compelled, visited, meek_rule3);
+    apply_rule_locally(cg, x, stack, compelled, visited, meek_rule4);
 }
