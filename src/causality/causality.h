@@ -11,7 +11,7 @@
 #ifdef CAUSALITY_R
 #include <R.h>
 #define CAUSALITY_PRINT(...) Rprintf(__VA_ARGS__)
-#define CAUSALITY_ERROR(...) Rprintf(__VA_ARGS__)
+#define CAUSALITY_ERROR(...) REprintf(__VA_ARGS__)
 #else
 #define CAUSALITY_PRINT(...) printf(__VA_ARGS__)
 #define CAUSALITY_ERROR(...) fprintf(stderr, __VA_ARGS__)
@@ -43,10 +43,9 @@ void            causality_chickering(struct cgraph *cg);
 void            causality_meek(struct cgraph *cg);
 /* misc functions */
 struct tree ** causality_aggregate_graphs(struct cgraph **cgs, double *weights,
-                                                               int n_graphs);
+                                              int n_graphs);
 double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
-                                          struct score_args args);
+                           struct score_args args);
 void ccf_fr_layout(double *positions, int n_nodes, int *edges, int n_edges,
-                                      double width, double height,
-                                      int iterations);
+                       double width, double height, int iterations);
 #endif

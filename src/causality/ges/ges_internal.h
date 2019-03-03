@@ -24,10 +24,10 @@ struct ges_operator {
 }; /* 64 bytes */
 
 struct ges_heap {
-    int                   max_size;
-    int                   size;
-    int                  *indices;
-    double               *score_diffs;
+    int     max_size;
+    int     size;
+    int    *indices;
+    double *score_diffs;
     struct ges_operator  *ops;
     struct ges_operator **ops_ptrs;
 };
@@ -52,12 +52,12 @@ struct ges_operator {
 
 static inline int IS_TAIL_NODE(uint64_t t, int node)
 {
-    return t & (1LLU << node);
+    return (t & (0x1 << node)) && 0x1;
 }
 
 static inline int IS_HEAD_NODE(uint64_t h, int node)
 {
-    return h & (1LLU << node);
+    return (h & (0x1 << node)) && 0x1;
 }
 
 /* memory utility functions */
@@ -74,20 +74,17 @@ void calculate_parents(struct cgraph *cg, struct ges_operator *op);
 void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited);
 void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited);
 int determine_deletion_operators_to_update(int *nodes, struct cgraph *cpy,
-                                                       struct cgraph *cg,
-                                                       struct ges_operator *op,
-                                                       int *visited);
+                                               struct cgraph *cg,
+                                               struct ges_operator *op, int
+                                               *visited);
 int determine_insertion_operators_to_update(int *nodes, struct cgraph *cpy,
-                                                        struct cgraph *cg,
-                                                        struct ges_operator *op,
-                                                        int *visited);
+                                                 struct cgraph *cg,
+                                                 struct ges_operator *op, int
+                                                 *visited);
 /* functions that optimize ges_bic_score score */
-void ges_bic_optimization1(struct cgraph *cg, int y, int n,
-                                              struct ges_score *gs);
+void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs);
 void ges_bic_optimization2(int xp, struct ges_score *gs);
-
-
-
+/* ges_heap functions */
 void free_heap(struct ges_heap *hp);
 void build_heap(struct ges_heap *hp);
 void insert_heap(struct ges_heap *hp, struct ges_operator *op);
@@ -95,4 +92,4 @@ void remove_heap(struct ges_heap *hp, int node);
 struct ges_heap * create_heap(int max_size, struct ges_operator *ext_ops);
 struct ges_operator * peek_heap(struct ges_heap *hp);
 void print_heap(struct ges_heap *hp);
-#endif
+#endif /* ges_internal.h */
