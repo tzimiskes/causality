@@ -1,5 +1,3 @@
-#include <causality.h>
-
 void dc_cov_xy(double *restrict cov_xy, double **x, double *y, int n, int m)
 {
     #ifdef __GNUC__
