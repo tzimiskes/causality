@@ -18,7 +18,7 @@
 #include <scores/scores.h>
 #include <scores/linearalgebra.h>
 
-#define ERROR_THRESH     1e-9
+#define ERROR_THRESH 1e-9
 
 double calcluate_bic(double rss, double penalty, int nobs, int npar) {
     return nobs * log(rss) + penalty * log(nobs) * (2 * npar + 1);
@@ -30,11 +30,11 @@ double bic_score(struct dataframe data, int *xy, int npar,
 {
     double  penalty = args.fargs[0];
     int     nobs    = data.nobs;
-    double *_y      = data.df[xy[npar]];
+    double *y      = data.df[xy[npar]];
     /* allocate memory for submatrix and fill in the columns */
-    double **_x      = malloc((npar + 1) * sizeof(double *));
+    double **x      = malloc((npar + 1) * sizeof(double *));
     for (int i = 0; i < npar + 1; ++i)
-        _x[i] = data.df[xy[i]];
+        x[i] = data.df[xy[i]];
 
     /* Allocate memory for cov_xx and cov_xy in one block. */
     double *mem    = calloc((npar + 1) * (npar + 2), sizeof(double));
@@ -42,8 +42,8 @@ double bic_score(struct dataframe data, int *xy, int npar,
     double *cov_xy = mem + (npar + 1) * (npar + 1);
     double *cov_xy_t = mem + (npar + 1) * (npar + 2);
     memcpy(cov_xy_t, cov_xy, npar * sizeof(double));
-    dc_cov_xx(cov_xx, _x, npar, nobs);
-    dc_cov_xy(cov_xy, _x, _y, npar, nobs);
+    dc_cov_xx(cov_xx, x, npar, nobs);
+    dc_cov_xy(cov_xy, x, y, npar, nobs);
     double rss = calculate_rss(mem, npar);
     free(mem);
     return calcluate_bic(rss, penalty, nobs, npar);
@@ -61,7 +61,6 @@ double calculate_rss(double *cov, int m)
     double *cov_xx   = cov;
     double *cov_xy   = cov + m * m;
     double *cov_xy_t = cov_xy + m;
-
     double rss = 1.0f;
     if (m == 0)
         return rss;
@@ -81,7 +80,7 @@ double calculate_rss(double *cov, int m)
          * positive definite
          */
         if (det < ERROR_THRESH)  {
-            //Rprintf("DET is too small!!\n");
+            CAUSALITY_ERROR("determinent is too small!\n");
             rss = DBL_MAX;
         }
         else
