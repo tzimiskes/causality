@@ -79,13 +79,13 @@ int valid_bes_clique(struct cgraph *cg, struct ges_operator *op)
  */
 static inline int is_marked(int i, unsigned char *marked)
 {
-    return marked[i / 8] & 1 << (i % 8);
+    return marked[i / 8] & 0x1 << (i % 8);
 }
 
 static inline void mark(int i, unsigned char *marked)
 {
     int q = i / 8;
-    marked[q] = marked[q] | 1 << (i % 8);
+    marked[q] = marked[q] | 0x1 << (i % 8);
 }
 
 /*

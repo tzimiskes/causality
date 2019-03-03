@@ -201,8 +201,7 @@ void update_deletion_operator(struct cgraph *cg, struct ges_operator *op,
     for (int i = 0; i < n; ++i) {
         apply_optimization2(cg, nodes[i], &gs);
         struct ges_operator o = {nodes[i], y, {0}, NULL, NULL, op->parents,
-                                           op->n_parents, 0, 0,
-                                           DEFAULT_SCORE_DIFF};
+                                     op->n_parents, 0, 0, DEFAULT_SCORE_DIFF};
         /* Calculate the neighbors of y that are adjacent to x */
         calculate_naxy(cg, &o);
         score_deletion_operator(cg, &o, gs);
