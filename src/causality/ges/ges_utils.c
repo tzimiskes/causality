@@ -22,51 +22,57 @@ void free_ges_score_mem(struct ges_score_mem gsm)
 }
 
 /*
- * valid_fes_clique checks to see if the set TAIL_SET U NAXY constructed from
- * the given (INSERTION) operator forms a clique.
+ * valid_fes_clique checks to see if the set TAIL U NAXY constructed from
+ * the given insertion operator forms a clique.
  */
 int valid_fes_clique(struct cgraph *cg, struct ges_operator *op)
 {
     struct ges_operator o = *op;
     for (int i = 0; i < o.naxy_size; ++i) {
+        /* check to see if naxy forms a clique */
         for (int j = 0; j < i; ++j) {
             if (!adjacent_in_cgraph(cg, o.naxy[i], o.naxy[j]))
                 return 0;
         }
+        /* check to see is every naxy is adj to every tail */
         for (int j = 0; j < o.set_size; ++j) {
+            /* If not in TAIL skip */
             if (!IS_TAIL_NODE(o.t, j))
                 continue;
             if (!adjacent_in_cgraph(cg, o.naxy[i], o.set[j]))
                 return 0;
         }
     }
+    /* check to see if TAIL forms a clique */
     for (int i = 0; i < o.set_size; ++i) {
+        /* If not in TAIL skip */
         if (!IS_TAIL_NODE(o.t, i))
             continue;
         for (int j = 0; j < i; ++j) {
-            if (!IS_TAIL_NODE(o.t, j))
-                continue;
-            if (!adjacent_in_cgraph(cg, o.set[i], o.set[j]))
-                return 0;
+            if (IS_TAIL_NODE(o.t, j)) {
+                if (!adjacent_in_cgraph(cg, o.set[i], o.set[j]))
+                    return 0;
+            }
         }
     }
     return 1;
 }
 /*
- * valid_fes_clique checks to see if the given ges operator's NAXY/H
+ * valid_fes_clique checks to see if the set NAXY/H
  * forms a clique.
  */
 int valid_bes_clique(struct cgraph *cg, struct ges_operator *op)
 {
     struct ges_operator o = *op;
     for (int i = 0; i < o.naxy_size; ++i) {
+        /* if i in H, skip */
         if (IS_HEAD_NODE(o.h, i))
             continue;
         for (int j = 0; j < i; ++j) {
-            if (IS_HEAD_NODE(o.h, j))
-                continue;
-            if (!adjacent_in_cgraph(cg, o.naxy[i], o.naxy[j])) {
-                return 0;
+            /* if j in H, skip */
+            if (!IS_HEAD_NODE(o.h, j)) {
+                if (!adjacent_in_cgraph(cg, o.naxy[i], o.naxy[j]))
+                    return 0;
             }
         }
     }
@@ -79,13 +85,15 @@ int valid_bes_clique(struct cgraph *cg, struct ges_operator *op)
  */
 static inline int is_marked(int i, unsigned char *marked)
 {
-    return marked[i / 8] & 0x1 << (i % 8);
+    unsigned char j = 0x01 << (i % 8);
+    return (marked[i / 8] & j) == j;
 }
 
 static inline void mark(int i, unsigned char *marked)
 {
     int q = i / 8;
-    marked[q] = marked[q] | 0x1 << (i % 8);
+    unsigned char j = 0x01 << (i % 8);
+    marked[q] = marked[q] | j;
 }
 
 /*
@@ -173,11 +181,11 @@ void partition_neighbors(struct cgraph *cg, struct ges_operator *op)
  */
 void calculate_naxy(struct cgraph *cg, struct ges_operator *op)
 {
-    struct ges_operator  o = *op;
-    struct ill    *s = cg->spouses[o.y];
-    o.naxy      = malloc(ill_size(s) * sizeof(int));
+    struct ges_operator o = *op;
+    struct ill *s = cg->spouses[o.y];
     o.naxy_size = 0;
     o.set_size  = 0;
+    o.naxy      = malloc(ill_size(s) * sizeof(int));
     o.set       = NULL;
     while (s) {
         if (adjacent_in_cgraph(cg, o.xp, s->node))

@@ -52,12 +52,15 @@ struct ges_operator {
 
 static inline int IS_TAIL_NODE(uint64_t t, int node)
 {
-    return (t & (0x1 << node)) && 0x1;
+    /* I believe this (i) is required for reasons of integer promotion */
+    uint64_t i = 0x1 << node;
+    return (t & i) == i;
 }
 
 static inline int IS_HEAD_NODE(uint64_t h, int node)
 {
-    return (h & (0x1 << node)) && 0x1;
+    uint64_t i = 0x1 << node;
+    return (h & i) == i;
 }
 
 /* memory utility functions */
