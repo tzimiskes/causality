@@ -1,64 +1,74 @@
 # ges_internal.h
-- [ ] IS_HEAD_NODE
-- [ ] IS_TAIL_NODE
+- [x] IS_HEAD_NODE
+- [x] IS_TAIL_NODE
 # ges_utils.c
-- [X] free_ges_score_mem
-- [ ] valid_fes_clique
-  - [ ] adjacent_in_cgraph
-  - [ ] IS_TAIL_NODE
-- [ ] valid_bes_clique
-  - [ ] adjacent_in_cgraph
-  - [ ] IS_HEAD_NODE
-- [ ] is_marked
-- [ ] mark
+- [x] free_ges_score_mem
+- [x] valid_fes_clique
+  - [x] adjacent_in_cgraph
+  - [x] IS_TAIL_NODE
+- [x] valid_bes_clique
+  - [x] adjacent_in_cgraph
+  - [x] IS_HEAD_NODE
+- [x] is_marked
+- [x] mark
 - [ ] cycle_created
-  - [ ]  IS_TAIL_NODE
-  - [ ] is_marked
-  - [ ] mark
-- [ ] partition_neighbors
-  - [ ] adjacent_in_cgraph
-  - [ ] ill_size
-- [ ] calculate_naxy
-  - [ ] adjacent_in_cgraph
-  - [ ] ill_size
-- [ ] calculate_parents
-  - [ ] ill_size
+  - [x]  IS_TAIL_NODE
+  - [x] is_marked
+  - [x] mark
+- [x] partition_neighbors
+  - [x] adjacent_in_cgraph
+  - [x] ill_size
+- [x] calculate_naxy
+  - [x] adjacent_in_cgraph
+  - [x] ill_size
+- [x] calculate_parents
+  - [x] ill_size
+- [ ] determine_insertion_operators_to_update
+  - [x] IS_TAIL_NODE
+  - [ ] identical_in_cgraphs
+  - [ ] ill_free
+  - [ ] copy_ill
+- [ ] determine_deletion_operators_to_update
+  - [x] IS_HEAD_NODE
+  - [ ] identical_in_cgraphs
+  - [ ] ill_free
+  - [ ] copy_ill
 # ges.c
 - [ ] is_valid_insertion
   - [ ] valid_fes_clique
   - [ ] cycle_created
-- [ ] is_valid_deletion
-  - [ ] valid_bes_clique
+- [x] is_valid_deletion
+  - [x] valid_bes_clique
 - [ ] score_insertion_operator
   - [ ] is_valid_insertion
-  - [ ] IS_TAIL_NODE
+  - [x] IS_TAIL_NODE
   - [ ] gsf
-- [ ] score_insertion_operator
-  - [ ] is_valid_deletion
-  - [ ] IS_HEAD_NODE
+- [ ] score_deletion_operator
+  - [x] is_valid_deletion
+  - [x] IS_HEAD_NODE
   - [ ] gsf
 - [ ] update_operator_info
-  - [ ] calculate_parents
+  - [x] calculate_parents
 - [ ] update_insertion_operator
   - [ ] apply_optimization1
   - [ ] apply_optimization2
-  - [ ] partition_neighbors
+  - [x] partition_neighbors
   - [ ] score_insertion_operator
   - [X] free_ges_score_mem
-  - [ ] adjacent_in_cgraph
+  - [x] adjacent_in_cgraph
 - [ ] update_deletion_operator
-  - [ ] ill_size
+  - [x] ill_size
   - [ ] apply_optimization1
   - [ ] apply_optimization2
-  - [ ] calculate_naxy
+  - [x] calculate_naxy
   - [X] free_ges_score_mem
 - [ ] apply_insertion_operator
   - [ ] add_edge_to_cgraph
-  - [ ] IS_TAIL_NODE
+  - [x] IS_TAIL_NODE
   - [ ] orient_undirected_edge
 - [ ] apply_deletion_operator
   - [ ] edge_directed_in_cgraph
   - [ ] delete_edge_from_cgraph
-  - [ ] IS_HEAD_NODE
+  - [x] IS_HEAD_NODE
   - [ ] orient_undirected_edge
   - [ ] edge_undirected_in_cgraph
