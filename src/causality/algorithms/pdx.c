@@ -11,13 +11,13 @@
 
 #include <causality.h>
 #include <cgraph/cgraph.h>
-#include <cgraph/int_linked_list.h>
+#include <cgraph/edge_list.h>
 
 /* create a circular linked list to iterate through */
 struct cll {
-    struct ill **children;
-    struct ill **parents;
-    struct ill **spouses;
+    struct edge_list **children;
+    struct edge_list **parents;
+    struct edge_list **spouses;
     struct cll  *next;
 };
 
@@ -33,11 +33,11 @@ static int is_sink(struct cll *node)
  */
 static int is_clique(struct cll *node, struct cgraph *cg)
 {
-    struct ill *spouses = *(node->spouses);
+    struct edge_list *spouses = *(node->spouses);
     /* grab a spouse (undirected adjacent) */
     while (spouses) {
         int          spouse = spouses->node;
-        struct ill *parents = *(node->parents);
+        struct edge_list *parents = *(node->parents);
         /* make sure spouse is adjacent to the parents of node */
         while (parents) {
             if (!adjacent_in_cgraph(cg, spouse, parents->node))
@@ -45,7 +45,7 @@ static int is_clique(struct cll *node, struct cgraph *cg)
             parents = parents->next;
         }
         /* make sure spouse is adjacent to the other spouses of node */
-        struct ill *p = *(node->spouses);
+        struct edge_list *p = *(node->spouses);
         while (p) {
             int spouse2 = p->node;
             if (spouse2 != spouse && !adjacent_in_cgraph(cg, spouse, spouse2))
@@ -63,8 +63,8 @@ static int is_clique(struct cll *node, struct cgraph *cg)
  */
 static void orient_in_cgraph(struct cgraph *cg, int node)
 {
-    struct ill *cpy = copy_ill(cg->spouses[node]);
-    struct ill *p   = cpy;
+    struct edge_list *cpy = copy_edge_list(cg->spouses[node]);
+    struct edge_list *p   = cpy;
     while (p) {
         orient_undirected_edge(cg, p->node, node);
         p = p->next;
@@ -72,20 +72,22 @@ static void orient_in_cgraph(struct cgraph *cg, int node)
     free(cpy);
 }
 
-/* remove_node deletes the node from the circular linked list, and removes all
- * edges involving node in cg (which is referenced by cll) */
+/*
+ * remove_node deletes the node from the circular linked list, and removes all
+ * edges involving node in cg (which is referenced by cll)
+ */
 static void remove_node(struct cll *current, struct cll *nodes)
 {
     int node = current - nodes; /* ptr arithemtic */
     /* delete all listings of node in its parents and spouses */
-    struct ill *parents = *(current->parents);
+    struct edge_list *parents = *(current->parents);
     while (parents) {
-        ill_delete(nodes[parents->node].children, node);
+        delete_edge_list(nodes[parents->node].children, node);
         parents = parents->next;
     }
-    struct ill *spouses = *(current->spouses);
+    struct edge_list *spouses = *(current->spouses);
     while (spouses) {
-        ill_delete(nodes[spouses->node].spouses, node);
+        delete_edge_list(nodes[spouses->node].spouses, node);
         spouses = spouses->next;
     }
 }
@@ -112,9 +114,9 @@ struct cgraph * causality_pdx(struct cgraph *cg)
         return NULL;
     }
     /* set up circular linked list. The entries of each node refernce cg */
-    struct ill **parents  = cg->parents;
-    struct ill **spouses  = cg->spouses;
-    struct ill **children = cg->children;
+    struct edge_list **parents  = cg->parents;
+    struct edge_list **spouses  = cg->spouses;
+    struct edge_list **children = cg->children;
     for (int i = 0; i < n_nodes; ++i) {
         nodes[i].parents  = parents  + i;
         nodes[i].children = children + i;

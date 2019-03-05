@@ -4,7 +4,7 @@
 #include <causality.h>
 
 #include <cgraph/cgraph.h>
-#include <cgraph/int_linked_list.h>
+#include <cgraph/edge_list.h>
 #include <algorithms/meek.h>
 #include <ges/ges.h>
 #include <ges/ges_internal.h>
@@ -14,27 +14,27 @@
 
 /* compelled edge list */
 struct cel {
-    struct ill *p;
+    struct edge_list *p;
     struct cel *next;
 };
 
 static void undirect_reversible_parents(int node, struct cgraph *cg,
-                                            struct ill **stack, struct cel
+                                            struct edge_list **stack, struct cel
                                             **compelled, int *visited);
 
-static void push_adjacents(int node, struct cgraph *cg, struct ill **stack);
+static void push_adjacents(int node, struct cgraph *cg, struct edge_list **stack);
 
-static void apply_rule_locally(struct cgraph *cg, int x, struct ill **stack,
+static void apply_rule_locally(struct cgraph *cg, int x, struct edge_list **stack,
                                    struct cel **compelled, int *visited,
                                    meek_rule meek_rule);
 
-static void meek_rules(struct cgraph *cg, int x, struct ill **stack, struct cel
+static void meek_rules(struct cgraph *cg, int x, struct edge_list **stack, struct cel
                            **compelled, int *visited);
 
-static void orient(struct cgraph *cg, int x, int y, struct ill **stack,
+static void orient(struct cgraph *cg, int x, int y, struct edge_list **stack,
                        struct cel **compelled, int *visited);
 
-static void make_compelled(struct cel **compelled, struct ill *l)
+static void make_compelled(struct cel **compelled, struct edge_list *l)
 {
     l->tag = TAG_COMPELLED;
     struct cel *t = malloc(sizeof(struct cel));
@@ -60,14 +60,14 @@ void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited)
 {
     memset(visited, 0, cg->n_nodes * sizeof(int));
     struct cel *compelled = NULL;
-    struct ill *stack     = NULL;
+    struct edge_list *stack     = NULL;
     undirect_reversible_parents(op.y, cg, &stack, &compelled, visited);
-    stack = ill_insert_front(stack, op.y, 0);
+    insert_edge_list(&stack, op.y, 0, 0);
     meek_rules(cg, op.y, &stack, &compelled, visited);
     while (stack) {
         /* pop the top */
         int         node = stack->node;
-        struct ill *p    = stack;
+        struct edge_list *p    = stack;
         stack = stack->next;
         free(p);
         undirect_reversible_parents(node, cg, &stack, &compelled, visited);
@@ -81,25 +81,25 @@ void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited)
 {
     memset(visited, 0, cg->n_nodes * sizeof(int));
     struct cel *compelled = NULL;
-    struct ill *stack     = NULL;
+    struct edge_list *stack     = NULL;
     undirect_reversible_parents(op.y, cg, &stack, &compelled, visited);
-    stack = ill_insert_front(stack, op.y, 0);
-    for (int i = 0; i < op.naxy_size; ++i) {
+    insert_edge_list(&stack, op.y, 0, 0);
+    for (int i = 0; i < op.nayx_size; ++i) {
         if (IS_HEAD_NODE(op.h, i)) {
-            undirect_reversible_parents(op.naxy[i], cg, &stack, &compelled,
+            undirect_reversible_parents(op.nayx[i], cg, &stack, &compelled,
                                                         visited);
-            stack = ill_insert_front(stack, op.naxy[i], 0);
+            insert_edge_list(&stack, op.nayx[i], 0, 0);
         }
     }
     meek_rules(cg, op.y, &stack, &compelled, visited);
-    for (int i = 0; i < op.naxy_size; ++i) {
+    for (int i = 0; i < op.nayx_size; ++i) {
         if (IS_HEAD_NODE(op.h, i))
-            meek_rules(cg, op.naxy[i], &stack, &compelled, visited);
+            meek_rules(cg, op.nayx[i], &stack, &compelled, visited);
     }
     while (stack) {
         /* pop the top */
         int node = stack->node;
-        struct ill *p = stack;
+        struct edge_list *p = stack;
         stack = stack->next;
         free(p);
         undirect_reversible_parents(node, cg, &stack, &compelled, visited);
@@ -115,18 +115,18 @@ void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited)
  * value negative if compelled
  */
 static void undirect_reversible_parents(int node, struct cgraph *cg,
-                                                  struct ill **stack,
+                                                  struct edge_list **stack,
                                                   struct cel **compelled,
                                                   int *visited)
 {
-    struct ill *reversible = NULL;
-    struct ill *p1 = cg->parents[node];
+    struct edge_list *reversible = NULL;
+    struct edge_list *p1 = cg->parents[node];
     /* find all unshielded colliders on node */
     while (p1) {
         if (p1->tag == TAG_COMPELLED)
             goto NEXT_PARENT;
         int x = p1->node;
-        struct ill *p2 = cg->parents[node];
+        struct edge_list *p2 = cg->parents[node];
         while (p2) {
             int z = p2->node;
             /*
@@ -142,7 +142,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
             }
             p2 = p2->next;
         }
-        reversible = ill_insert_front(reversible, x, 0);
+        insert_edge_list(&reversible, x, 0, 0);
         NEXT_PARENT:
         p1 = p1->next;
     }
@@ -153,7 +153,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
     int node_modified = 0;
     while (reversible) {
         int parent = reversible->node;
-        struct ill *p = ill_search(cg->parents[node], parent);
+        struct edge_list *p = search_edge_list(cg->parents[node], parent);
         if (p->tag == UNTAGGED) {
             node_modified = 1;
             unorient_directed_edge(cg, parent, node);
@@ -166,19 +166,19 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
     }
     if (node_modified) {
         push_adjacents(node, cg, stack);
-        *stack = ill_insert_front(*stack, node, 0);
+        insert_edge_list(stack, node, 0,0);
     }
 }
 
-static inline void push_list(struct ill **stack, struct ill *p)
+static inline void push_list(struct edge_list **stack, struct edge_list *p)
 {
     while (p) {
-        *stack = ill_insert_front(*stack, p->node, 0);
+        insert_edge_list(stack, p->node, 0, 0);
         p = p->next;
     }
 }
 
-static void push_adjacents(int node, struct cgraph *cg, struct ill **stack)
+static void push_adjacents(int node, struct cgraph *cg, struct edge_list **stack)
 {
     push_list(stack, cg->parents[node]);
     push_list(stack, cg->spouses[node]);
@@ -191,19 +191,19 @@ static void push_adjacents(int node, struct cgraph *cg, struct ill **stack)
  * and y so we mark them down as visited. y is added to the stack to see what
  * effect the newly oriented edge has.
  */
-void orient(struct cgraph *cg, int x, int y, struct ill **stack,
+void orient(struct cgraph *cg, int x, int y, struct edge_list **stack,
                                      struct cel **compelled, int *visited)
 {
     orient_undirected_edge(cg, x, y);
     /* get the newly created edge and make it compelled */
-    make_compelled(compelled, ill_search(cg->parents[y], x));
+    make_compelled(compelled, search_edge_list(cg->parents[y], x));
     visited[x] = 1;
     visited[y] = 1;
-    *stack = ill_insert_front(*stack, y, 0);
-    *stack = ill_insert_front(*stack, x, 0);
+    insert_edge_list(stack, y, 0, 0);
+    insert_edge_list(stack, x, 0, 0);
 }
 
-static void apply_rule_locally(struct cgraph *cg, int x, struct ill **stack,
+static void apply_rule_locally(struct cgraph *cg, int x, struct edge_list **stack,
                                    struct cel **compelled, int *visited,
                                    meek_rule meek_rule)
 {
@@ -211,8 +211,8 @@ static void apply_rule_locally(struct cgraph *cg, int x, struct ill **stack,
      * we need to create a copy of spouses in case an edge is
      * oriented -- orientation occurs "in place."
      */
-    struct ill *cpy = copy_ill(cg->spouses[x]);
-    struct ill *p   = cpy;
+    struct edge_list *cpy = copy_edge_list(cg->spouses[x]);
+    struct edge_list *p   = cpy;
     while (p) {
         int y = p->node;
         if (meek_rule(cg, x, y))
@@ -221,10 +221,10 @@ static void apply_rule_locally(struct cgraph *cg, int x, struct ill **stack,
             orient(cg, y, x, stack, compelled, visited);
         p = p->next;
     }
-    ill_free(cpy);
+    free_edge_list(cpy);
 }
 
-static void meek_rules(struct cgraph *cg, int x, struct ill **stack,
+static void meek_rules(struct cgraph *cg, int x, struct edge_list **stack,
                            struct cel **compelled, int *visited)
 {
     apply_rule_locally(cg, x, stack, compelled, visited, meek_rule1);

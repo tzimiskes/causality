@@ -11,14 +11,14 @@
 
 #include <causality.h>
 #include <cgraph/cgraph.h>
-#include <cgraph/int_linked_list.h>
+#include <cgraph/edge_list.h>
 
 #define UNKNOWN   -1
 #define COMPELLED  DIRECTED
 #define REVERSABLE UNDIRECTED
 
 static void order_edges(struct cgraph *cg, int *sort);
-static void insertion_sort(struct ill *list, int *inv_sort);
+static void insertion_sort(struct edge_list *list, int *inv_sort);
 static void find_compelled(struct cgraph *cg, int *sort);
 
 void causality_chickering(struct cgraph *cg)
@@ -48,7 +48,7 @@ static void order_edges(struct cgraph *cg, int *sort)
      * This isn't a problem because in force compelled all the values will be
      * declared unknown.
      */
-    struct ill **parents = cg->parents;
+    struct edge_list **parents = cg->parents;
     for (int i = 0; i < n_nodes; ++i)
         insertion_sort(parents[i], inv_sort);
     free(inv_sort);
@@ -60,11 +60,11 @@ static void order_edges(struct cgraph *cg, int *sort)
  * faster because the average degree of causal graphs is 2-5, and insertion sort
  * is faster than merge sort until we hit 10-50 elements.
  */
-static void insertion_sort(struct ill *list, int *inv_sort)
+static void insertion_sort(struct edge_list *list, int *inv_sort)
 {
     while (list) {
-        struct ill *top = list;
-        struct ill *max = list;
+        struct edge_list *top = list;
+        struct edge_list *max = list;
         while (top) {
             if (inv_sort[top->node] > inv_sort[max->node])
                 max = top;
@@ -79,14 +79,10 @@ static void insertion_sort(struct ill *list, int *inv_sort)
 
 static void find_compelled(struct cgraph *cg, int *sort)
 {
-    struct ill **parents = cg->parents;
+    struct edge_list **parents = cg->parents;
     int          n_nodes = cg->n_nodes;
-    /*
-     * order edges sets the value parameter for each edge, so we need to
-     * change the value for everything to UNKNOWN
-     */
     for (int i = 0; i < n_nodes; ++i) {
-        struct ill *p = parents[i];
+        struct edge_list *p = parents[i];
         while (p) {
             p->edge = UNKNOWN;
             p        = p->next;
@@ -100,13 +96,13 @@ static void find_compelled(struct cgraph *cg, int *sort)
         /* by lemma 5 in Chickering, all the incident edges on y are unknown
          * so we don't need to check to see its unordered */
         int         y  = sort[i];
-        struct ill *yp = parents[y];
+        struct edge_list *yp = parents[y];
         /* if y has no incident edges, go to the next node in the order */
         if (!yp)
             continue;
         /* Since y has parents, run stepts 5-8 */
         int         x  = yp->node;
-        struct ill *xp = parents[x];
+        struct edge_list *xp = parents[x];
         /*
          * for each parent of x, w, where w -> x is compelled
          * check to see if w forms a chain (w -> x -> y)
@@ -118,12 +114,12 @@ static void find_compelled(struct cgraph *cg, int *sort)
             int w = xp->node;
             /* if true , w --> y , x;  x--> y form a shielded collider */
             if (edge_directed_in_cgraph(cg, w, y)) {
-                struct ill* p = ill_search(parents[y], w);
+                struct edge_list* p = search_edge_list(parents[y], w);
                 p->edge = COMPELLED;
             }
             /* otherwise it is a chain and parents of y are compelled */
             else {
-                struct ill *p = parents[y];
+                struct edge_list *p = parents[y];
                 while (p) {
                     p->edge = COMPELLED;
                     p        = p->next;
@@ -138,7 +134,7 @@ static void find_compelled(struct cgraph *cg, int *sort)
          * parent of x. That is, an unshielded collider.
          */
         int unshielded_collider = 0;
-        struct ill *p = parents[y];
+        struct edge_list *p = parents[y];
         while (p) {
             int z = p->node;
             if (z != x && !adjacent_in_cgraph(cg, z, x)) {
@@ -161,7 +157,7 @@ static void find_compelled(struct cgraph *cg, int *sort)
              * we need to create cpy because unorient_directed_edge operates in
              * place, which would mess the parents[y] pointer
              */
-            struct ill *cpy = copy_ill(parents[y]);
+            struct edge_list *cpy = copy_edge_list(parents[y]);
             p = cpy;
             while (p) {
                 if (p->edge == UNKNOWN)

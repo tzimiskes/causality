@@ -10,11 +10,11 @@
 
 #include <causality.h>
 #include <cgraph/cgraph.h>
-#include <cgraph/int_linked_list.h>
+#include <cgraph/edge_list.h>
 #include <algorithms/meek.h>
 
 void ccf_meek(struct cgraph *cg);
-void apply_rule(struct cgraph *cg, int x, struct ill **stack,
+void apply_rule(struct cgraph *cg, int x, struct edge_list **stack,
                                    meek_rule meek_rule);
 
 /*
@@ -24,20 +24,20 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  */
 void causality_meek(struct cgraph *cg)
 {
-    struct ill *stack = NULL;
+    struct edge_list *stack = NULL;
     for (int i = 0; i < cg->n_nodes; ++i) {
         if (cg->spouses[i])
-            stack = ill_insert_front(stack, i, 0);
+            insert_edge_list(&stack, i, 0, 0);
     }
-    struct ill *p;
-    while ((p = stack)) {
-        int node = p->node;
+    while (stack) {
+        int node = stack->node;
         apply_rule(cg, node, &stack, meek_rule1);
         apply_rule(cg, node, &stack, meek_rule2);
         apply_rule(cg, node, &stack, meek_rule3);
         apply_rule(cg, node, &stack, meek_rule4);
+        struct edge_list *e = stack;
         stack = stack->next;
-        free(p);
+        free(e);
     }
 }
 
@@ -45,30 +45,30 @@ void causality_meek(struct cgraph *cg)
  * apply_rule applied the selected meek rule (passed in by function pointer)
  * it returns 1 if the rule was applied, and 0 if not
  */
-void apply_rule(struct cgraph *cg, int x, struct ill **stack,
+void apply_rule(struct cgraph *cg, int x, struct edge_list **stack,
                                    meek_rule meek_rule)
 {
     /*
      * we need to create a copy of spouses incase an edge is
      * oriented -- orientation occurs "in place."
      */
-    struct ill *cpy = copy_ill(cg->spouses[x]);
-    struct ill *p   = cpy;
+    struct edge_list *cpy = copy_edge_list(cg->spouses[x]);
+    struct edge_list *p   = cpy;
     if(!p)
         return;
     while(p) {
         int y = p->node;
         if (meek_rule(cg, x, y)) {
             orient_undirected_edge(cg, x, y);
-            insert_ell(stack, y, 0);
+            insert_edge_list(stack, y, 0, 0);
         }
         else if (meek_rule(cg, y, x)) {
             orient_undirected_edge(cg, y, x);
-            insert_ell(stack, x, 0);
+            insert_edge_list(stack, y, 0, 0);
         }
         p = p->next;
     }
-    ill_free(cpy);
+    free_edge_list(cpy);
 }
 
 /*
@@ -78,7 +78,7 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  */
  int meek_rule1(struct cgraph *cg, int x, int y)
  {
-     struct ill *p = cg->parents[x];
+     struct edge_list *p = cg->parents[x];
      while (p) {
          int z = p->node;
          if (!adjacent_in_cgraph(cg, y, z)) {
@@ -95,7 +95,7 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  */
  int meek_rule2(struct cgraph *cg, int x, int y)
  {
-     struct ill  *c = cg->children[x];
+     struct edge_list  *c = cg->children[x];
      while (c) {
          int z = c->node;
          if (edge_directed_in_cgraph(cg, z, y))
@@ -112,12 +112,12 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  */
  int meek_rule3(struct cgraph *cg, int x, int y)
  {
-     struct ill *yp = cg->parents[y];
+     struct edge_list *yp = cg->parents[y];
      while (yp) {
          int z = yp->node;
          if (!edge_undirected_in_cgraph(cg, z, x))
              goto NEXT_Y_PARENT;
-         struct ill *yp_cpy = cg->parents[y];
+         struct edge_list *yp_cpy = cg->parents[y];
          while (yp_cpy) {
              int w = yp_cpy->node;
              if (w != z && edge_undirected_in_cgraph(cg, w, x)) {
@@ -133,17 +133,17 @@ void apply_rule(struct cgraph *cg, int x, struct ill **stack,
  }
 
 /*
- *  meek4 rule4: orient node1 --> node2 if there is a chain
+ * meek4 rule4: orient node1 --> node2 if there is a chain
  * node4 --> node3 --> node2, node1 --- node4, with adj(node3, node1) and
  * !adj(node2, node4)
  */
  int meek_rule4(struct cgraph *cg, int x, int y)
  {
-     struct ill *yp = cg->parents[y];
+     struct edge_list *yp = cg->parents[y];
      while (yp) {
          int z = yp->node;
          if (adjacent_in_cgraph(cg, x, z)) {
-             struct ill *zp = cg->parents[z];
+             struct edge_list *zp = cg->parents[z];
              while (zp) {
                  int w = zp->node;
                  if (edge_undirected_in_cgraph(cg, w, x)) {

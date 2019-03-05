@@ -11,14 +11,14 @@
 
 #include <causality.h>
 #include <cgraph/cgraph.h>
-#include <cgraph/int_linked_list.h>
+#include <cgraph/edge_list.h>
 
 #define UNMARKED   0
 #define MARKED     1
 #define TEMPORARY -1
 
-static void visit(int node, int *marked, int *stack_index,
-                            struct ill **children, int *sort);
+static void visit(int node, int *marked, int *stack_index, struct edge_list
+                      **children, int *sort);
 
 /*
  * In order to account for the possibility that the input may contain a cycle,
@@ -58,8 +58,8 @@ int * causality_sort(struct cgraph *cg)
          * Pick an unmarked node and do a breadth first search on it. If
          * the node is marked, go to the next node and try again
          */
-        struct ill **children    = cg->children;
-        int          stack_index = n_nodes;
+        struct edge_list **children = cg->children;
+        int stack_index = n_nodes;
         for (int i = 0; i < n_nodes; ++i) {
             if (!marked[i])
                 visit(i, marked, &stack_index, children, sort);
@@ -86,18 +86,18 @@ int * causality_sort(struct cgraph *cg)
  * node is permentantly marked, the node is pushed onto the topological sort,
  * stack_index is decremented, and the function terminates.
  */
-static void visit(int node, int *marked, int *stack_index,
-                            struct ill **children, int *sort)
+static void visit(int node, int *marked, int *stack_index, struct edge_list
+                      **children, int *sort)
 {
     /* Cycle exists; perform longjmp to so we can terminate the sort */
     if (marked[node] == TEMPORARY)
         longjmp(FAIL_STATE, 1);
     else if (marked[node] == UNMARKED) {
         marked[node] = TEMPORARY;
-        struct ill *child = children[node];
-        while (child != NULL) {
-            visit(child->node, marked, stack_index, children, sort);
-            child = child->next;
+        struct edge_list *e = children[node];
+        while (e != NULL) {
+            visit(e->node, marked, stack_index, children, sort);
+            e = e->next;
         }
         marked[node]       = MARKED;
         *stack_index      -= 1;

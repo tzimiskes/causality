@@ -40,21 +40,20 @@ SEXP create_causality_graph(int n_edges, int n_nodes, SEXP nodes)
 
 struct cgraph * cgraph_from_causality_graph(SEXP graph)
 {
-    int  n_nodes     = length(VECTOR_ELT(graph, NODES));
+    int n_nodes      = length(VECTOR_ELT(graph, NODES));
     SEXP graph_nodes = VECTOR_ELT(graph, NODES);
+    struct cgraph *cg  = create_cgraph(n_nodes);
     const char **nodes = malloc(n_nodes * sizeof(const char *));
     for (int i = 0; i < n_nodes; ++i)
         nodes[i] = CHAR(STRING_ELT(graph_nodes, i));
     SEXP  graph_edges = VECTOR_ELT(graph, EDGES);
     int   n_edges     = nrows(VECTOR_ELT(graph, EDGES));
-    int  *edges       = malloc(n_edges * 3 * sizeof(int));
-    for (int i = 0; i < 2 * n_edges; ++i)
-        edges[i] = node_to_int(CHAR(STRING_ELT(graph_edges, i)), nodes);
-    for (int i = 2 * n_edges; i < 3 * n_edges; ++i)
-        edges[i] = edge_to_int(CHAR(STRING_ELT(graph_edges, i)));
-    struct cgraph *cg = create_cgraph(n_nodes);
-    fill_in_cgraph(cg, n_edges, edges);
-    free(edges);
+    for (int i = 0; i < n_edges; ++i) {
+        int x = node_to_int(CHAR(STRING_ELT(graph_edges, i)), nodes);
+        int y = node_to_int(CHAR(STRING_ELT(graph_edges, i + n_edges)), nodes);
+        short edge = edge_to_int(CHAR(STRING_ELT(graph_edges, i + 2 * n_edges)));
+        add_edge_to_cgraph(cg, x, y, edge);
+    }
     free(nodes);
     return cg;
 }
@@ -67,9 +66,9 @@ SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP graph_nodes)
     /* Now, fill in the edge matrix */
     SEXP graph_edges = VECTOR_ELT(graph, EDGES);
     SEXP adjacencies = VECTOR_ELT(graph, ADJACENCIES);
-    struct ill **parents  = cg->parents;
-    struct ill **spouses  = cg->spouses;
-    struct ill **children = cg->children;
+    struct edge_list **parents  = cg->parents;
+    struct edge_list **spouses  = cg->spouses;
+    struct edge_list **children = cg->children;
     /*
      * optimization to speed up filling in the edge matrix. This is safe because
      * all of the nodes are already registered in R's global (string(?)) pool.
@@ -83,10 +82,10 @@ SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP graph_nodes)
     int e_i = 2 * n_edges;
     for (int i = 0; i < n_nodes; ++i) {
         int         node  = i;
-        struct ill *p     = parents[i];
-        struct ill *s     = spouses[i];
-        struct ill *c     = children[i];
-        int n_adjs = ill_size(p) + ill_size(s) + ill_size(c);
+        struct edge_list *p     = parents[i];
+        struct edge_list *s     = spouses[i];
+        struct edge_list *c     = children[i];
+        int n_adjs = size_edge_list(p) + size_edge_list(s) + size_edge_list(c);
         int adj_i  = 0;
         if (n_adjs)
             SET_VECTOR_ELT(adjacencies, i, allocVector(STRSXP, n_adjs));

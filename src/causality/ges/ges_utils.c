@@ -22,24 +22,24 @@ void free_ges_score_mem(struct ges_score_mem gsm)
 }
 
 /*
- * valid_fes_clique checks to see if the set TAIL U NAXY constructed from
+ * valid_fes_clique checks to see if the set TAIL U nayx constructed from
  * the given insertion operator forms a clique.
  */
 int valid_fes_clique(struct cgraph *cg, struct ges_operator *op)
 {
     struct ges_operator o = *op;
-    for (int i = 0; i < o.naxy_size; ++i) {
-        /* check to see if naxy forms a clique */
+    for (int i = 0; i < o.nayx_size; ++i) {
+        /* check to see if nayx forms a clique */
         for (int j = 0; j < i; ++j) {
-            if (!adjacent_in_cgraph(cg, o.naxy[i], o.naxy[j]))
+            if (!adjacent_in_cgraph(cg, o.nayx[i], o.nayx[j]))
                 return 0;
         }
-        /* check to see is every naxy is adj to every tail */
+        /* check to see is every nayx is adj to every tail */
         for (int j = 0; j < o.set_size; ++j) {
             /* If not in TAIL skip */
             if (!IS_TAIL_NODE(o.t, j))
                 continue;
-            if (!adjacent_in_cgraph(cg, o.naxy[i], o.set[j]))
+            if (!adjacent_in_cgraph(cg, o.nayx[i], o.set[j]))
                 return 0;
         }
     }
@@ -58,20 +58,20 @@ int valid_fes_clique(struct cgraph *cg, struct ges_operator *op)
     return 1;
 }
 /*
- * valid_fes_clique checks to see if the set NAXY/H
+ * valid_fes_clique checks to see if the set nayx/H
  * forms a clique.
  */
 int valid_bes_clique(struct cgraph *cg, struct ges_operator *op)
 {
     struct ges_operator o = *op;
-    for (int i = 0; i < o.naxy_size; ++i) {
+    for (int i = 0; i < o.nayx_size; ++i) {
         /* if i in H, skip */
         if (IS_HEAD_NODE(o.h, i))
             continue;
         for (int j = 0; j < i; ++j) {
             /* if j in H, skip */
             if (!IS_HEAD_NODE(o.h, j)) {
-                if (!adjacent_in_cgraph(cg, o.naxy[i], o.naxy[j]))
+                if (!adjacent_in_cgraph(cg, o.nayx[i], o.nayx[j]))
                     return 0;
             }
         }
@@ -110,31 +110,32 @@ int cycle_created(struct cgraph *cg, struct ges_operator *op, int *mem)
     unsigned char *marked = (unsigned char *) mem;
     memset(marked, 0, cg->n_nodes / 8 + 1);
     /*
-     * If a path goes into s_u_naxy, it is ignored. Nodes will only be enqueued
-     * if they are unmarked, so marking every node in s_u_naxy accomplishes
-     * this (ie ignores the path because it goes into s_u_naxy).
+     * If a path goes into s_u_nayx, it is ignored. Nodes will only be enqueued
+     * if they are unmarked, so marking every node in s_u_nayx accomplishes
+     * this (ie ignores the path because it goes into s_u_nayx).
      */
-    for (int i = 0; i < op->naxy_size; ++i)
-        mark(op->naxy[i], marked);
+    for (int i = 0; i < op->nayx_size; ++i)
+        mark(op->nayx[i], marked);
     for (int i = 0; i < op->set_size; ++i) {
         if (IS_TAIL_NODE(op->t, i))
             mark(op->set[i], marked);
     }
     /* Grab memory from mem to use as a queue. We don't need to zero this. */
-    int *queue      = mem + cg->n_nodes;
-    int  queue_size = 1;
+    int *queue = mem + cg->n_nodes;
+    /* queue_size is bounded by n_nodes, as we only ever add a node once */
+    int size = 1;
     queue[0] = op->y;
-    for (int i = 0; i < queue_size; ++i) {
+    for (int i = 0; i < size; ++i) {
         int node = queue[i];
         /* Add the node's unmarked spouses and children to the queue */
-        struct ill *p = cg->children[node];
+        struct edge_list *p = cg->children[node];
         while (p) {
             /* If the next node is x we have found a cycle and can return 1 */
             if (p->node == op->xp)
                 return 1;
             if (!is_marked(p->node, marked)) {
                 mark(p->node, marked);
-                queue[queue_size++] = p->node;
+                queue[size++] = p->node;
             }
             p = p->next;
         }
@@ -144,7 +145,7 @@ int cycle_created(struct cgraph *cg, struct ges_operator *op, int *mem)
                 return 1;
             if (!is_marked(p->node, marked)) {
                 mark(p->node, marked);
-                queue[queue_size++] = p->node;
+                queue[size++] = p->node;
             }
             p = p->next;
         }
@@ -154,20 +155,20 @@ int cycle_created(struct cgraph *cg, struct ges_operator *op, int *mem)
 
 /*
  * partition_neighbors partitions the neighbors of op.y into those adjacent
- * to opx (NAXY) in cg and those nonadjacent to op.x (set). Used in FES.
+ * to opx (nayx) in cg and those nonadjacent to op.x (set). Used in FES.
  */
 void partition_neighbors(struct cgraph *cg, struct ges_operator *op)
 {
     struct ges_operator o = *op;
-    struct ill   *s = cg->spouses[o.y];
-    int           n = ill_size(s);
-    o.naxy      = malloc(n * sizeof(int));
-    o.naxy_size = 0;
+    struct edge_list   *s = cg->spouses[o.y];
+    int n = size_edge_list(s);
+    o.nayx      = malloc(n * sizeof(int));
+    o.nayx_size = 0;
     o.set       = malloc(n * sizeof(int));
     o.set_size  = 0;
     while (s) {
         if (adjacent_in_cgraph(cg, o.xp, s->node))
-            o.naxy[o.naxy_size++] = s->node;
+            o.nayx[o.nayx_size++] = s->node;
         else
             o.set[o.set_size++] = s->node;
         s = s->next;
@@ -176,20 +177,20 @@ void partition_neighbors(struct cgraph *cg, struct ges_operator *op)
 }
 
 /*
- * calculate_naxy caculates the neighbors of op.y that are adjacent to op.x.
- * Used in BES.
+ * calculate_nayx caculates the neighbors (spouses) of op.y that are adjacent
+ * to op.x. Used in BES.
  */
-void calculate_naxy(struct cgraph *cg, struct ges_operator *op)
+void calculate_nayx(struct cgraph *cg, struct ges_operator *op)
 {
     struct ges_operator o = *op;
-    struct ill *s = cg->spouses[o.y];
-    o.naxy_size = 0;
+    struct edge_list *s = cg->spouses[o.y];
+    o.nayx_size = 0;
     o.set_size  = 0;
-    o.naxy      = malloc(ill_size(s) * sizeof(int));
+    o.nayx      = malloc(size_edge_list(s) * sizeof(int));
     o.set       = NULL;
     while (s) {
         if (adjacent_in_cgraph(cg, o.xp, s->node))
-            o.naxy[o.naxy_size++] = s->node;
+            o.nayx[o.nayx_size++] = s->node;
         s = s->next;
     }
     *op = o;
@@ -200,8 +201,8 @@ void calculate_naxy(struct cgraph *cg, struct ges_operator *op)
  */
 void calculate_parents(struct cgraph *cg, struct ges_operator *op)
 {
-    struct ill *p = cg->parents[op->y];
-    op->n_parents = ill_size(p);
+    struct edge_list *p = cg->parents[op->y];
+    op->n_parents = size_edge_list(p);
     op->parents   = malloc(op->n_parents * sizeof(int));
     int i = 0;
     while (p) {
@@ -217,10 +218,9 @@ void calculate_parents(struct cgraph *cg, struct ges_operator *op)
 * deterimine_nodes_to_recalc to get the nodes and the number of nodes
 * we need to recalculate.
 */
-int determine_insertion_operators_to_update(int *nodes, struct cgraph *cpy,
-                                                        struct cgraph *cg,
-                                                        struct ges_operator *op,
-                                                        int *visited)
+int get_insertion_operators_to_update(int *nodes, struct cgraph *cpy,
+                                          struct cgraph *cg, struct ges_operator
+                                          *op, int *visited)
 {
     int n_nodes = cg->n_nodes;
     int n = 0;
@@ -234,37 +234,36 @@ int determine_insertion_operators_to_update(int *nodes, struct cgraph *cpy,
         if (!visited[i])
             continue;
         if (!identical_in_cgraphs(cg, cpy, i)) {
-            ill_free(cpy->parents[i]);
-            cpy->parents[i] = copy_ill(cg->parents[i]);
-            ill_free(cpy->spouses[i]);
-            cpy->spouses[i] = copy_ill(cg->spouses[i]);
+            free_edge_list(cpy->parents[i]);
+            cpy->parents[i] = copy_edge_list(cg->parents[i]);
+            free_edge_list(cpy->spouses[i]);
+            cpy->spouses[i] = copy_edge_list(cg->spouses[i]);
             nodes[n++] = i;
         }
     }
     return n;
 }
 
-int determine_deletion_operators_to_update(int *nodes, struct cgraph *cpy,
-                                                       struct cgraph *cg,
-                                                       struct ges_operator *op,
-                                                       int *visited)
+int get_deletion_operators_to_update(int *nodes, struct cgraph *cpy,
+                                         struct cgraph *cg, struct ges_operator
+                                         *op, int *visited)
 {
     int  n_nodes = cg->n_nodes;
     int  n       = 0;
     visited[op->y]  = 1;
     visited[op->xp] = 1;
-    for (int i = 0; i < op->naxy_size; ++i) {
+    for (int i = 0; i < op->nayx_size; ++i) {
         if (IS_HEAD_NODE(op->h, i))
-            visited[op->naxy[i]] = 1;
+            visited[op->nayx[i]] = 1;
     }
     for (int i = 0; i < n_nodes; ++i) {
         if (!visited[i])
             continue;
         if (!identical_in_cgraphs(cg, cpy, i)) {
-            ill_free(cpy->parents[i]);
-            cpy->parents[i] = copy_ill(cg->parents[i]);
-            ill_free(cpy->spouses[i]);
-            cpy->spouses[i] = copy_ill(cg->spouses[i]);
+            size_edge_list(cpy->parents[i]);
+            cpy->parents[i] = copy_edge_list(cg->parents[i]);
+            size_edge_list(cpy->spouses[i]);
+            cpy->spouses[i] = copy_edge_list(cg->spouses[i]);
             n++;
         }
         else

@@ -11,6 +11,8 @@
 #include <causality.h>
 #include <dataframe.h>
 #include <scores/scores.h>
+#include <cgraph/cgraph.h>
+#include <cgraph/edge_list.h>
 
 /*
  * score_graph calculates the (BIC-like) score of a graph using a causality
@@ -24,12 +26,12 @@ double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
 {
     double       graph_score = 0.0f;
     int          n_nodes     = cg->n_nodes;
-    struct ill **parents     = cg->parents;
-    struct ill **spouses     = cg->spouses;
+    struct edge_list **parents     = cg->parents;
+    struct edge_list **spouses     = cg->spouses;
     for (int i = 0; i < n_nodes; ++i) {
-        struct ill *p = parents[i];
-        struct ill *s = spouses[i];
-        int  n  = ill_size(p) + ill_size(s);
+        struct edge_list *p = parents[i];
+        struct edge_list *s = spouses[i];
+        int  n  = size_edge_list(p) + size_edge_list(s);
         int *xy = malloc((n + 1) * sizeof(int));
         xy[n] = i; /* set y to i */
         int j = 0;

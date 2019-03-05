@@ -31,7 +31,7 @@ struct tree ** causality_aggregate_graphs(struct cgraph **cgs, double *weights,
         struct cgraph *cg = cgs[i];
         double weight     = weights[i];
         for (int x = 0; x < n_nodes; ++x) {
-            struct ill *p = cg->parents[x];
+            struct edge_list *p = cg->parents[x];
             while (p) {
                 int y    = p->node;
                 int edge = p->edge;

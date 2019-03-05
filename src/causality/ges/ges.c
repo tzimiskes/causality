@@ -23,11 +23,11 @@
 #include <omp.h>
 #endif
 
-#define DEFAULT_SCORE_DIFF 1.0f
+#define DEFAULT_SCORE_DIFF 1.0F
 
 /*
  * is_valid_insertion returns whether or not applying the given insertion
- * operator, op, is valid. It checks to see if T U NaXY forms a clique and
+ * operator, op, is valid. It checks to see if T U nayx forms a clique and
  * that adding the edge x --> y does not result in a cycle. preallocated
  * memory is passed in to cycle_created as an optimization and to facilitate
  * parallelization.
@@ -40,7 +40,7 @@ static int is_valid_insertion(struct cgraph *cg, struct ges_operator *op,
 
 /*
  * is_valid_deletion returns whether or not applying the given deletion
- * operator, op, results in a valid deletion. It checks to see if NaXY/H
+ * operator, op, results in a valid deletion. It checks to see if nayx/H
  * forms a clique.
  */
 static int is_valid_deletion(struct cgraph *cg, struct ges_operator *op)
@@ -51,7 +51,7 @@ static int is_valid_deletion(struct cgraph *cg, struct ges_operator *op)
 /*
  * score_insertion_operator takes the insertion operator op and modifies it by
  * finding the (valid) set T (where T is in the powerset of S) that minimizes
- * the quantity score((py, naxy, T, x), y) - score((py, naxy, T), y).
+ * the quantity score((py, nayx, T, x), y) - score((py, nayx, T), y).
  * The function also modifies op by setting the score_diff field to the best
  * score difference. If there is no valid T, then op is unmodified.
  */
@@ -60,26 +60,26 @@ void score_insertion_operator(struct cgraph *cg, struct ges_operator *op,
                                                         int *cycle_test_mem)
 {
     struct ges_operator o = *op;
-    /* allocate enough memory on the stack to store all of Pa(y) U Naxy U S */
-    int py_naxy_size = o.naxy_size + o.n_parents;
-    int py_naxy_t[py_naxy_size + o.set_size];
+    /* allocate enough memory on the stack to store all of Pa(y) U nayx U S */
+    int py_nayx_size = o.nayx_size + o.n_parents;
+    int py_nayx_t[py_nayx_size + o.set_size];
     for (int i = 0; i < o.n_parents; ++i)
-        py_naxy_t[i] = o.parents[i];
-    for (int i = 0; i < o.naxy_size; ++i)
-        py_naxy_t[i + o.n_parents] = o.naxy[i];
+        py_nayx_t[i] = o.parents[i];
+    for (int i = 0; i < o.nayx_size; ++i)
+        py_nayx_t[i + o.n_parents] = o.nayx[i];
     /* iterate through the powerset of S via bit operations.  */
     uint64_t powerset_size = 1 << o.set_size; /* |P(S)|  = 2^|S| */
     for (o.t = 0; o.t < powerset_size; ++o.t) {
         if (!is_valid_insertion(cg, &o, cycle_test_mem))
             continue;
-        int py_naxy_t_size = py_naxy_size;
+        int py_nayx_t_size = py_nayx_size;
         for (int i = 0; i < o.set_size; ++i) {
-            /* We now need to score the valid operator. We add t to py_naxy_t */
+            /* We now need to score the valid operator. We add t to py_nayx_t */
             if (IS_TAIL_NODE(o.t, i))
-                py_naxy_t[py_naxy_t_size++] = o.set[i];
+                py_nayx_t[py_nayx_t_size++] = o.set[i];
         }
-        /* score_diff = score(y, pay_naxy_t_x) - score(y, pay_naxy_t) */
-        o.score_diff = gs.gsf(gs.df, o.xp, o.y, py_naxy_t, py_naxy_t_size,
+        /* score_diff = score(y, pay_nayx_t_x) - score(y, pay_nayx_t) */
+        o.score_diff = gs.gsf(gs.df, o.xp, o.y, py_nayx_t, py_nayx_t_size,
                                      gs.args, gs.gsm);
         if (o.score_diff < op->score_diff)
             *op = o;
@@ -88,8 +88,8 @@ void score_insertion_operator(struct cgraph *cg, struct ges_operator *op,
 
 /*
  * score_deletion_operator takes the deletion operator op and modifies it by
- * finding the (valid) set H (where H is in the powerset of Naxy/x) that
- * minimizes the quantity -(score((py, naxy/H, x), y) - score((py, naxy/H, y)).
+ * finding the (valid) set H (where H is in the powerset of nayx/x) that
+ * minimizes the quantity -(score((py, nayx/H, x), y) - score((py, nayx/H, y)).
  * The function also modifies op by setting the score_diff field to the best
  * score difference. If there is no valid H, then op is unmodified.
  */
@@ -97,26 +97,26 @@ void score_deletion_operator(struct cgraph *cg, struct ges_operator *op,
                                                 struct ges_score gs)
 {
     struct ges_operator o = *op;
-    /* allocate enough memory on the stack to store all of Pa(y) U Naxy */
+    /* allocate enough memory on the stack to store all of Pa(y) U nayx */
     int py_size = 0;
-    int py_naxy_mh[o.n_parents + o.naxy_size];
-    /* add pa(y) != x to py_naxy_smh */
+    int py_nayx_mh[o.n_parents + o.nayx_size];
+    /* add pa(y) != x to py_nayx_smh */
     for (int i = 0; i < o.n_parents; ++i) {
         if (o.parents[i] != o.xp)
-            py_naxy_mh[py_size++] = o.parents[i];
+            py_nayx_mh[py_size++] = o.parents[i];
     }
-    /* iterate through the powerset of naxy via bit operations.  */
-    uint64_t powerset_size = 1 << o.naxy_size;
+    /* iterate through the powerset of nayx via bit operations.  */
+    uint64_t powerset_size = 1 << o.nayx_size;
     for (o.h = 0; o.h < powerset_size; ++o.h) {
         if (!is_valid_deletion(cg, &o))
             continue;
-        /* add naxy_smh to py_naxy_smh (naxy minus h ) */
-        int py_naxy_mh_size = py_size;
-        for (int i = 0; i < o.naxy_size; ++i) {
-            if (!IS_HEAD_NODE(o.h, i) && o.naxy[i] != o.xp)
-                py_naxy_mh[py_naxy_mh_size++] = o.naxy[i];
+        /* add nayx_smh to py_nayx_smh (nayx minus h ) */
+        int py_nayx_mh_size = py_size;
+        for (int i = 0; i < o.nayx_size; ++i) {
+            if (!IS_HEAD_NODE(o.h, i) && o.nayx[i] != o.xp)
+                py_nayx_mh[py_nayx_mh_size++] = o.nayx[i];
         }
-        o.score_diff = -gs.gsf(gs.df, o.xp, o.y, py_naxy_mh, py_naxy_mh_size,
+        o.score_diff = -gs.gsf(gs.df, o.xp, o.y, py_nayx_mh, py_nayx_mh_size,
                                         gs.args, gs.gsm);
         if (o.score_diff < op->score_diff)
             *op = o;
@@ -156,17 +156,17 @@ void update_insertion_operator(struct cgraph *cg, struct ges_operator *op,
         apply_optimization2(cg, x, &gs);
         struct ges_operator o = {x, op->y, {0}, NULL, NULL, op->parents,
                                     op->n_parents, 0, 0, DEFAULT_SCORE_DIFF};
-        /* Split y's neighbors into set (nonadj to x) and naxy (adj to x) */
+        /* Split y's neighbors into set (nonadj to x) and nayx (adj to x) */
         partition_neighbors(cg, &o);
         score_insertion_operator(cg, &o, gs, cycle_test_mem);
         if (o.score_diff < op->score_diff) {
             free(op->set);
-            free(op->naxy);
+            free(op->nayx);
             *op = o;
         }
         else {
             free(o.set);
-            free(o.naxy);
+            free(o.nayx);
         }
     }
     if (gs.gsf == ges_bic_score)
@@ -183,10 +183,10 @@ void update_deletion_operator(struct cgraph *cg, struct ges_operator *op,
      * We calculate what parents and spouses to iterate over to make
      * load balancing easier
      */
-    int         n     = ill_size(cg->parents[y]) + ill_size(cg->spouses[y]);
-    int        *nodes = malloc(n * sizeof(int));
-    struct ill *p     = cg->parents[y];
-    int         i     = 0;
+    int  n     = size_edge_list(cg->parents[y]) + size_edge_list(cg->spouses[y]);
+    int *nodes = malloc(n * sizeof(int));
+    struct edge_list *p = cg->parents[y];
+    int i = 0;
     while (p) {
         nodes[i++] = p->node;
         p          = p->next;
@@ -203,16 +203,16 @@ void update_deletion_operator(struct cgraph *cg, struct ges_operator *op,
         struct ges_operator o = {nodes[i], y, {0}, NULL, NULL, op->parents,
                                      op->n_parents, 0, 0, DEFAULT_SCORE_DIFF};
         /* Calculate the neighbors of y that are adjacent to x */
-        calculate_naxy(cg, &o);
+        calculate_nayx(cg, &o);
         score_deletion_operator(cg, &o, gs);
         if (o.score_diff < op->score_diff) {
             free(op->set);
-            free(op->naxy);
+            free(op->nayx);
             *op = o;
         }
         else {
             free(o.set);
-            free(o.naxy);
+            free(o.nayx);
         }
     }
     free(nodes);
@@ -246,11 +246,11 @@ static void apply_deletion_operator(struct cgraph *cg, struct ges_operator *op)
     else
         delete_edge_from_cgraph(cg, op->xp, op->y, UNDIRECTED);
     /* Now, orient uncovered edges */
-    for (int i = 0; i < op->naxy_size; ++i) {
+    for (int i = 0; i < op->nayx_size; ++i) {
         if (IS_HEAD_NODE(op->h, i)) {
-            orient_undirected_edge(cg, op->y, op->naxy[i]);
-            if (edge_undirected_in_cgraph(cg, op->xp, op->naxy[i]))
-                orient_undirected_edge(cg, op->xp, op->naxy[i]);
+            orient_undirected_edge(cg, op->y, op->nayx[i]);
+            if (edge_undirected_in_cgraph(cg, op->xp, op->nayx[i]))
+                orient_undirected_edge(cg, op->xp, op->nayx[i]);
         }
     }
 }
@@ -316,8 +316,7 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         apply_insertion_operator(cg, op);
         graph_score += op->score_diff;
         reorient_fes(cg, *op, visited);
-        int n = determine_insertion_operators_to_update(nodes, cpy, cg, op,
-                                                               visited);
+        int n = get_insertion_operators_to_update(nodes, cpy, cg, op, visited);
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
         for (int i = 0; i < n; ++i) {
             new_ops[i] = ops[nodes[i]];
@@ -348,8 +347,7 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         apply_deletion_operator(cg, op);
         graph_score += op->score_diff;
         reorient_bes(cg, *op, visited);
-        int n = determine_deletion_operators_to_update(nodes, cpy, cg, op,
-                                                              visited);
+        int n = get_deletion_operators_to_update(nodes, cpy, cg, op, visited);
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
         for (int i = 0; i < n; ++i) {
             new_ops[i] = ops[nodes[i]];
@@ -376,7 +374,7 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
     for (int i = 0; i < nvar; ++i) {
         free(ops[i].parents);
         free(ops[i].set);
-        free(ops[i].naxy);
+        free(ops[i].nayx);
     }
     free(ops);
     return graph_score;

@@ -13,7 +13,7 @@ SCORE.OBJS = causality/scores/bdeu_score.o causality/scores/score_graph.o \
 ALG.OBJS = causality/algorithms/meek.o causality/algorithms/sort.o \
     causality/algorithms/chickering.o causality/algorithms/pdx.o
 
-CGRAPH.OBJS = causality/cgraph/cgraph.o causality/cgraph/int_ll.o
+CGRAPH.OBJS = causality/cgraph/cgraph.o causality/cgraph/edge_list.o
 
 AGG.OBJS = causality/aggregate/aggregate_graphs.o causality/aggregate/tree.o
 

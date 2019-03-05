@@ -7,6 +7,7 @@
 #include <scores/linearalgebra.h>
 #include <ges/ges.h>
 #include <ges/ges_internal.h>
+#include <cgraph/edge_list.h>
 
 static double calcluate_bic_diff(double rss_p, double rss_m, double penalty,
     int nobs)
@@ -95,11 +96,11 @@ double ges_bic_score(struct dataframe df, int xp, int y, int *x, int nx,
 
 void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs)
 {
-    struct ill *p = cg->parents[y];
-    struct ill *s = cg->spouses[y];
+    struct edge_list *p = cg->parents[y];
+    struct edge_list *s = cg->spouses[y];
     /* Allocate memory to store the precalculated convariances. */
     struct ges_score_mem gsm;
-    gsm.m       = ill_size(p) + ill_size(s);
+    gsm.m       = size_edge_list(p) + size_edge_list(s);
     gsm.cov_xy  = malloc(n * sizeof(double));
     gsm.cov_xx  = malloc(gsm.m * gsm.m * sizeof(double));
     gsm.cov_xpx = malloc(gsm.m * sizeof(double));
