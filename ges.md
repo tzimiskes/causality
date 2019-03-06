@@ -23,17 +23,15 @@
   - [x] adjacent_in_cgraph
   - [x] size_edge_list
 - [x] calculate_parents
-  - [x] ill_size
+  - [x] size_edge_list
 - [ ] get_insertion_operators_to_update
   - [x] IS_TAIL_NODE
   - [ ] identical_in_cgraphs
-  - [ ] ill_free
-  - [ ] copy_ill
+  - [x] copy_edge_list
 - [ ] get_deletion_operators_to_update
   - [x] IS_HEAD_NODE
   - [ ] identical_in_cgraphs
-  - [ ] ill_free
-  - [ ] copy_ill
+  - [x] copy_edge_list
 
 ## ges_reorient.c
 - [ ] make_compelled
@@ -41,8 +39,8 @@
 - [ ] undirect_reversible_parents
   - [ ] adjacent_in_cgraph
   - [ ] make_compelled
-  - [ ] ill_insert_front
-  - [ ] ill_search
+  - [ ] insert_edge
+  - [ ] search_edge_list
   - [ ] unorient_directed_edge
   - [ ] push_adjacents
 - [ ] push_adjacents
@@ -50,9 +48,9 @@
 - [ ] orient
   - [ ] orient_undirected_edge
   - [ ] make_compelled
-  - [ ] ill_insert_front
+  - [ ] insert_edge
 - [ ] apply_rule_locally
-  - [ ] copy_ill
+  - [ ] copy_edge_list
   - [ ] meek_rule[1-4]
   - [ ] orient
 - [ ] meek_rules
@@ -60,13 +58,13 @@
   - [ ] meek_rule[1-4]
 - [ ] reorient_fes
     - [ ] undirect_reversible_parents
-    - [ ] ill_insert_front
+    - [ ] insert_edge
     - [ ] meek_rules
     - [ ] free_compelled
 - [ ] reorient_bes
     - [ ] IS_HEAD_NODE
     - [ ] undirect_reversible_parents
-    - [ ] ill_insert_front
+    - [ ] insert_edge
     - [ ] meek_rules
     - [ ] free_compelled
 ## ges.c

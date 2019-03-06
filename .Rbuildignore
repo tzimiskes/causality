@@ -4,3 +4,4 @@
 .clang_complete
 ^src/causality\.so
 LICENSE
+ctests
