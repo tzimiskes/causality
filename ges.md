@@ -1,7 +1,8 @@
-# ges_internal.h
+## ges_internal.h
 - [x] IS_HEAD_NODE
 - [x] IS_TAIL_NODE
-# ges_utils.c
+
+## ges_utils.c
 - [x] free_ges_score_mem
 - [x] valid_fes_clique
   - [x] adjacent_in_cgraph
@@ -11,7 +12,7 @@
   - [x] IS_HEAD_NODE
 - [x] is_marked
 - [x] mark
-- [ ] cycle_created
+- [x] cycle_created
   - [x]  IS_TAIL_NODE
   - [x] is_marked
   - [x] mark
@@ -23,24 +24,59 @@
   - [x] ill_size
 - [x] calculate_parents
   - [x] ill_size
-- [ ] determine_insertion_operators_to_update
+- [ ] get_insertion_operators_to_update
   - [x] IS_TAIL_NODE
   - [ ] identical_in_cgraphs
   - [ ] ill_free
   - [ ] copy_ill
-- [ ] determine_deletion_operators_to_update
+- [ ] get_deletion_operators_to_update
   - [x] IS_HEAD_NODE
   - [ ] identical_in_cgraphs
   - [ ] ill_free
   - [ ] copy_ill
-# ges.c
-- [ ] is_valid_insertion
-  - [ ] valid_fes_clique
-  - [ ] cycle_created
+
+## ges_reorient.c
+- [ ] make_compelled
+- [ ] free_compelled
+- [ ] undirect_reversible_parents
+  - [ ] adjacent_in_cgraph
+  - [ ] make_compelled
+  - [ ] ill_insert_front
+  - [ ] ill_search
+  - [ ] unorient_directed_edge
+  - [ ] push_adjacents
+- [ ] push_adjacents
+  - [ ] push_list
+- [ ] orient
+  - [ ] orient_undirected_edge
+  - [ ] make_compelled
+  - [ ] ill_insert_front
+- [ ] apply_rule_locally
+  - [ ] copy_ill
+  - [ ] meek_rule[1-4]
+  - [ ] orient
+- [ ] meek_rules
+  - [ ] apply_rule_locally
+  - [ ] meek_rule[1-4]
+- [ ] reorient_fes
+    - [ ] undirect_reversible_parents
+    - [ ] ill_insert_front
+    - [ ] meek_rules
+    - [ ] free_compelled
+- [ ] reorient_bes
+    - [ ] IS_HEAD_NODE
+    - [ ] undirect_reversible_parents
+    - [ ] ill_insert_front
+    - [ ] meek_rules
+    - [ ] free_compelled
+## ges.c
+- [x] is_valid_insertion
+  - [x] valid_fes_clique
+  - [x] cycle_created
 - [x] is_valid_deletion
   - [x] valid_bes_clique
 - [ ] score_insertion_operator
-  - [ ] is_valid_insertion
+  - [x] is_valid_insertion
   - [x] IS_TAIL_NODE
   - [ ] gsf
 - [ ] score_deletion_operator
@@ -54,14 +90,14 @@
   - [ ] apply_optimization2
   - [x] partition_neighbors
   - [ ] score_insertion_operator
-  - [X] free_ges_score_mem
+  - [x] free_ges_score_mem
   - [x] adjacent_in_cgraph
 - [ ] update_deletion_operator
   - [x] ill_size
   - [ ] apply_optimization1
   - [ ] apply_optimization2
   - [x] calculate_naxy
-  - [X] free_ges_score_mem
+  - [x] free_ges_score_mem
 - [ ] apply_insertion_operator
   - [ ] add_edge_to_cgraph
   - [x] IS_TAIL_NODE
