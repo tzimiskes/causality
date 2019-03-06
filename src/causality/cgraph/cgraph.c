@@ -36,12 +36,12 @@ struct cgraph * copy_cgraph(struct cgraph *cg)
 void add_edge_to_cgraph(struct cgraph *cg, int x, int y, short edge)
 {
     if (IS_DIRECTED(edge)) {
-        insert_edge_list(&cg->children[x], y, edge, 0);
-        insert_edge_list(&cg->parents[y], x, edge, 0);
+        insert_edge(&cg->children[x], y, edge, 0);
+        insert_edge(&cg->parents[y], x, edge, 0);
     }
     else {
-        insert_edge_list(&cg->spouses[x], y, edge, 0);
-        insert_edge_list(&cg->spouses[y], x, edge, 0);
+        insert_edge(&cg->spouses[x], y, edge, 0);
+        insert_edge(&cg->spouses[y], x, edge, 0);
     }
     cg->n_edges += 1;
 }
@@ -49,12 +49,12 @@ void add_edge_to_cgraph(struct cgraph *cg, int x, int y, short edge)
 void delete_edge_from_cgraph(struct cgraph *cg, int x, int y, short edge)
 {
     if (IS_DIRECTED(edge)) {
-        delete_edge_list(&cg->parents[y], x);
-        delete_edge_list(&cg->children[x], y);
+        remove_edge(&cg->parents[y], x);
+        remove_edge(&cg->children[x], y);
     }
     else {
-        delete_edge_list(&cg->spouses[y], x);
-        delete_edge_list(&cg->spouses[x], y);
+        remove_edge(&cg->spouses[y], x);
+        remove_edge(&cg->spouses[x], y);
     }
     cg->n_edges -= 1;
 }
@@ -109,11 +109,11 @@ int edge_undirected_in_cgraph(struct cgraph *cg, int x, int y)
     return 0;
 }
 
-int edge_directed_in_cgraph(struct cgraph *cg, int parent, int child)
+int edge_directed_in_cgraph(struct cgraph *cg, int x, int y)
 {
-    struct edge_list *e = cg->children[parent];
+    struct edge_list *e = cg->children[x];
     while (e) {
-        if (e->node == child)
+        if (e->node == y)
             return 1;
         e = e->next;
     }

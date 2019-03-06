@@ -27,7 +27,7 @@ void causality_meek(struct cgraph *cg)
     struct edge_list *stack = NULL;
     for (int i = 0; i < cg->n_nodes; ++i) {
         if (cg->spouses[i])
-            insert_edge_list(&stack, i, 0, 0);
+            insert_edge(&stack, i, 0, 0);
     }
     while (stack) {
         int node = stack->node;
@@ -60,11 +60,11 @@ void apply_rule(struct cgraph *cg, int x, struct edge_list **stack,
         int y = p->node;
         if (meek_rule(cg, x, y)) {
             orient_undirected_edge(cg, x, y);
-            insert_edge_list(stack, y, 0, 0);
+            insert_edge(stack, y, 0, 0);
         }
         else if (meek_rule(cg, y, x)) {
             orient_undirected_edge(cg, y, x);
-            insert_edge_list(stack, y, 0, 0);
+            insert_edge(stack, y, 0, 0);
         }
         p = p->next;
     }

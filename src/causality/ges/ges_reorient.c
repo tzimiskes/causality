@@ -9,8 +9,8 @@
 #include <ges/ges.h>
 #include <ges/ges_internal.h>
 
-#define TAG_COMPELLED 1
-#define UNTAGGED      0
+#define TAG_COMPELLED  1
+#define TAG_REVERSABLE UNTAGGED
 
 /* compelled edge list */
 struct cel {
@@ -62,7 +62,7 @@ void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited)
     struct cel *compelled = NULL;
     struct edge_list *stack     = NULL;
     undirect_reversible_parents(op.y, cg, &stack, &compelled, visited);
-    insert_edge_list(&stack, op.y, 0, 0);
+    insert_edge(&stack, op.y, 0, 0);
     meek_rules(cg, op.y, &stack, &compelled, visited);
     while (stack) {
         /* pop the top */
@@ -83,12 +83,12 @@ void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited)
     struct cel *compelled = NULL;
     struct edge_list *stack     = NULL;
     undirect_reversible_parents(op.y, cg, &stack, &compelled, visited);
-    insert_edge_list(&stack, op.y, 0, 0);
+    insert_edge(&stack, op.y, 0, 0);
     for (int i = 0; i < op.nayx_size; ++i) {
         if (IS_HEAD_NODE(op.h, i)) {
             undirect_reversible_parents(op.nayx[i], cg, &stack, &compelled,
                                                         visited);
-            insert_edge_list(&stack, op.nayx[i], 0, 0);
+            insert_edge(&stack, op.nayx[i], 0, 0);
         }
     }
     meek_rules(cg, op.y, &stack, &compelled, visited);
@@ -142,7 +142,7 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
             }
             p2 = p2->next;
         }
-        insert_edge_list(&reversible, x, 0, 0);
+        insert_edge(&reversible, x, 0, 0);
         NEXT_PARENT:
         p1 = p1->next;
     }
@@ -166,14 +166,14 @@ static void undirect_reversible_parents(int node, struct cgraph *cg,
     }
     if (node_modified) {
         push_adjacents(node, cg, stack);
-        insert_edge_list(stack, node, 0,0);
+        insert_edge(stack, node, 0,0);
     }
 }
 
 static inline void push_list(struct edge_list **stack, struct edge_list *p)
 {
     while (p) {
-        insert_edge_list(stack, p->node, 0, 0);
+        insert_edge(stack, p->node, 0, 0);
         p = p->next;
     }
 }
@@ -199,8 +199,8 @@ void orient(struct cgraph *cg, int x, int y, struct edge_list **stack,
     make_compelled(compelled, search_edge_list(cg->parents[y], x));
     visited[x] = 1;
     visited[y] = 1;
-    insert_edge_list(stack, y, 0, 0);
-    insert_edge_list(stack, x, 0, 0);
+    insert_edge(stack, y, 0, 0);
+    insert_edge(stack, x, 0, 0);
 }
 
 static void apply_rule_locally(struct cgraph *cg, int x, struct edge_list **stack,

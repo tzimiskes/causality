@@ -18,10 +18,10 @@
   - [x] mark
 - [x] partition_neighbors
   - [x] adjacent_in_cgraph
-  - [x] ill_size
+  - [x] size_edge_list
 - [x] calculate_naxy
   - [x] adjacent_in_cgraph
-  - [x] ill_size
+  - [x] size_edge_list
 - [x] calculate_parents
   - [x] ill_size
 - [ ] get_insertion_operators_to_update
@@ -93,18 +93,18 @@
   - [x] free_ges_score_mem
   - [x] adjacent_in_cgraph
 - [ ] update_deletion_operator
-  - [x] ill_size
+  - [x] size_edge_list
   - [ ] apply_optimization1
   - [ ] apply_optimization2
   - [x] calculate_naxy
   - [x] free_ges_score_mem
 - [ ] apply_insertion_operator
-  - [ ] add_edge_to_cgraph
+  - [x] add_edge_to_cgraph
   - [x] IS_TAIL_NODE
-  - [ ] orient_undirected_edge
+  - [x] orient_undirected_edge
 - [ ] apply_deletion_operator
-  - [ ] edge_directed_in_cgraph
-  - [ ] delete_edge_from_cgraph
+  - [x] edge_directed_in_cgraph
+  - [x] delete_edge_from_cgraph
   - [x] IS_HEAD_NODE
-  - [ ] orient_undirected_edge
-  - [ ] edge_undirected_in_cgraph
+  - [x] orient_undirected_edge
+  - [x] edge_undirected_in_cgraph

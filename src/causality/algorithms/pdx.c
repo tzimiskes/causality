@@ -82,12 +82,12 @@ static void remove_node(struct cll *current, struct cll *nodes)
     /* delete all listings of node in its parents and spouses */
     struct edge_list *parents = *(current->parents);
     while (parents) {
-        delete_edge_list(nodes[parents->node].children, node);
+        remove_edge(nodes[parents->node].children, node);
         parents = parents->next;
     }
     struct edge_list *spouses = *(current->spouses);
     while (spouses) {
-        delete_edge_list(nodes[spouses->node].spouses, node);
+        remove_edge(nodes[spouses->node].spouses, node);
         spouses = spouses->next;
     }
 }
