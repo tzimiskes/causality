@@ -14,8 +14,7 @@
 #include <algorithms/meek.h>
 
 void ccf_meek(struct cgraph *cg);
-void apply_rule(struct cgraph *cg, int x, struct edge_list **stack,
-                                   meek_rule meek_rule);
+void apply_rule(struct cgraph *cg, int x, struct stack **s, meek_rule meek_rule);
 
 /*
  * meek_rules take in a PDAG and maximially orients it by repeatedly applying
@@ -24,20 +23,17 @@ void apply_rule(struct cgraph *cg, int x, struct edge_list **stack,
  */
 void causality_meek(struct cgraph *cg)
 {
-    struct edge_list *stack = NULL;
+    struct stack *s = NULL;
     for (int i = 0; i < cg->n_nodes; ++i) {
         if (cg->spouses[i])
-            insert_edge(&stack, i, 0, 0);
+            push(&s, i);
     }
-    while (stack) {
-        int node = stack->node;
-        apply_rule(cg, node, &stack, meek_rule1);
-        apply_rule(cg, node, &stack, meek_rule2);
-        apply_rule(cg, node, &stack, meek_rule3);
-        apply_rule(cg, node, &stack, meek_rule4);
-        struct edge_list *e = stack;
-        stack = stack->next;
-        free(e);
+    int node;
+    while ((node = pop(&s)) >= 0) {
+        apply_rule(cg, node, &s, meek_rule1);
+        apply_rule(cg, node, &s, meek_rule2);
+        apply_rule(cg, node, &s, meek_rule3);
+        apply_rule(cg, node, &s, meek_rule4);
     }
 }
 
@@ -45,26 +41,26 @@ void causality_meek(struct cgraph *cg)
  * apply_rule applied the selected meek rule (passed in by function pointer)
  * it returns 1 if the rule was applied, and 0 if not
  */
-void apply_rule(struct cgraph *cg, int x, struct edge_list **stack,
+void apply_rule(struct cgraph *cg, int y, struct stack **s,
                                    meek_rule meek_rule)
 {
     /*
      * we need to create a copy of spouses incase an edge is
      * oriented -- orientation occurs "in place."
      */
-    struct edge_list *cpy = copy_edge_list(cg->spouses[x]);
-    struct edge_list *p   = cpy;
-    if(!p)
+    if (!cg->spouses[y])
         return;
-    while(p) {
-        int y = p->node;
+    struct edge_list *cpy = copy_edge_list(cg->spouses[y]);
+    struct edge_list *p   = cpy;
+    while (p) {
+        int x = p->node;
         if (meek_rule(cg, x, y)) {
             orient_undirected_edge(cg, x, y);
-            insert_edge(stack, y, 0, 0);
+            push(s, y);
         }
         else if (meek_rule(cg, y, x)) {
             orient_undirected_edge(cg, y, x);
-            insert_edge(stack, y, 0, 0);
+            push(s, x);
         }
         p = p->next;
     }

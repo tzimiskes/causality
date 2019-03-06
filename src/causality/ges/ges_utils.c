@@ -231,13 +231,13 @@ int get_insertion_operators_to_update(int *nodes, struct cgraph *cpy,
                 visited[op->set[i]] = 1;
     }
     for (int i = 0; i < n_nodes; ++i) {
-        if (!visited[i])
-            continue;
-        if (!identical_in_cgraphs(cg, cpy, i)) {
+        if (visited[i] && !identical_in_cgraphs(cg, cpy, i)) {
             free_edge_list(cpy->parents[i]);
             cpy->parents[i] = copy_edge_list(cg->parents[i]);
             free_edge_list(cpy->spouses[i]);
             cpy->spouses[i] = copy_edge_list(cg->spouses[i]);
+            free_edge_list(cpy->children[i]);
+            cpy->children[i] = copy_edge_list(cg->children[i]);
             nodes[n++] = i;
         }
     }
@@ -257,13 +257,13 @@ int get_deletion_operators_to_update(int *nodes, struct cgraph *cpy,
             visited[op->nayx[i]] = 1;
     }
     for (int i = 0; i < n_nodes; ++i) {
-        if (!visited[i])
-            continue;
-        if (!identical_in_cgraphs(cg, cpy, i)) {
-            size_edge_list(cpy->parents[i]);
+        if (visited[i] && !identical_in_cgraphs(cg, cpy, i)) {
+            free_edge_list(cpy->parents[i]);
             cpy->parents[i] = copy_edge_list(cg->parents[i]);
-            size_edge_list(cpy->spouses[i]);
+            free_edge_list(cpy->spouses[i]);
             cpy->spouses[i] = copy_edge_list(cg->spouses[i]);
+            free_edge_list(cpy->children[i]);
+            cpy->children[i] = copy_edge_list(cg->children[i]);
             n++;
         }
         else
