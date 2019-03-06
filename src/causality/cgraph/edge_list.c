@@ -14,7 +14,7 @@
 /*
  * instantiate a new edge to be inserted into the edge list. by default edges
  * are untagged. edge corresponds to one of the edge defined in causality.h
-*/
+ */
 static struct edge_list * instantiate(int node, short edge, short tag)
 {
     struct edge_list *e = malloc(sizeof(struct edge_list));
