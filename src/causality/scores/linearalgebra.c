@@ -1,6 +1,8 @@
+#include <stdio.h>
 void dc_cov_xy(double *restrict cov_xy, double **x, double *y, int n, int m)
 {
     #ifdef __GNUC__
+    printf("here\n");
     y = __builtin_assume_aligned(y, 32);
     #endif
     double inv_nm1 = 1.0f / (n - 1.0f);
