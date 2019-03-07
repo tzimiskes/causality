@@ -1,14 +1,14 @@
 #include <stdio.h>
 void dc_cov_xy(double *restrict cov_xy, double **x, double *y, int n, int m)
 {
-    #ifdef __GNUC__
+    #ifndef  __WIN32__
     printf("here\n");
     y = __builtin_assume_aligned(y, 32);
     #endif
     double inv_nm1 = 1.0f / (n - 1.0f);
     //#pragma omp parallel for num_threads(2) if (m > 8)
     for (int i = 0; i < m; ++i) {
-        #ifdef __GNUC__
+        #ifndef  __WIN32__
         double *x_i = __builtin_assume_aligned(x[i], 32);
         #else
         double *x_i = x[i];
@@ -24,7 +24,7 @@ void dc_cov_xy(double *restrict cov_xy, double **x, double *y, int n, int m)
  {
      double inv_nm1 = 1.0f / (n - 1.0f);
      for (int i = 0; i < m; ++i) {
-         #ifdef __GNUC__
+         #ifndef  __WIN32__
          double *x_i =  __builtin_assume_aligned(x[i], 32);
          #else
          double *x_i = x[i]
@@ -33,7 +33,7 @@ void dc_cov_xy(double *restrict cov_xy, double **x, double *y, int n, int m)
              if (i == j)
                  cov_xx[j + m * i] = 1.0f;
              else {
-                 #ifdef __GNUC__
+                 #ifndef  __WIN32__
                  double *x_j =  __builtin_assume_aligned(x[j], 32);
                  #else
                  double *x_j =  x[j];
