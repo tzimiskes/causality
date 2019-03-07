@@ -41,7 +41,6 @@ struct dataframe prepare_df(SEXP Df, SEXP States)
     for (int i = 0; i < df.nvar; ++i) {
         SEXP Df_i = VECTOR_ELT(Df, i);
         if (df.states[i]) {
-            
             df.df[i] = malloc(df.nobs * sizeof(int));
             memcpy(df.df[i], INTEGER(Df_i), df.nobs * sizeof(int));
         }
@@ -87,7 +86,6 @@ SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States,
     struct ges_score score = {ges_score, {0}, data, {fargs, iargs}};
     struct cgraph *cg      = create_cgraph(data.nvar);
     /* run GES! */
-    CAUSALITY_PRINT("go!\n");
     double graph_score     = ccf_ges(score, cg);
     /* free dataframe */
     for(int i = 0; i < data.nvar; ++i)

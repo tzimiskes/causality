@@ -266,7 +266,6 @@ static void apply_deletion_operator(struct cgraph *cg, struct ges_operator *op)
  */
 double ccf_ges(struct ges_score score, struct cgraph *cg)
 {
-   CAUSALITY_PRINT("start\n!"); 
    /*
     * The number of processors ges is going to use. Right now it is 1,
     * but this will eventually be passed in as an argument to ges
@@ -278,7 +277,6 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
     struct ges_operator *ops  = calloc(nvar, sizeof(struct ges_operator));
     struct ges_heap     *heap = create_heap(nvar, ops);
     /* FES STEP 0: For all x,y score x --> y */
-  CAUSALITY_PRINT("STEP0\n");
     for (int y = 0; y < nvar; ++y) {
         struct ges_score local_score = score;
         double min_score = DEFAULT_SCORE_DIFF;
@@ -299,7 +297,6 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         ops[y].score_diff = min_score;
     }
     /* TODO */
-  CAUSALITY_PRINT("STEP0DONE\n");
     build_heap(heap);
     /* FORWARD EQUIVALENCE SEARCH (FES) */
     struct cgraph *cpy            = copy_cgraph(cg);
