@@ -315,7 +315,8 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         }
         apply_insertion_operator(cg, op);
         graph_score += op->score_diff;
-        reorient_fes(cg, *op, visited);
+        int nodes_to_reorient [2] = {op->xp, op->y};
+        reorient(cg, nodes_to_reorient, 2, visited);
         int n = get_insertion_operators_to_update(nodes, cpy, cg, op, visited);
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
         for (int i = 0; i < n; ++i) {
@@ -346,7 +347,15 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         }
         apply_deletion_operator(cg, op);
         graph_score += op->score_diff;
-        reorient_bes(cg, *op, visited);
+        int nodes_to_reorient [2 + op->nayx_size];
+        nodes_to_reorient[0] = op->xp;
+        nodes_to_reorient[1] = op->y;
+        int n_nodes_to_reorient = 2;
+        for (int i = 0; i < op->nayx_size; ++i) {
+            if (IS_HEAD_NODE(op->h, i))
+            nodes_to_reorient[n_nodes_to_reorient++] = op->nayx[i];
+        }
+        reorient(cg, nodes_to_reorient, n_nodes_to_reorient, visited);
         int n = get_deletion_operators_to_update(nodes, cpy, cg, op, visited);
         struct ges_operator *new_ops = malloc(n * sizeof(struct ges_operator));
         for (int i = 0; i < n; ++i) {

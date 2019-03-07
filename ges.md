@@ -26,11 +26,11 @@
   - [x] size_edge_list
 - [ ] get_insertion_operators_to_update
   - [x] IS_TAIL_NODE
-  - [ ] identical_in_cgraphs
+  - [x] identical_in_cgraphs
   - [x] copy_edge_list
 - [ ] get_deletion_operators_to_update
   - [x] IS_HEAD_NODE
-  - [ ] identical_in_cgraphs
+  - [x] identical_in_cgraphs
   - [x] copy_edge_list
 
 ## ges_reorient.c
@@ -44,7 +44,7 @@
   - [ ] unorient_directed_edge
   - [ ] push_adjacents
 - [ ] push_adjacents
-  - [ ] push_list
+  - [x] push_list
 - [ ] orient
   - [ ] orient_undirected_edge
   - [ ] make_compelled
@@ -96,7 +96,7 @@
   - [ ] apply_optimization2
   - [x] calculate_naxy
   - [x] free_ges_score_mem
-- [ ] apply_insertion_operator
+- [x] apply_insertion_operator
   - [x] add_edge_to_cgraph
   - [x] IS_TAIL_NODE
   - [x] orient_undirected_edge

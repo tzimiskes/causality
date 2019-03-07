@@ -74,8 +74,7 @@ void partition_neighbors(struct cgraph *cg, struct ges_operator *op);
 void calculate_nayx(struct cgraph *cg, struct ges_operator *op);
 void calculate_parents(struct cgraph *cg, struct ges_operator *op);
 /* reorient cgraph after an operator has been applied */
-void reorient_fes(struct cgraph *cg, struct ges_operator op, int *visited);
-void reorient_bes(struct cgraph *cg, struct ges_operator op, int *visited);
+void reorient(struct cgraph *cg, int *nodes, int n, int *visited);
 int get_deletion_operators_to_update(int *nodes, struct cgraph *cpy,
                                          struct cgraph *cg, struct ges_operator
                                          *op, int *visited);
