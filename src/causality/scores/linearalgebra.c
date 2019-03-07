@@ -27,7 +27,7 @@ void dc_cov_xy(double *restrict cov_xy, double **x, double *y, int n, int m)
          #ifndef  __WIN32__
          double *x_i =  __builtin_assume_aligned(x[i], 32);
          #else
-         double *x_i = x[i]
+         double *x_i = x[i];
          #endif
          for (int j = i; j < m; ++j) {
              if (i == j)
