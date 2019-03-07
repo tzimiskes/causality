@@ -1,4 +1,6 @@
+#infdef __WIN32__
 #define _POSIX_C_SOURCE 200112L
+#endif
 
 #include <R_causality/R_causality.h>
 
@@ -38,11 +40,16 @@ struct dataframe prepare_df(SEXP Df, SEXP States)
     for (int i = 0; i < df.nvar; ++i) {
         SEXP Df_i = VECTOR_ELT(Df, i);
         if (df.states[i]) {
+            
             df.df[i] = malloc(df.nobs * sizeof(int));
             memcpy(df.df[i], INTEGER(Df_i), df.nobs * sizeof(int));
         }
         else {
+            #ifdef _WIN32
+            df.df[i] = malloc(df.nobs *sizeof(double));
+            #else
             posix_memalign(&df.df[i], 32, df.nobs * sizeof(double));
+            #endif
             memcpy(df.df[i], REAL(Df_i), df.nobs * sizeof(double));
             normalize(df.df[i], df.nobs);
         }
