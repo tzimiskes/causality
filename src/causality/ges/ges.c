@@ -266,7 +266,7 @@ static void apply_deletion_operator(struct cgraph *cg, struct ges_operator *op)
  */
 double ccf_ges(struct ges_score score, struct cgraph *cg)
 {
-   CAUSALITY_PRINT("start\n!); 
+   CAUSALITY_PRINT("start\n!"); 
    /*
     * The number of processors ges is going to use. Right now it is 1,
     * but this will eventually be passed in as an argument to ges
