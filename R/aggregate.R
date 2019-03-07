@@ -4,7 +4,7 @@
 #' "aggregated.causality.graph" object which can be used for bootstrapping and
 #' jackknifing causal discovery algorithms among other things.
 #' @param graphs A list of causality.graphs. Each graph must have the same nodes.
-#' @param weights an optional vector of graph weights to be used in the
+#' @param weights An optional vector of graph weights to be used in the
 #'   aggregation process. If weights is not supplied, it defaults to
 #'   \code{length(graphs)}. If weights is non NULL, the length of weights must
 #'   equal the length of graphs, the sum of weights must be greater than 0,
@@ -14,8 +14,9 @@
 #' @examples
 #' TODO
 #' @author Alexander Rix
-#' @export
+#' @rdname aggregate-graphs
 #' @useDynLib causality r_causality_aggregate_graphs
+#' @export
 aggregate_graphs <- function(graphs, weights = NULL)
 {
   if (!is.list(graphs))
@@ -48,26 +49,28 @@ aggregate_graphs <- function(graphs, weights = NULL)
     stop("Not all the graphs have the same nodes")
 
   table <- .Call("r_causality_aggregate_graphs", graphs, weights)
-  acg <- data.frame(x = table[[1]], y = table[[2]], "<--" = table[[10]],
-                                    "-->" = table[[3]], "---" = table[[4]],
-                                    "<++" = table[[11]], "++>" = table[[5]],
-                                    "<~~" = table[[12]], "~~>" = table[[6]],
-                                    "<-o" = table[[13]], "o->" = table[[7]],
-                                    "o-o" = table[[8]], "<->" = table[[9]], stringsAsFactors = F)
-  acg.names <- c("x", "y", "<--", "-->", "---", "<++", "++>", "<~~", "~~>", "<-o", "o->", "o-o", "<->")
+  acg <- data.frame(table[[1]], table[[2]], table[[10]], table[[3]], table[[4]],
+                    table[[11]], table[[5]], table[[12]], table[[6]],
+                    table[[13]], "o->" = table[[7]], table[[8]],
+                    table[[9]], stringsAsFactors = F)
+  acg.names <- c("x", "y", "<--", "-->", "---", "<++", "++>", "<~~", "~~>",
+                 "<-o", "o->", "o-o", "<->")
   names(acg) <- acg.names
   output <- list(nodes = base$nodes, edge.table = acg)
-  class(output) <- c("aggregated.causality.graph")
+  class(output) <- "aggregated.causality.graph"
   return(output)
 }
 
+#' @rdname aggregate-graphs
 #' @export
-vote <- function(aggregated.graphs) {
-  nodes     <- aggregated.graphs$nodes
-  table     <- aggregated.graphs$edge.table
-  table$" " <- 1 - rowSums(table[, -(1:2)])
-  arrows <- names(table[, -(1:2)])[max.col(table[, -(1:2)])]
-  edge <- function(node1, node2, arrow) {
+coalesce <- function(aggregated.graph) {
+  if (class(aggregate.graph) != "aggregated.causality.graph")
+  stop("aggregated.graph must be an aggregated.causality.graph")
+  nodes     <- aggregated.graph$nodes
+  table     <- aggregated.graph$edge.table
+  table[[" "]] <- 1 - rowSums(table[, -(1:2)])
+  arrows    <- names(table[, -(1:2)])[max.col(table[, -(1:2)])]
+  edge      <- function(node1, node2, arrow) {
     if (arrow == "<--")
       return(c(node2, node1, "-->"))
     if (arrow == "<~~")

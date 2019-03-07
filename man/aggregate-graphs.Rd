@@ -2,14 +2,17 @@
 % Please edit documentation in R/aggregate.R
 \name{aggregate_graphs}
 \alias{aggregate_graphs}
+\alias{coalesce}
 \title{Aggregate a list of causality.graphs into a single object}
 \usage{
 aggregate_graphs(graphs, weights = NULL)
+
+coalesce(aggregated.graph)
 }
 \arguments{
 \item{graphs}{A list of causality.graphs. Each graph must have the same nodes.}
 
-\item{weights}{an optional vector of graph weights to be used in the
+\item{weights}{An optional vector of graph weights to be used in the
 aggregation process. If weights is not supplied, it defaults to
 \code{length(graphs)}. If weights is non NULL, the length of weights must
 equal the length of graphs, the sum of weights must be greater than 0,
