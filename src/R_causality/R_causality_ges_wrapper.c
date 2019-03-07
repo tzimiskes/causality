@@ -87,6 +87,7 @@ SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States,
     struct ges_score score = {ges_score, {0}, data, {fargs, iargs}};
     struct cgraph *cg      = create_cgraph(data.nvar);
     /* run GES! */
+    CAUSALITY_PRINT("go!\n");
     double graph_score     = ccf_ges(score, cg);
     /* free dataframe */
     for(int i = 0; i < data.nvar; ++i)
