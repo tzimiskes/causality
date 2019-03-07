@@ -1,4 +1,5 @@
-#ifndef __WIN32__
+#ifdef __WIN32__
+#else
 #define _POSIX_C_SOURCE 200112L
 #endif
 
