@@ -1,4 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^.git
 .clang_complete
+^src/causality\.so
 LICENSE
+ctests

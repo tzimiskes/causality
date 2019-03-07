@@ -4,12 +4,12 @@
 \alias{shd}
 \title{Structural Hamming Distance}
 \usage{
-shd(pattern1, pattern2)
+shd(x, y)
 }
 \arguments{
-\item{pattern1}{A causality pattern}
+\item{x}{A causality.graph}
 
-\item{pattern2}{A causality pattern that is being compared to \code{pattern1}}
+\item{y}{A causality.graph \code{x}}
 }
 \value{
 Length one numeric between 0 and \eqn{n^2}, where n is the number of

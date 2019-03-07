@@ -1,16 +1,17 @@
 Package: causality
 Type: Package
-Title: Discover the Underlying Causal Structure of Data
-Version: 0.0.0.9009
+Title: Discover The Underlying Causal Structure of Data
+Version: 0.0.1
 Authors@R: person("Alexander", "Rix", email = "alexanderjrix@gmail.com",
   role = c("aut", "cre"))
 Author: Alexander Rix [aut, cre]
 Maintainer: Alexander Rix <alexanderjrix@gmail.com>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: Learn causal graphs, stabilize graph learning algorithms
+    and use graphs to make inferences on how the world works.
 License: GPL-3
 Encoding: UTF-8
+Needs : compilation
 LazyData: true
-Depends: R (>= 3.1.0), readr, MASS
-Suggests: testthat, lavaan
-RoxygenNote: 6.0.1
+Depends: R (>= 3.1.0),
+Suggests: testthat, lavaan, bnlearn
+RoxygenNote: 6.1.1

@@ -5,15 +5,15 @@
 #'
 #' \code{adjacency_recall} calculates the adjacency recall between two
 #' causality graphs.
-#' @param cgraph1 A causality graph
-#' @param cgraph2 A causality graph
+#' @param x A causality.graph
+#' @param y A causality.graph
 #' @details TODO(arix) explain what they do
 #' @return Both \code{adjacency_precision} and \code{adjacency_recall} return a
 #'   numeric between 0 and 1 with the following exceptions:
 #'   \itemize{
-#'   \item \code{adjacency_precision} returns \code{NA} if \code{cgraph2}
+#'   \item \code{adjacency_precision} returns \code{NA} if \code{y}
 #'     contains 0 adjacencies
-#'   \item \code{adjacency_recall} returns \code{NA} if \code{cgraph1}
+#'   \item \code{adjacency_recall} returns \code{NA} if \code{x}
 #'     contains 0 adjacencies
 #'   }
 #'
@@ -35,60 +35,60 @@ NULL
 
 #' @rdname adjacency
 #' @export
-adjacency_precision <- function(cgraph1, cgraph2) {
+adjacency_precision <- function(x, y) {
   # type checking
-  if (!is.cgraph(cgraph1))
-    stop("cgraph1 is not of type cgraph")
-  if (!is.cgraph(cgraph2))
-    stop("cgraph2 is not of type cgraph")
+  if (!is.cgraph(x))
+    stop("x is not of type cgraph")
+  if (!is.cgraph(y))
+    stop("y is not of type cgraph")
   # check to make use that the nodes are the same
-  if (!isTRUE(all.equal(sort(cgraph1$nodes), sort(cgraph1$nodes))))
-    stop("cgraph1 and cgraph2 need to have the same nodes")
-  # calculate the number adjacents in cgraph2
+  if (!isTRUE(all.equal(sort(x$nodes), sort(x$nodes))))
+    stop("x and y need to have the same nodes")
+  # calculate the number adjacents in y
   # return NA if there are none
-  n_cgraph2_adjs <- sum(lengths(cgraph2$adjacencies))
-  if (n_cgraph2_adjs == 0) {
-    warning("cgraph2 has no adjacencies. Returning NA")
+  n_y_adjs <- sum(lengths(y$adjacencies))
+  if (n_y_adjs == 0) {
+    warning("y has no adjacencies. Returning NA")
     return(NA)
   }
-  # calcluate the intersection of adjacencies over n_cgraph2_adjs and return the
+  # calcluate the intersection of adjacencies over n_y_adjs and return the
   # ratio
-  return(adjacency_intersect(cgraph1, cgraph2) / n_cgraph2_adjs)
+  return(adjacency_intersect(x, y) / n_y_adjs)
 }
 
 #' @rdname adjacency
 #' @export
-adjacency_recall <- function(cgraph1, cgraph2) {
+adjacency_recall <- function(x, y) {
   # type checking
-  if (!is.cgraph(cgraph1))
-    stop("cgraph1 is not of type cgraph")
-  if (!is.cgraph(cgraph2))
-    stop("cgraph2 is not of type cgraph")
+  if (!is.cgraph(x))
+    stop("x is not of type cgraph")
+  if (!is.cgraph(y))
+    stop("y is not of type cgraph")
 
-  # calculate the number adjacents in cgraph1
+  # calculate the number adjacents in x
   # return NA if there are none
-  n_cgraph1_adjs <- sum(lengths(cgraph1$adjacencies))
-  if (n_cgraph1_adjs == 0) {
-    warning("cgraph1 has no adjacencies. Returning NA")
+  n_x_adjs <- sum(lengths(x$adjacencies))
+  if (n_x_adjs == 0) {
+    warning("x has no adjacencies. Returning NA")
     return(NA)
   }
 
-  # calcluate the intersection of adjacencies over n_cgraph1_adjs and return the
+  # calcluate the intersection of adjacencies over n_x_adjs and return the
   # ratio
-  return(adjacency_intersect(cgraph1, cgraph2) / n_cgraph1_adjs)
+  return(adjacency_intersect(x, y) / n_x_adjs)
 }
 
 # internal function that is used to cacluate the intersection of the adjacencies
-# for each node in cgraph1 and cgraph2
-adjacency_intersect <- function(cgraph1, cgraph2) {
+# for each node in x and y
+adjacency_intersect <- function(x, y) {
   n_same <- 0
   # for each node, calculate the intersection of the node's
-  # adjacencies in cgraph1 and cgraph2
-  for (node in names(cgraph1$adjacencies)) {
+  # adjacencies in x and y
+  for (node in names(x$adjacencies)) {
     # get the size for intersection of the adjacencies of 'node'
     # in est graph and true graph
     n_same <- n_same + length(
-      intersect(cgraph1$adjacencies[[node]], cgraph2$adjacencies[[node]])
+      intersect(x$adjacencies[[node]], y$adjacencies[[node]])
     )
   }
   return(n_same)

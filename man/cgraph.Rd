@@ -4,6 +4,7 @@
 \alias{cgraph}
 \alias{is_valid_cgraph}
 \alias{is.cgraph}
+\alias{summary.causality.graph}
 \title{Casuality Graphs}
 \usage{
 cgraph(nodes, edges, validate = TRUE)
@@ -11,6 +12,8 @@ cgraph(nodes, edges, validate = TRUE)
 is_valid_cgraph(graph)
 
 is.cgraph(graph)
+
+\\method{summary}{causality.graph}(object, ...)
 }
 \arguments{
 \item{nodes}{A character array of node names}
@@ -23,6 +26,10 @@ edge types are listed below}
 if the cgraph is valid before returning it. Default is \code{TRUE}}
 
 \item{graph}{A graph to coerced or tested}
+
+\item{object}{A causality.graph}
+
+\item{...}{additional (unused) arguments to pass to \code{summary}}
 }
 \value{
 \code{cgraph} returns object of class "causality.graph", or an error
@@ -30,6 +37,8 @@ if the cgraph is valid before returning it. Default is \code{TRUE}}
 
 \code{is_valid_cgraph} returns \code{TRUE} or \code{FALSE} depending
   on whether or not the input is valid
+
+\code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
 }
 \description{
 Create or test for objects of type "causality.graph"
@@ -67,7 +76,9 @@ A causality-graph consists of three things
 
 \code{is.cgraph} tests whether or not an object has the class
   causality.graph
-  @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
+
+\code{summary} provides basic summary statistics about \code{graph},
+  like average degree, max degree, number of directed/undirected eges etc.
 }
 \examples{
 nodes <- c("X1", "X2", "X3", "X4")
@@ -78,19 +89,21 @@ edges <- matrix(c("X1", "X2", "-->",
                   "X4", "X2", "-->"), ncol = 3, byrow = T)
 graph <- cgraph(nodes, edges)
 
-# cgraph defaults to validate = TRUE, but if you want to make sure it is
+# cgraph defaults to validate = TRUE, but you can check validity by calling
 is_valid_cgraph(graph)
 
 # you can coerce graphs from package \\code{bnlearn} to causality.graphs
-library(bnlearn)
-sachs <- as.cgraph(mmhc(sachs.df))
+\dontrun{
+  library(bnlearn)
+  sachs <- as.cgraph(mmhc(sachs.df))
+}
 }
 \references{
 Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
   2001, p. 109.
 
- Spirtes P. Introduction to causal inference.
- Journal of Machine Learning Research. 2010;11(May):1643-62.
+  Spirtes P. Introduction to causal inference.
+  Journal of Machine Learning Research. 2010;11(May):1643-62.
 
   Pearl, Judea. Causality. Cambridge university press, 2009.
 }

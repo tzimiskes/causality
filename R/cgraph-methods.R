@@ -1,4 +1,4 @@
-# Causality Graph methodos ----------------------------------------------------
+# Causality Graph methods ----------------------------------------------------
 #' Causality graph methods
 #'
 #' These are miscellaneous functions that can be applied any to causality.graph
@@ -30,13 +30,13 @@ NULL
 
 #' @name cgraph-methods
 #' @export
-is.cyclic <- function(cgraph) {
-  if (!is.cgraph(cgraph))
+is.cyclic <- function(graph) {
+  if (!is.cgraph(graph))
     stop("input is not a cgraph")
   # all these types cannot have cycles
-  if (is.dag(cgraph) | is.pdag(cgraph) | is.pattern(cgraph) | is.pag(cgraph))
+  if (is.dag(graph) | is.pdag(graph) | is.pattern(graph) | is.pag(graph))
     return(FALSE)
-  if (is.null(sort.causality.graph(cgraph)))
+  if (is.null(sort.causality.graph(graph)))
     return(TRUE)
   else
     return(FALSE)
@@ -51,10 +51,10 @@ is.acyclic <- function(graph) {
 #'   the only edge type is \code{"-->"}
 #' @name cgraph-methods
 #' @export
-is.directed <- function(cgraph) {
-  if (!is.cgraph(cgraph))
+is.directed <- function(graph) {
+  if (!is.cgraph(graph))
     stop("input is not a cgraph")
-  edge_types <- cgraph$edges[, 3]
+  edge_types <- graph$edges[, 3]
   n_edges <- length(edge_types)
   for (i in 1:n_edges) {
     if (edge_types[i] != .DIRECTED) { # ie  edge_type != -->
@@ -66,10 +66,10 @@ is.directed <- function(cgraph) {
 
 #' @rdname cgraph-methods
 #' @export
-is.nonlatent <- function(cgraph) {
-  if (!is.cgraph(cgraph))
+is.nonlatent <- function(graph) {
+  if (!is.cgraph(graph))
     stop("input is not a causality.graph")
-  edge_types <- cgraph$edges[, 3]
+  edge_types <- graph$edges[, 3]
   n_edges <- length(edge_types)
   for (i in 1:n_edges) {
     if (!(edge_types[i] %in% .NONLATENT_EDGE_TYPES))
@@ -80,16 +80,42 @@ is.nonlatent <- function(cgraph) {
 
 #' @rdname cgraph-methods
 #' @export
-is.latent <- function(cgraph) {
-  if (!is.cgraph(cgraph))
+is.latent <- function(graph) {
+  if (!is.cgraph(graph))
     stop("input is not a cgraph")
-  if (is.pag(cgraph))
+  if (is.pag(graph))
     return(TRUE)
-  edge_types <- cgraph$edges[, 3]
+  edge_types <- graph$edges[, 3]
   n_edges <- length(edge_types)
   for (i in 1:n_edges) {
     if (!(edge_types[i] %in% .LATENT_EDGE_TYPES))
       return(FALSE)
   }
   return(TRUE)
+}
+
+#' @rdname cgraph-methods
+#' @export
+parents <- function(graph) {
+  parents <- list()
+  edges <- graph$edges
+  for (i in 1:nrow(edges)) {
+    edge <- edges[i, ]
+    if (edge[3] %in% .DIRECTED_EDGE_TYPES)
+      parents[[edge[2]]] <- c(edge[1], parents[[edge[2]]])
+  }
+  return(parents)
+}
+
+#' @rdname cgraph-methods
+#' @export
+children <- function(graph) {
+  children <- list()
+  edges <- graph$edges
+  for (i in 1:nrow(edges)) {
+    edge <- edges[i, ]
+    if (edge[3] %in% .DIRECTED_EDGE_TYPES)
+      children[[edge[1]]] <- c(edge[2], children[[edge[1]]])
+  }
+  return(children)
 }

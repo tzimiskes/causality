@@ -3,23 +3,27 @@
 \name{cgraph-methods}
 \alias{cgraph-methods}
 \alias{is.cyclic}
-\alias{cgraph-methods}
 \alias{is.acyclic}
-\alias{cgraph-methods}
 \alias{is.directed}
 \alias{is.nonlatent}
 \alias{is.latent}
+\alias{parents}
+\alias{children}
 \title{Causality graph methods}
 \usage{
-is.cyclic(cgraph)
+is.cyclic(graph)
 
 is.acyclic(graph)
 
-is.directed(cgraph)
+is.directed(graph)
 
-is.nonlatent(cgraph)
+is.nonlatent(graph)
 
-is.latent(cgraph)
+is.latent(graph)
+
+parents(graph)
+
+children(graph)
 }
 \arguments{
 \item{graph}{a causality.graph}

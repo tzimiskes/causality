@@ -4,6 +4,7 @@
 #' Causality Patterns
 #'
 #' Create, test, or manipulate objects of type "causality.pattern"
+#' @param nodes A character array of node names
 #' @param edges A \eqn{m x 3} character matrix. Each row is an edge in the form
 #'   of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid
 #'   edge types are listed below
@@ -64,19 +65,23 @@ is_valid_pattern <- function(graph) {
   if (!is.cgraph(graph))
     stop("Input must be a causality graph!")
   if (!is.nonlatent(graph)) {
-    warning("graph contains nonlatent edge types")
+    warning("graph contains latent edge types")
     return(FALSE)
   }
   else if (is.cyclic(graph)) {
     warning("graph is cylic")
     return(FALSE)
   }
-  else if(isTRUE(all.equal(graph$edges, meek(graph)$edges))) {
-    return(TRUE)
-  }
   else {
-    warning("graph is not invariant under the meek rules,
-             so it is a pdag not a pattern")
+    dag <- .pdx(graph)
+    if (is.null(dag)) {
+      warning("graph cannot be a pattern")
+      return(FALSE)
+    }
+    dag <- .chickering(dag)
+    if (shd(graph, dag) == 0)
+      return(TRUE)
+    warning("graph is a PDAG, not a pattern")
     return(FALSE)
   }
 }
@@ -142,16 +147,12 @@ as.pattern.causality.pag <- function(graph) {
 #' @rdname pattern
 #' @export
 as.pattern.causality.graph <- function(graph) {
-  if (is_valid_pattern(graph)) {
-    class(graph) <- .PATTERN_CLASS
-    return(graph)
-  }
-  else if (is.acyclic(graph)) {
+  if (is.acyclic(graph)) {
     if (is.directed(graph)) {
-      return(.dag_to_pattern(graph))
+      return(.chickering(graph))
     }
     else if (is.nonlatent(graph)) {
-      graph <- .dag_from_pdag(graph)
+      graph <- .pdx(graph)
       if(is.null(graph)) {
         warning("graph is a pdag that doesn't contain a dag extension.")
         warning("Cannot coerce graph to causality.pattern.")
@@ -159,7 +160,7 @@ as.pattern.causality.graph <- function(graph) {
       }
     }
     else {
-      return(.dag_to_pattern(graph))
+      return(.chickering(graph))
     }
   }
   else {

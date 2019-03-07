@@ -1,4 +1,33 @@
-  PKG_CPPFLAGS = -I./headers
-  PKG_CFLAGS   = $(SHLIB_OPENMP_CFLAGS) -O3
-  PKG_LIBS     = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) \
+PKG_CPPFLAGS = -DCAUSALITY_R -I. -Icausality
+PKG_CFLAGS   = $(SHLIB_OPENMP_CFLAGS)
+PKG_LIBS     = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) \
    $(SHLIB_OPENMP_CFLAGS)
+
+GES.OBJS = causality/ges/ges.o causality/ges/ges_reorient.o \
+    causality/ges/ges_utils.o causality/ges/ges_bic_score.o \
+    causality/ges/ges_heap.o causality/ges/ges_bdeu_score.o
+
+SCORE.OBJS = causality/scores/bdeu_score.o causality/scores/score_graph.o \
+    causality/scores/bic_score.o causality/scores/linearalgebra.o
+
+ALG.OBJS = causality/algorithms/meek.o causality/algorithms/sort.o \
+    causality/algorithms/chickering.o causality/algorithms/pdx.o
+
+CGRAPH.OBJS = causality/cgraph/cgraph.o causality/cgraph/edge_list.o
+
+AGG.OBJS = causality/aggregate/aggregate_graphs.o causality/aggregate/tree.o
+
+RCAUSALITY.OBJS = R_causality/R_causality.o R_causality/R_causality_wrappers.o \
+    R_causality/R_causality_ges_wrapper.o R_causality/R_causality_aggregate.o
+
+OBJECTS = $(CGRAPH.OBJS) $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
+    $(RCAUSALITY.OBJS)
+
+all: $(SHLIB) clean
+
+causality/scores/linearalgebra.o:
+	@(cd causality/scores && $(MAKE) linearalgebra.o \
+        CC="$(CC)" CPPFLAGS="$(PKG_CPPFLAGS)" CFLAGS="$(CPICFLAGS)")
+
+clean:
+	rm -f $(OBJECTS)

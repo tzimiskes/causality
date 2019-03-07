@@ -5,23 +5,23 @@
 \alias{arrowhead_recall}
 \title{Arrowhead Precision and Recall}
 \usage{
-arrowhead_precision(pdag1, pdag2)
+arrowhead_precision(x, y)
 
-arrowhead_recall(pdag1, pdag2)
+arrowhead_recall(x, y)
 }
 \arguments{
-\item{pdag1}{A causality PDAG}
+\item{x}{A causality PDAG}
 
-\item{pdag2}{A causality PDAG}
+\item{y}{A causality PDAG}
 }
 \value{
 Length one numeric between 0 and 1.
 
   \code{arrowhead_precision} returns \code{NA} if there are no oriented
-  edges in \code{pdag2}.
+  edges in \code{y}.
 
 \code{arrowhead_recall} returns \code{NA} if there are
-  no oriented edges (arrows) in \code{pdag1}
+  no oriented edges (arrows) in \code{x}
 }
 \description{
 \code{arrowhead_precision} calculates the arrowhead precision between two
@@ -32,13 +32,13 @@ causality graphs
 }
 \details{
 \code{arrowhead_precision} counts the number of directed edges
-  (\code{"-->"}) in \code{pdag1} and then counts how many directed edges in
-  \code{pdag1} are also in \code{pdag2}. Then, the ratio is returned.
+  (\code{"-->"}) in \code{x} and then counts how many directed edges in
+  \code{x} are also in \code{y}. Then, the ratio is returned.
 
 \code{arrowhead_recall} counts the number of directed edges
-  \code{pdag1} and then counts how many directed edges in
-  \code{pdag2} are in \code{pdag1}. Then, the ratio is returned. 1
-  implies that every directed edge in \code{pdag1} are also in \code{pdag2}.
+  \code{x} and then counts how many directed edges in
+  \code{y} are in \code{x}. Then, the ratio is returned. 1
+  implies that every directed edge in \code{x} are also in \code{y}.
 }
 \examples{
 TODO(arix)

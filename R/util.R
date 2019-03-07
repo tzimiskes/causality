@@ -1,11 +1,11 @@
 # get the skeleton from the edge representation
 # loop over the nodes
-.calculate_adjacencies_from_edges <- function(edges, nodes) {
-  n_edges <- nrow(edges)
-  adjacency <- lapply(nodes, function(node) {
+.calculate_adjacencies <- function(edges, nodes) {
+  n.edges <- nrow(edges)
+  adjacencies <- lapply(nodes, function(node) {
     neighborhood <- c()
     # loop over the edges
-    for (i in 1:n_edges) {
+    for (i in 1:n.edges) {
       # if a node is in an edge, find its partner (neighbor)
       if( node %in% edges[i, 1:2]) {
         neighbor <- edges[i, c(node != edges[i,1:2], F)]
@@ -16,8 +16,8 @@
     return(neighborhood)
   }
   )
-  names(adjacency) <- nodes
-  return(adjacency)
+  names(adjacencies) <- nodes
+  return(adjacencies)
 }
 
 # I'm pretty sire this code is garbage (arix)
@@ -46,12 +46,12 @@
     cgraph$edges <- as.integer(cgraph$edges)
     dim(cgraph$edges) <- c(nr, nc)
   }
-  if(adjacencies) {
+  if (adjacencies) {
     cgraph$adjacencies <- lapply(cgraph$adjacencies, function(x) {
       as.integer(unname(unlist(hash)[x]))
     })
   }
-  if(nodes)
+  if (nodes)
     cgraph$nodes <- unname(unlist(hash))
   return(cgraph)
 }

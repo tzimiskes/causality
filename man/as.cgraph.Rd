@@ -4,6 +4,7 @@
 \alias{as.cgraph}
 \alias{as.cgraph.causality.graph}
 \alias{as.cgraph.default}
+\alias{as.cgraph.bn}
 \alias{as.cgraph.fges}
 \alias{as.cgraph.fges.discrete}
 \alias{as.cgraph.fges.mixed}
@@ -14,7 +15,7 @@
 \alias{as.cgraph.cpc}
 \alias{as.cgraph.pcstable}
 \alias{as.cgraph.cpcstable}
-\alias{as.cgraph.bn}
+\alias{as.cgraph.fci}
 \title{Coerce a graph to a Causality Graph}
 \usage{
 as.cgraph(graph)
@@ -22,6 +23,8 @@ as.cgraph(graph)
 \method{as.cgraph}{causality.graph}(graph)
 
 \method{as.cgraph}{default}(graph)
+
+\method{as.cgraph}{bn}(bn)
 
 \method{as.cgraph}{fges}(graph)
 
@@ -43,7 +46,11 @@ as.cgraph(graph)
 
 \method{as.cgraph}{cpcstable}(graph)
 
-\method{as.cgraph}{bn}(graph)
+\method{as.cgraph}{fci}(graph)
+}
+\arguments{
+\item{graph}{A (non causality.graph) graph you'd like to attempt to convert
+into a causality.graph}
 }
 \value{
 \code{as.cgraph} returns a causality graph object, or throws an error
@@ -53,8 +60,8 @@ Coerce a graph to a Causality Graph
 }
 \details{
 \code{as.cgraph} is an S3 generic that attempts to convert a not
-causality.cgraph to a "causalality.graph". It currently supports turning "bn"
-objects and r-causal objects to "causality.graphs".
+  causality.cgraph to a "causalality.graph". It currently supports turning
+  "bn" objects and r-causal objects to "causality.graphs".
 }
 \seealso{
 See \code{\link{cgraph}} for the documentation of object

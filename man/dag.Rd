@@ -31,6 +31,8 @@ as.dag(graph)
 \method{as.dag}{causality.pag}(graph)
 }
 \arguments{
+\item{nodes}{A character array of node names}
+
 \item{edges}{A \eqn{m x 3} character matrix. Each row is an edge in the form
 of (node1, node2, edgetype), with node1 and node2 being in nodes. Valid
 edge types are listed below}
