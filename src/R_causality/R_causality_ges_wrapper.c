@@ -1,7 +1,3 @@
-#ifdef __WIN32__
-#undef posix_memalign
-#define posix_memalign(p, align, size) *p = malloc(size)
-#else
 #define _POSIX_C_SOURCE 200112L
 #endif
 
