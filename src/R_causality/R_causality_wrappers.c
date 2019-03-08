@@ -82,29 +82,9 @@ SEXP r_causality_score_graph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
         args.iargs = INTEGER(IntegerArgs);
     if (!isNull(FloatingArgs))
         args.fargs = REAL(FloatingArgs);
-    /*
-     * states stores the number of states (in the sense of degrees of freedom)
-     * of each variable in the data frame with the caveat that for continuous
-     * variables, the number of states is considered to be to be 0 instead of 1.
-     * This allows me to use the actual value in each entry of dims to determine
-     * the type (real or discrete/integer)of the variable in the data frame.
-     * Instead, we store the columns as void pointers in df. This helps divorce
-     * C and R so it is easier to port this package to python, julia, etc.
-     */
-    struct dataframe df;
-    df.nvar   = length(Df);
-    df.nobs   = length(VECTOR_ELT(Df, 0));
-    df.states = INTEGER(States);
-    df.df     = malloc(df.nvar * sizeof(void *));
-    /* populate df with the pointers to the columns of the R dataframe */
-    for (int i = 0; i < df.nvar; ++i) {
-        if (df.states[i])
-            df.df[i] = INTEGER(VECTOR_ELT(Df, i));
-        else
-            df.df[i] = REAL(VECTOR_ELT(Df, i));
-    }
-    double graph_score = ccf_score_graph(cg, df, score, args);
+    struct dataframe df = prepare_df(Df, States);
+    double graph_score = causality_score_graph(cg, df, score, args);
     free(df.df);
     free_cgraph(cg);
-    return(ScalarReal(graph_score));
+    return ScalarReal(graph_score);
 }
