@@ -64,7 +64,7 @@ aggregate_graphs <- function(graphs, weights = NULL)
 #' @rdname aggregate-graphs
 #' @export
 coalesce <- function(aggregated.graph) {
-  if (class(aggregate.graph) != "aggregated.causality.graph")
+  if (class(aggregated.graph) != "aggregated.causality.graph")
   stop("aggregated.graph must be an aggregated.causality.graph")
   nodes     <- aggregated.graph$nodes
   table     <- aggregated.graph$edge.table
