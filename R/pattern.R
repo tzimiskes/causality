@@ -75,7 +75,7 @@ is_valid_pattern <- function(graph) {
   else {
     dag <- .pdx(graph)
     if (is.null(dag)) {
-      warning("graph cannot be a pattern")
+      warning("graph lacks a dag extension")
       return(FALSE)
     }
     dag <- .chickering(dag)
@@ -147,25 +147,11 @@ as.pattern.causality.pag <- function(graph) {
 #' @rdname pattern
 #' @export
 as.pattern.causality.graph <- function(graph) {
-  if (is.acyclic(graph)) {
-    if (is.directed(graph)) {
-      return(.chickering(graph))
-    }
-    else if (is.nonlatent(graph)) {
-      graph <- .pdx(graph)
-      if(is.null(graph)) {
-        warning("graph is a pdag that doesn't contain a dag extension.")
-        warning("Cannot coerce graph to causality.pattern.")
-        return(NULL)
-      }
-    }
-    else {
-      return(.chickering(graph))
-    }
+  if (is_valid_pattern(graph)) {
+    return(.chickering(.pdx(graph)))
   }
   else {
-    warning("graph is cyclic.")
-    warning("Cannot coerce graph to causality.pattern")
+    warning("graph cannot be coerced to a pattern")
     return(NULL)
   }
 }

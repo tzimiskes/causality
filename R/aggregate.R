@@ -17,7 +17,7 @@
 #' @rdname aggregate-graphs
 #' @useDynLib causality r_causality_aggregate_graphs
 #' @export
-aggregate_graphs <- function(graphs, weights = NULL)
+aggregate_graphs <- function(graphs, filter = .1, weights = NULL)
 {
   if (!is.list(graphs))
     stop("graphs is not as list")
@@ -51,11 +51,16 @@ aggregate_graphs <- function(graphs, weights = NULL)
   table <- .Call("r_causality_aggregate_graphs", graphs, weights)
   acg <- data.frame(table[[1]], table[[2]], table[[10]], table[[3]], table[[4]],
                     table[[11]], table[[5]], table[[12]], table[[6]],
-                    table[[13]], "o->" = table[[7]], table[[8]],
+                    table[[13]], table[[7]], table[[8]],
                     table[[9]], stringsAsFactors = F)
   acg.names <- c("x", "y", "<--", "-->", "---", "<++", "++>", "<~~", "~~>",
                  "<-o", "o->", "o-o", "<->")
   names(acg) <- acg.names
+
+  for (col in names(acg)[-(1:2)])
+    if (sum(acg[[col]]) == 0) acg[[col]] <- NULL
+  acg <- acg[(rowSums(acg[, -(1:2)]) >= filter),]
+  row.names(acg) <- 1:nrow(acg)
   output <- list(nodes = base$nodes, edge.table = acg)
   class(output) <- "aggregated.causality.graph"
   return(output)
