@@ -30,20 +30,20 @@ struct tree ** causality_aggregate_graphs(struct cgraph **cgs, double *weights,
     for (int i = 0; i < n_graphs; ++i) {
         struct cgraph *cg = cgs[i];
         double weight     = weights[i];
-        for (int x = 0; x < n_nodes; ++x) {
-            struct edge_list *p = cg->parents[x];
+        for (int y = 0; y < n_nodes; ++y) {
+            struct edge_list *p = cg->parents[y];
             while (p) {
-                int y    = p->node;
+                int x    = p->node;
                 int edge = p->edge;
                 if (x < y)
-                    insert_tree(&trees[y], x, edge, weight);
+                    insert_tree(&trees[x], y, edge, weight);
                 else
-                    insert_tree(&trees[x], y, reverse(edge), weight);
+                    insert_tree(&trees[y], x, reverse(edge), weight);
                 p = p->next;
             }
-            p = cg->spouses[x];
+            p = cg->spouses[y];
             while (p) {
-                int y    = p->node;
+                int x    = p->node;
                 int edge = p->edge;
                 if (x < y)
                     insert_tree(&trees[x], y, edge, weight);
