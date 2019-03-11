@@ -14,10 +14,7 @@ ges <- function(df, score = c("bic", "bdue"), penalty = 1.0, sample.prior = 1.0,
   dimensions <- rep(0L, ncol)
   for (j in 1:ncol) {
     col <- df[[j]]
-    if (is.double(col)) {
-    # noop
-    }
-    else if (is.integer(col)) {
+  if (is.integer(col)) {
       dimensions[j] <- length(unique(col))
       df[[j]]       <- col - min(col)
     }
@@ -51,7 +48,8 @@ ges <- function(df, score = c("bic", "bdue"), penalty = 1.0, sample.prior = 1.0,
   }
   else if (score == "cg")
     stop("not implemented")
-
+  else
+    stop("error")
   score.func.args <-
   switch(score,
          "bic"  = list(penalty = penalty),

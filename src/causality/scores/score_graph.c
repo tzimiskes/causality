@@ -21,8 +21,8 @@
  * to construct the model x --> y, where x:= Parents(y), and then score
  * the model given the data.
  */
-double ccf_score_graph(struct cgraph *cg, struct dataframe df, score_func score,
-                                          struct score_args args)
+double causality_score_graph(struct cgraph *cg, struct dataframe df, score_func
+                                 score, struct score_args args)
 {
     double       graph_score = 0.0f;
     int          n_nodes     = cg->n_nodes;

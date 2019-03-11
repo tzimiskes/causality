@@ -6,18 +6,14 @@ score <- function(graph, df, score = c("bic", "bdue"), penalty = 1.0,
   if (!is.cgraph(graph))
     stop("graph is not a causality.graph!")
   if (!is.dag(graph))
-    stop("graph is not a causality.dag!")
+    graph <- as.dag(graph)
   score <- match.arg(score, c("bic", "bdeu"))
   # the first step is to convert the data frame into one that only contains
   # numerics and integers. numerics are normalized.
   dimensions <- rep(0L, ncol(df))
   for (j in 1:ncol(df)) {
     col <- df[[j]]
-    if (is.double(col)) {
-      col     <- col - mean(col)
-      df[[j]] <- col / sd(col)
-    }
-    else if (is.integer(col)) {
+    if (is.integer(col)) {
       dimensions[j] <- length(unique(col))
       df[[j]]       <- col - min(col)
     }
@@ -37,16 +33,25 @@ score <- function(graph, df, score = c("bic", "bdue"), penalty = 1.0,
             Use bic or cg")
   }
   # deterime the floating and integer arguments depending on the score
-  if (score == "bic") {
-    floating.args <- c(penalty)
-    integer.args  <- c()
+    if (score == "bic") {
+      floating.args <- c(penalty)
+      integer.args  <- c()
     }
-  else if (score == "bdeu") {
-    floating.args <- c(sample.prior, structure.prior)
-    integer.args <- c()
-  }
-  else if (score == "cg")
-    stop("not implemented")
+    else if (score == "bdeu") {
+      floating.args <- c(sample.prior, structure.prior)
+      integer.args  <- c()
+    }
+    else if (score == "cg")
+      stop("not implemented")
+    else
+      stop("error")
+    score.func.args <-
+    switch(score,
+           "bic"  = list(penalty = penalty),
+           "bdeu" = list(sample.prior = sample.prior,
+                         structure.prior = structure.prior
+                    )
+          )
   score <- .Call("r_causality_score_graph", graph, df, score, dimensions,
                                             floating.args, integer.args)
   return(score)

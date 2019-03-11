@@ -11,53 +11,6 @@
 #include <scores/scores.h>
 #include <ges/ges_internal.h>
 
-/*
- * normalize continuous variables to help speed up scoring of continuous
- * variables.
- */
-static void normalize(double *x, int n)
-{
-    double mu = 0.0f;
-    for (int i = 0; i < n; ++i)
-        mu += x[i];
-    mu /= n;
-    double var = 0.0f;
-    for (int i = 0; i < n; ++i) {
-        x[i] -= mu;
-        var += x[i] * x[i];
-    }
-    var = 1 / sqrt(var / (n - 1));
-    for (int i = 0; i < n; ++i)
-        x[i] *= var;
-}
-
-struct dataframe prepare_df(SEXP Df, SEXP States)
-{
-    struct dataframe df;
-    df.nvar   = length(Df);
-    df.nobs   = length(VECTOR_ELT(Df, 0));
-    df.states = INTEGER(States);
-    df.df   = malloc(df.nvar * sizeof(void *));
-    for (int i = 0; i < df.nvar; ++i) {
-        SEXP Df_i = VECTOR_ELT(Df, i);
-        if (df.states[i]) {
-            df.df[i] = malloc(df.nobs * sizeof(int));
-            memcpy(df.df[i], INTEGER(Df_i), df.nobs * sizeof(int));
-        }
-        else {
-            #ifdef _WIN32
-            df.df[i] = malloc(df.nobs *sizeof(double));
-            #else
-            posix_memalign(&df.df[i], 32, df.nobs * sizeof(double));
-            #endif
-            memcpy(df.df[i], REAL(Df_i), df.nobs * sizeof(double));
-            normalize(df.df[i], df.nobs);
-        }
-    }
-    return df;
-}
-
-
 SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States,
                            SEXP FloatingArgs, SEXP IntegerArgs)
 {
@@ -96,7 +49,6 @@ SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States,
     SEXP Names  = PROTECT(getAttrib(Df, R_NamesSymbol));
     SET_VECTOR_ELT(Output, 0, causality_graph_from_cgraph(cg, Names));
     SET_VECTOR_ELT(Output, 1, ScalarReal(graph_score));
-
     free_cgraph(cg);
     /* Set the output of GES to the class causality.pattern */
     SEXP Class = PROTECT(allocVector(STRSXP, 2));

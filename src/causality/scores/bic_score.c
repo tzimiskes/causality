@@ -32,18 +32,18 @@ double bic_score(struct dataframe data, int *xy, int npar,
     int     nobs    = data.nobs;
     double *y      = data.df[xy[npar]];
     /* allocate memory for submatrix and fill in the columns */
-    double **x      = malloc((npar + 1) * sizeof(double *));
-    for (int i = 0; i < npar + 1; ++i)
+    double **x      = malloc(npar * sizeof(double *));
+    for (int i = 0; i < npar; ++i)
         x[i] = data.df[xy[i]];
 
     /* Allocate memory for cov_xx and cov_xy in one block. */
-    double *mem    = calloc((npar + 1) * (npar + 2), sizeof(double));
+    double *mem    = calloc((npar) * (npar + 2), sizeof(double));
     double *cov_xx = mem;
-    double *cov_xy = mem + (npar + 1) * (npar + 1);
-    double *cov_xy_t = mem + (npar + 1) * (npar + 2);
+    double *cov_xy = mem + npar * npar;
+    double *cov_xy_t = mem + npar * (npar + 1);
     memcpy(cov_xy_t, cov_xy, npar * sizeof(double));
-    dc_cov_xx(cov_xx, x, npar, nobs);
-    dc_cov_xy(cov_xy, x, y, npar, nobs);
+    dc_cov_xx(cov_xx, x, nobs, npar);
+    dc_cov_xy(cov_xy, x, y, nobs, npar);
     double rss = calculate_rss(mem, npar);
     free(mem);
     return calcluate_bic(rss, penalty, nobs, npar);

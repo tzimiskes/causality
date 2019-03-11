@@ -18,12 +18,13 @@ CGRAPH.OBJS = causality/cgraph/cgraph.o causality/cgraph/edge_list.o
 AGG.OBJS = causality/aggregate/aggregate_graphs.o causality/aggregate/tree.o
 
 RCAUSALITY.OBJS = R_causality/R_causality.o R_causality/R_causality_wrappers.o \
-    R_causality/R_causality_ges_wrapper.o R_causality/R_causality_aggregate.o
+    R_causality/R_causality_ges_wrapper.o R_causality/R_causality_aggregate.o \
+    R_causality/R_causality_dataframe.o
 
 OBJECTS = $(CGRAPH.OBJS) $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
     $(RCAUSALITY.OBJS)
 
-all: $(SHLIB) clean
+all: $(SHLIB)
 
 causality/scores/linearalgebra.o:
 	@(cd causality/scores && $(MAKE) linearalgebra.o \
