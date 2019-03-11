@@ -24,7 +24,7 @@ as.cgraph(graph)
 
 \method{as.cgraph}{default}(graph)
 
-\method{as.cgraph}{bn}(bn)
+\method{as.cgraph}{bn}(graph)
 
 \method{as.cgraph}{fges}(graph)
 

@@ -236,17 +236,17 @@ as.cgraph.default <- function(graph) {
 
 #' @rdname as.cgraph
 #' @export
-as.cgraph.bn <- function(bn) {
-  if (!(class(bn) == "bn"))
+as.cgraph.bn <- function(graph) {
+  if (!(class(graph) == "bn"))
     stop("Input is not of class bn!")
-  nodes <- names(bn$nodes)
+  nodes <- names(graph$nodes)
   edges <- c()
   for (node in nodes) {
-    parents <- bn[["nodes"]][[node]][["parents"]]
-    children <- bn[["nodes"]][[node]][["children"]]
-    nbr <- bn[["nodes"]][[node]][["nbr"]]
+    parents <- graph[["nodes"]][[node]][["parents"]]
+    children <- graph[["nodes"]][[node]][["children"]]
+    nbr <- graph[["nodes"]][[node]][["nbr"]]
     spouses <- setdiff(nbr, c(parents, children))
-    for (parent in bn[["nodes"]][[node]][["parents"]])
+    for (parent in graph[["nodes"]][[node]][["parents"]])
       edges <- c(edges, c(parent, node, .DIRECTED))
     for (spouse in spouses) {
       if (node < spouse)

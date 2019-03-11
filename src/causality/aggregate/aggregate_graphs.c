@@ -36,9 +36,9 @@ struct tree ** causality_aggregate_graphs(struct cgraph **cgs, double *weights,
                 int y    = p->node;
                 int edge = p->edge;
                 if (x < y)
-                    insert_tree(&trees[x], y, edge, weight);
+                    insert_tree(&trees[y], x, edge, weight);
                 else
-                    insert_tree(&trees[y], x, reverse(edge), weight);
+                    insert_tree(&trees[x], y, reverse(edge), weight);
                 p = p->next;
             }
             p = cg->spouses[x];
