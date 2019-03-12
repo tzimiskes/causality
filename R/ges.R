@@ -61,7 +61,9 @@ ges <- function(df, score = c("bic", "bdue"), penalty = 1.0, sample.prior = 1.0,
                                     integer.args)
   names(ges.out) <- c("graph", "graph.score")
   # # add additonal diagnostic info
+  ges.out$alg <- "ges"
   ges.out$score.func      <- score
   ges.out$score.func.args <- score.func.args
+  class(ges.out) <- "causality.algorithm.output"
   return(ges.out)
 }

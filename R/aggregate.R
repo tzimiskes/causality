@@ -9,10 +9,23 @@
 #'   \code{length(graphs)}. If weights is non NULL, the length of weights must
 #'   equal the length of graphs, the sum of weights must be greater than 0,
 #'   and each weight must be non-negative.
+#' @param filter Numeric between 0 and 1. aggregate_graphs filters out rows
+#'   that sum to less than filter.
+#' @param aggregated.graph An aggregated.causality.graph that you wish to turn
+#'   into a causality graph.
 #' @details
 #' TODO
 #' @examples
-#' TODO
+#' # jackknife ges
+#' n.jks   <- 10
+#' jk.frac <- .9
+#' n.obs   <- nrow(ecoli.df)
+#' graphs  <- vector("list", n.jks)
+#' for (i in 1:n.jks) {
+#'  ecoli.jk <- ecoli.df[sample(n.obs, n.obs * jk.frac, replace = FALSE),]
+#'  graphs[[i]] <- ges(ecoli.jk, "bic", penalty = 1)
+#' }
+#' aggregated <- aggregate_graphs(graphs)
 #' @author Alexander Rix
 #' @rdname aggregate-graphs
 #' @useDynLib causality r_causality_aggregate_graphs
@@ -23,8 +36,15 @@ aggregate_graphs <- function(graphs, filter = .1, weights = NULL)
     stop("graphs is not as list")
   if (length(graphs) == 1)
     stop("graphs has length 1")
-  if (sum(unlist(lapply(graphs, is.cgraph))) != length(graphs))
-    stop("Every graph in graphs must be a causality.graph!")
+  for (i in 1:length(graphs)) {
+    if (!is.cgraph(graphs[[i]])) {
+      if (class(graphs[[i]]) == "causality.algorithm.output")
+        graphs[[i]] <- graphs[[i]]$graph
+      else
+        stop("graph in graphs cannot be coerced to a cgraph")
+    }
+  }
+
   if (is.null(weights)) {
     weights <- rep(1, length(graphs))
   }
@@ -36,7 +56,8 @@ aggregate_graphs <- function(graphs, filter = .1, weights = NULL)
   if (sum(weights >= 0) < length(weights))
     stop("Each weight must be non negative")
   }
-
+  if (filter < 0 || filter > 1)
+    stop("filter must be in the range [0-1]")
   graphs <- lapply(graphs, function(graph) {graph$nodes <- sort(graph$nodes)
                                             graph})
   base <- graphs[[1]]

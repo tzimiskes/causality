@@ -5,18 +5,24 @@
 \alias{coalesce}
 \title{Aggregate a list of causality.graphs into a single object}
 \usage{
-aggregate_graphs(graphs, weights = NULL)
+aggregate_graphs(graphs, filter = 0.1, weights = NULL)
 
 coalesce(aggregated.graph)
 }
 \arguments{
 \item{graphs}{A list of causality.graphs. Each graph must have the same nodes.}
 
+\item{filter}{Numeric between 0 and 1. aggregate_graphs filters out rows
+that sum to less than filter.}
+
 \item{weights}{An optional vector of graph weights to be used in the
 aggregation process. If weights is not supplied, it defaults to
 \code{length(graphs)}. If weights is non NULL, the length of weights must
 equal the length of graphs, the sum of weights must be greater than 0,
 and each weight must be non-negative.}
+
+\item{aggregated.graph}{An aggregated.causality.graph that you wish to turn
+into a causality graph.}
 }
 \description{
 \code{aggregate_graphs} will combine \code{graphs} into an
@@ -27,7 +33,16 @@ jackknifing causal discovery algorithms among other things.
 TODO
 }
 \examples{
-TODO
+# jackknife ges
+n.jks   <- 10
+jk.frac <- .9
+n.obs   <- nrow(ecoli.df)
+graphs  <- vector("list", n.jks)
+for (i in 1:n.jks) {
+ ecoli.jk <- ecoli.df[sample(n.obs, n.obs * jk.frac, replace = FALSE),]
+ graphs[[i]] <- ges(ecoli.jk, "bic", penalty = 1)
+}
+aggregated <- aggregate_graphs(graphs)
 }
 \author{
 Alexander Rix
