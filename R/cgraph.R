@@ -226,6 +226,8 @@ as.cgraph.causality.graph <- function(graph) {
 #' @rdname as.cgraph
 #' @export
 as.cgraph.default <- function(graph) {
+  if (isTRUE(all.equal(names(graph), c("graph", "nodes", "edges"))))
+    return(as.cgraph.rcausal(graph))
   if (is_valid_cgraph(graph)) {
     class(graph) <- .CGRAPH_CLASS
     return(graph)
@@ -283,48 +285,3 @@ as.cgraph.rcausal <- function(graph) {
 
   return(cgraph)
 }
-
-# tetrad sucks. this exists to support the generic as.cgraph function
-#' @rdname as.cgraph
-#' @export
-as.cgraph.fges <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.fges.discrete <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.fges.mixed <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.gfci <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.gfci.discrete <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.gfci.mixed <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.pc <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.cpc <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.pcstable <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.cpcstable <- as.cgraph.rcausal
-
-#' @rdname as.cgraph
-#' @export
-as.cgraph.fci <- as.cgraph.rcausal

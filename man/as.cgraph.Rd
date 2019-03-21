@@ -5,17 +5,6 @@
 \alias{as.cgraph.causality.graph}
 \alias{as.cgraph.default}
 \alias{as.cgraph.bn}
-\alias{as.cgraph.fges}
-\alias{as.cgraph.fges.discrete}
-\alias{as.cgraph.fges.mixed}
-\alias{as.cgraph.gfci}
-\alias{as.cgraph.gfci.discrete}
-\alias{as.cgraph.gfci.mixed}
-\alias{as.cgraph.pc}
-\alias{as.cgraph.cpc}
-\alias{as.cgraph.pcstable}
-\alias{as.cgraph.cpcstable}
-\alias{as.cgraph.fci}
 \title{Coerce a graph to a Causality Graph}
 \usage{
 as.cgraph(graph)
@@ -25,28 +14,6 @@ as.cgraph(graph)
 \method{as.cgraph}{default}(graph)
 
 \method{as.cgraph}{bn}(graph)
-
-\method{as.cgraph}{fges}(graph)
-
-\method{as.cgraph}{fges.discrete}(graph)
-
-\method{as.cgraph}{fges.mixed}(graph)
-
-\method{as.cgraph}{gfci}(graph)
-
-\method{as.cgraph}{gfci.discrete}(graph)
-
-\method{as.cgraph}{gfci.mixed}(graph)
-
-\method{as.cgraph}{pc}(graph)
-
-\method{as.cgraph}{cpc}(graph)
-
-\method{as.cgraph}{pcstable}(graph)
-
-\method{as.cgraph}{cpcstable}(graph)
-
-\method{as.cgraph}{fci}(graph)
 }
 \arguments{
 \item{graph}{A (non causality.graph) graph you'd like to attempt to convert
