@@ -69,5 +69,5 @@ static int reverse(int edge)
         return CIRCLEARROW_REV;
     }
     CAUSALITY_ERROR("Unrecognized edgetype in causality_aggregate_graphs!\n");
-    return edge; /* hopefully will cause a crash! */
+    return UNDIRECTED; /* hopefully will cause a crash! */
 }

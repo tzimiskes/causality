@@ -25,8 +25,9 @@ const char * edge_to_char(int edge);
 int          node_to_int(const char *node, const char **nodes);
 
 void calculate_edges_from_cgraph(struct cgraph *cg, SEXP graph);
-struct dataframe prepare_df(SEXP Df, SEXP States);
-struct cgraph * cgraph_from_causality_graph(SEXP Graph);
+struct dataframe *prepare_dataframe(SEXP Df, SEXP States);
+void free_dataframe(struct dataframe *df);
+struct cgraph *cgraph_from_causality_graph(SEXP Graph);
 SEXP causality_graph_from_cgraph(struct cgraph *cg, SEXP Nodes);
 SEXP create_causality_graph(int n_nedges, int n_nodes, SEXP Nodes);
 #endif

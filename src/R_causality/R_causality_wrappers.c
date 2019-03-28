@@ -82,9 +82,9 @@ SEXP r_causality_score_graph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
         args.iargs = INTEGER(IntegerArgs);
     if (!isNull(FloatingArgs))
         args.fargs = REAL(FloatingArgs);
-    struct dataframe df = prepare_df(Df, States);
+    struct dataframe *df = prepare_dataframe(Df, States);
     double graph_score = causality_score_graph(cg, df, score, args);
-    free(df.df);
+    free_dataframe(df);
     free_cgraph(cg);
     return ScalarReal(graph_score);
 }

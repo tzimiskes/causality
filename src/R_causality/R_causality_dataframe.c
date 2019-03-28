@@ -27,28 +27,39 @@ static void normalize(double *x, int n)
  * Instead, we store the columns as void pointers in df. This helps divorce
  * C and R so it is easier to port this package to python, julia, etc.
  */
-struct dataframe prepare_df(SEXP Df, SEXP States)
+struct dataframe *prepare_dataframe(SEXP Df, SEXP States)
 {
-    struct dataframe df;
-    df.nvar   = length(Df);
-    df.nobs   = length(VECTOR_ELT(Df, 0));
-    df.states = INTEGER(States);
-    df.df   = malloc(df.nvar * sizeof(void *));
-    for (int i = 0; i < df.nvar; ++i) {
+    struct dataframe *df = malloc(sizeof(struct dataframe));
+    df->nvar   = length(Df);
+    df->nobs   = length(VECTOR_ELT(Df, 0));
+    df->states = INTEGER(States);
+    df->df   = malloc(df->nvar * sizeof(void *));
+    for (int i = 0; i < df->nvar; ++i) {
         SEXP Df_i = VECTOR_ELT(Df, i);
-        if (df.states[i]) {
-            df.df[i] = malloc(df.nobs * sizeof(int));
-            memcpy(df.df[i], INTEGER(Df_i), df.nobs * sizeof(int));
+        if (df->states[i]) {
+            df->df[i] = malloc(df->nobs * sizeof(int));
+            memcpy(df->df[i], INTEGER(Df_i), df->nobs * sizeof(int));
         }
         else {
             #ifdef _WIN32
-            df.df[i] = malloc(df.nobs *sizeof(double));
+            df->df[i] = malloc(df->nobs *sizeof(double));
             #else
-            posix_memalign(&df.df[i], 32, df.nobs * sizeof(double));
+            if (posix_memalign(&df->df[i], 32, df->nobs * sizeof(double)))
+                CAUSALITY_ERROR("Failed to allocate memory for causality \
+                                 dataframe.");
             #endif
-            memcpy(df.df[i], REAL(Df_i), df.nobs * sizeof(double));
-            normalize(df.df[i], df.nobs);
+            memcpy(df->df[i], REAL(Df_i), df->nobs * sizeof(double));
+            normalize(df->df[i], df->nobs);
         }
     }
     return df;
+}
+
+
+void free_dataframe(struct dataframe *df)
+{
+    for (int i = 0; i < df->nvar; ++i)
+      free(df->df[i]);
+    free(df->df);
+    free(df);
 }

@@ -44,7 +44,7 @@ void            causality_meek(struct cgraph *cg);
 /* misc functions */
 struct tree ** causality_aggregate_graphs(struct cgraph **cgs, double *weights,
                                               int n_graphs);
-double causality_score_graph(struct cgraph *cg, struct dataframe df, score_func
+double causality_score_graph(struct cgraph *cg, struct dataframe *df, score_func
                                  score, struct score_args args);
 void ccf_fr_layout(double *positions, int n_nodes, int *edges, int n_edges,
                        double width, double height, int iterations);

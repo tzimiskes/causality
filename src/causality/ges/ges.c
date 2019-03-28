@@ -62,7 +62,7 @@ void score_insertion_operator(struct cgraph *cg, struct ges_operator *op,
     struct ges_operator o = *op;
     /* allocate enough memory on the stack to store all of Pa(y) U nayx U S */
     int py_nayx_size = o.nayx_size + o.n_parents;
-    int py_nayx_t[py_nayx_size + o.set_size];
+    int *py_nayx_t = malloc ((py_nayx_size + o.set_size) * sizeof(int));
     for (int i = 0; i < o.n_parents; ++i)
         py_nayx_t[i] = o.parents[i];
     for (int i = 0; i < o.nayx_size; ++i)
@@ -84,6 +84,7 @@ void score_insertion_operator(struct cgraph *cg, struct ges_operator *op,
         if (o.score_diff < op->score_diff)
             *op = o;
     }
+    free(py_nayx_t);
 }
 
 /*
@@ -270,8 +271,8 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
     * The number of processors ges is going to use. Right now it is 1,
     * but this will eventually be passed in as an argument to ges
     */
-    int    nprocs      = 1;
-    int    nvar        = cg->n_nodes;
+    int nprocs = 1;
+    int nvar   = cg->n_nodes;
     double graph_score = 0.0f;
     /* TODO */
     struct ges_operator *ops  = calloc(nvar, sizeof(struct ges_operator));
@@ -292,8 +293,8 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
         }
         if (score.gsf == ges_bic_score)
             free_ges_score_mem(local_score.gsm);
-        ops[y].xp         = xp;
-        ops[y].y          = y;
+        ops[y].xp = xp;
+        ops[y].y  = y;
         ops[y].score_diff = min_score;
     }
     /* TODO */
@@ -363,10 +364,8 @@ double ccf_ges(struct ges_score score, struct cgraph *cg)
             remove_heap(heap, nodes[i]);
             update_operator_info(cg, &new_ops[i]);
         }
-        /* This step (update_operator) can be parallelized */
-        for (int i = 0; i < n; ++i)
-            update_deletion_operator(cg, &new_ops[i], score);
         for (int i = 0; i < n; ++i) {
+            update_deletion_operator(cg, &new_ops[i], score);
             ops[nodes[i]] = new_ops[i];
             insert_heap(heap, &ops[nodes[i]]);
         }

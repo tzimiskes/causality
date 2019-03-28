@@ -256,9 +256,8 @@ as.cgraph.bn <- function(graph) {
   return(cgraph(nodes, matrix(edges, ncol = 3, byrow = T)))
 }
 
-# rcausal uses different classes for each algorithm, this makes it necessary to
-# create this 'dummy' function to handle converting the algorithm output to
-# causality
+#' @rdname as.cgraph
+#' @export
 as.cgraph.rcausal <- function(graph) {
 
   edges <- graph$edges

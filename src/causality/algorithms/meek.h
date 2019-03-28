@@ -1,6 +1,7 @@
 #ifndef MEEK_H
 #define MEEK_H
 
+#include <stdlib.h>
 #include <cgraph/cgraph.h>
 
 struct stack {

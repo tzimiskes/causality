@@ -25,16 +25,15 @@ double calcluate_bic(double rss, double penalty, int nobs, int npar) {
 }
 
 /* TODO */
-double bic_score(struct dataframe data, int *xy, int npar,
-                                        struct score_args args)
+double bic_score(struct dataframe *df, int *xy, int npar, struct score_args args)
 {
     double  penalty = args.fargs[0];
-    int     nobs    = data.nobs;
-    double *y      = data.df[xy[npar]];
+    int     nobs    = df->nobs;
+    double *y      = df->df[xy[npar]];
     /* allocate memory for submatrix and fill in the columns */
     double **x      = malloc(npar * sizeof(double *));
     for (int i = 0; i < npar; ++i)
-        x[i] = data.df[xy[i]];
+        x[i] = df->df[xy[i]];
 
     /* Allocate memory for cov_xx and cov_xy in one block. */
     double *mem    = calloc((npar) * (npar + 2), sizeof(double));
@@ -95,19 +94,16 @@ double calculate_rss(double *cov, int m)
     else {
         int err = 0;
         int u   = 1;
-        /*
-         * dposv solves the linear system Ax = b, where A is a symmetric
-         * positive definite matrix
-         */
+        /* dposv solves the linear system Ax = b, where A = A^T, vAv > 0 */
         F77_CALL(dposv)("L", &m, &u, cov_xx, &m, cov_xy, &m, &err);
         if (err) {
-            warning("Error in LAPACK routine dposv. error code: %i!\n", err);
+            warning("Error in LAPACK routine dposv. Error code: %i!\n", err);
             rss = DBL_MAX;
         }
         else
             rss -= F77_CALL(ddot)(&m, cov_xy, &u, cov_xy_t, &u);
     }
-    if (rss < ERROR_THRESH)
+    if (rss < 0)
         rss = DBL_MAX;
     return rss;
 }
