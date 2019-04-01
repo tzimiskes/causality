@@ -180,7 +180,7 @@ is_valid_cgraph <- function(graph)
 # edges of the type -->, ~~>, ++>, o->
 .DIRECTED_EDGE_TYPES <- c(.DIRECTED, .SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED)
 
-.EDGE_TYPES <- c(.LATENT_EDGE_TYPES, .DIRECTED_EDGE_TYPES)
+.EDGE_TYPES <- c(.LATENT_EDGE_TYPES, .NONLATENT_EDGE_TYPES)
 # Casusality Graph is ----------------------------------------------------------
 #' @usage is.cgraph(graph)
 #' @details \code{is.cgraph} tests whether or not an object has the class
