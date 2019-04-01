@@ -73,9 +73,9 @@
 #' @export
 cgraph <- function(nodes, edges, validate = TRUE)
 {
-    if (!is.character(graph$nodes))
+    if (!is.character(nodes))
         stop("nodes is not a character vector.")
-    if (!is.character(graph$edges))
+    if (!is.character(edges))
         stop("edges is not a character vector.")
 
     if (!is.matrix(edges)) {
