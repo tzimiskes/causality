@@ -78,15 +78,15 @@ cgraph <- function(nodes, edges, validate = TRUE)
     if (!is.character(graph$edges))
         stop("edges is not a character vector.")
 
-    if (!is.matrix(graph$edges)) {
-        if (length(graph$edges) %% 3 == 0)
-            graph$edges <- as.matrix(graph$edges, ncol = 3 , byrow = T)
+    if (!is.matrix(edges)) {
+        if (length(edges) %% 3 == 0)
+            edges <- as.matrix(edges, ncol = 3 , byrow = T)
         else
             stop ("edges cannot be converted to a n x 3 character matrix.")
     }
-    if (dim(graph$edges)[2] != 3)
+    if (dim(edges)[2] != 3)
         stop("graph edges does not have three columns.")
-    for (edge in graph$edges[,3])
+    for (edge in edges[,3])
         if (!(edge %in% EDGES))
             stop(sprintf("Unrecognized edge type %s\n", edge))
     if (!is.logical(validate))
