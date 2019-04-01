@@ -133,7 +133,7 @@ is_valid_cgraph <- function(graph)
     }
     # determine whether the graph is simple (No self-loops, no multi-edges)
     # as well as making sure all nodes in the edges show up in nodes
-    nedges <- nrow(graph$edges)
+    n_edges <- nrow(graph$edges)
     parents <- list()
     for (i in 1:n_edges) {
         edge <- graph$edges[i,]
