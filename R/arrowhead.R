@@ -28,9 +28,9 @@ arrowhead_precision <- function(x, y)
         stop("x is not a causality.graph.")
     if (!is.cgraph(y))
         stop("y is not a causality.graph.")
-    if (!is_nonlatent(x))
+    if (!is.nonlatent(x))
         stop("x contains latent edges.")
-    if (!is_nonlatent(y))
+    if (!is.nonlatent(y))
         stop("y contains latent edges.")
     n.y.arrows <- 0
     for (i in 1:nrow(y$edges)) {
@@ -62,12 +62,12 @@ arrowhead_recall <- function(x, y)
         stop("x must be a causality graph")
     if (!is.cgraph(y))
         stop("y must be a causality graph")
-    if (!is_nonlatent(x))
+    if (!is.nonlatent(x))
         stop("x contains latent edges.")
-    if (!is_nonlatent(y))
+    if (!is.nonlatent(y))
         stop("y contains latent edges.")
     n.x.arrows <- 0
-    for (i in 1:nrow(edges)) {
+    for (i in 1:nrow(x$edges)) {
         if (x$edges[i, 3] == .DIRECTED)
             n.x.arrows <- n.x.arrows + 1
     }
