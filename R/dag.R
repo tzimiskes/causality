@@ -17,7 +17,12 @@
 #' @return \code{dag} returns object of class "causality.dag", or an error
 #'   if the graph is invalid (assuming \code{validate = TRUE}).
 #' @author Alexander Rix
-#' @examples TODO
+#' @examples
+#' d <- dag(c("X1", "X2", "X3"), c("X1", "X2", "-->",
+#'                                 "X2", "X3", "-->"))
+#' d <- dag(c("X1", "X2", "X3"), c("X1", "X2", "-->",
+#'                                 "X2", "X3", "-->",
+#'                                 "X3", "X1", "-->"))
 #' @references
 #'   Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,
 #'   2001, p. 109.
@@ -29,16 +34,15 @@
 #' @seealso
 #' Other causality classes: \code{\link{cgraph}}, \code{\link{pattern}}
 #' @export
-dag <- function(nodes, edges, validate = TRUE) {
-  if (!is.logical(validate))
-    stop("validate must take on a logical value")
-  graph <- cgraph(nodes, edges, validate)
-  if (validate) {
-    if (!is_valid_dag(graph))
-      stop("Input is not a valid causality dag")
-  }
-  class(graph) <- .DAG_CLASS
-  return(graph)
+dag <- function(nodes, edges, validate = TRUE)
+{
+    if (!is.logical(validate))
+        stop("validate must take on a logical value")
+    graph <- cgraph(nodes, edges, validate)
+    if (validate && !is_valid_dag(graph))
+        stop("Input is not a valid causality dag")
+    class(graph) <- .DAG_CLASS
+    return(graph)
 }
 
 #' @details \code{is_valid_dag} checks to see if the input is a valid
@@ -49,20 +53,18 @@ dag <- function(nodes, edges, validate = TRUE) {
 #' @return \code{is_valid_dag} returns \code{TRUE} or \code{FALSE} depending
 #'   on whether or not the input is a valid "causality.dag".
 #' @export
-is_valid_dag <- function(graph) {
-  if (!is.cgraph(graph))
-    stop("Input must be a causality graph!")
-  if (is.directed(graph) && is.acyclic(graph)) {
-    return(TRUE)
-  }
-  else if (!is.directed(graph)) {
-    warning("graph is not directed")
+is_valid_dag <- function(graph)
+{
+    if (!is.cgraph(graph))
+        stop("input is not a causality graph.")
+    if (is.directed(graph) && is.acyclic(graph))
+        return(TRUE)
+    else if (!is.directed(graph)) {
+        warning("graph is not directed.")
+        return(FALSE)
+    }
+    warning("graph is cyclic.")
     return(FALSE)
-  }
-  else {
-    warning("graph is not acyclic")
-    return(FALSE)
-  }
 }
 
 #' @usage is.dag(graph)
@@ -71,84 +73,79 @@ is_valid_dag <- function(graph) {
 #' @return \code{is.dag} returns \code{TRUE} or \code{FALSE}.
 #' @rdname dag
 #' @export
-is.dag <- function(graph) {
-  if (isTRUE(all.equal(.DAG_CLASS, class(graph))))
-    return(TRUE)
-  else
-    return(FALSE)
+is.dag <- function(graph)
+{
+    if (isTRUE(all.equal(.DAG_CLASS, class(graph))))
+        return(TRUE)
+    else
+        return(FALSE)
 }
 
 #' @rdname dag
 #' @export
-as.dag <- function(graph) {
+as.dag <- function(graph)
+{
   UseMethod("as.dag")
 }
 
 #' @rdname dag
 #' @export
-as.dag.default <- function(graph) {
-  if (is.dag(graph))
-    return(graph)
-  if (!is.cgraph(cgraph))
-    stop("input is not a cgraph")
+as.dag.default <- function(graph)
+{
+    if (is.dag(graph))
+        return(graph)
+    if (!is.cgraph(cgraph))
+        stop("input is not a cgraph")
 }
 
 #' @rdname dag
 #' @export
-as.dag.causality.graph <- function(graph) {
-  if (!is.cgraph(graph))
-    stop("input is not a cgraph")
-
-  if (is.nonlatent(graph)) {
-    if (is.acyclic(graph)) {
-      if (is.directed(graph)) {
+as.dag.causality.graph <- function(graph)
+{
+    if (!is.cgraph(graph))
+        stop("input is not a cgraph")
+    if (!is.nonlatent(graph))
+        stop("not implemented")
+    directed <- is.directed(graph)
+    if (directed && is.acyclic(graph)) {
         class(graph) <- .DAG_CLASS
         return(graph)
-      }
-      else { # we have a a pdag
-        dag <- .pdx(graph)
-        if (is.null(dag))
-          warning("Unable to coerce input to causality.dag")
-        return(dag)
-      }
     }
-    else { # cyclic, so we can't coerce it
-      warning("Unable to coerce input to causality.dag")
-      return(NULL)
-    }
-  }
-  else if (is.latent(graph)) {
+    if (!directed)
+        stop("graph is cyclic. Cannot coerce graph to causality.dag.")
+    # pdag / pattern
+    dag <- .pdx(graph)
+    if (is.null(dag))
+        stop("cannot coerce input to causality.dag")
+    return(dag)
+}
+
+#' @rdname dag
+#' @export
+as.dag.causality.pdag <- function(graph)
+{
+    if (!is.pdag(graph))
+        stop("input is not a causality.graph")
+    dag <- .pdx(graph)
+    if (is.null(dag))
+        warning("Unable to coerce input to causality.dag")
+    return(dag)
+}
+
+#' @rdname dag
+#' @export
+as.dag.causality.pattern <- function(graph)
+{
+    if (!is.pattern(graph))
+        stop("input is not a causality.pattern")
+    return(.pdx(graph))
+}
+
+#' @rdname dag
+#' @export
+as.dag.causality.pag <- function(graph)
+{
+    if (!is.pag(graph))
+        stop("input is not a causality.pag")
     stop("Not implemented")
-  }
-  else {
-    stop("Unrecognized graph! Can't coerce!")
-  }
-}
-
-#' @rdname dag
-#' @export
-as.dag.causality.pdag <- function(graph) {
-  if (!is.pdag(graph))
-    stop("input is not a causality.graph")
-
-  dag <- .pdx(graph)
-  if (is.null(dag))
-    warning("Unable to coerce input to causality.dag")
-  return(dag)
-}
-
-#' @rdname dag
-#' @export
-as.dag.causality.pattern <- function(graph) {
-  if (!is.pattern(graph))
-    stop("input is not a causality.pattern")
-  return(.pdx(graph))
-}
-
-#' @rdname dag
-#' @export
-as.dag.causality.pag <- function(graph) {
-  if (!is.pag(graph))
-    stop("input is not a causality.pag")
-  stop("Not implemented")
 }

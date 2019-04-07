@@ -18,11 +18,11 @@
 #'     \item nodes: a character vector of the nodes of the in the causal graph
 #'     \item adjacencies: a list of character vectors that contain the
 #'       adjacencies of each node. This is calculated when a cgraph is created.
-#'     \item edges: a \eqn{m x 3} character matrix which represents the edges in
-#'       a causal graph in the form (from, to, edge). For example, if we are
-#'       dealing with a causal graph regarding drug use and cancer, The edge
-#'       "Smoking --> Cancer" would be stored as ("Smoking", "Cancer", "-->")
-#'       in the edge matrix
+#'     \item edges: either a  \eqn{m x 3} character matrix or \eqn{3 x m}
+#'       character vector which represents the edges in a causal graph in the
+#'       form (from, to, edge). For example, if we are dealing with a causal
+#'       graph regarding drug use and cancer, The edge "Smoking --> Cancer"
+#'       would be stored as ("Smoking", "Cancer", "-->") in the edge matrix.
 #'   }
 #'   The valid edges types for non latent variable model graphs
 #'   (DAGs, PDAGs, Patterns) are:
@@ -34,8 +34,8 @@
 #'   \itemize{
 #'     \item \code{o-o}
 #'     \item \code{o->}
-#'     \item \code{++>} (in Tetrad this is known as --> dd nl)
-#'     \item \code{~~>} (in Tetrad this is known as --> pd nl)
+#'     \item \code{++>} (in Tetrad this is a green arrow)
+#'     \item \code{~~>} (in Tetrad this is a black arrow)
 #'     \item \code{<->}
 #'   }
 #'
@@ -77,35 +77,34 @@ cgraph <- function(nodes, edges, validate = TRUE)
         stop("nodes is not a character vector.")
     if (!is.character(edges))
         stop("edges is not a character vector.")
-
     if (!is.matrix(edges)) {
         if (length(edges) %% 3 == 0)
-            edges <- as.matrix(edges, ncol = 3 , byrow = T)
+            edges <- matrix(edges, ncol = 3 , byrow = T)
         else
             stop ("edges cannot be converted to a n x 3 character matrix.")
     }
     if (dim(edges)[2] != 3)
         stop("graph edges does not have three columns.")
-    for (edge in edges[,3])
+    for (edge in edges[, 3])
         if (!(edge %in% .EDGE_TYPES))
-            stop(sprintf("Unrecognized edge type %s\n", edge))
+            stop(sprintf("Unrecognized edge type %s.\n", edge))
     if (!is.logical(validate))
-        stop("validate must take on a logical value")
+        stop("validate must take on a logical value.")
     adjacencies <- .calculate_adjacencies(edges, nodes)
     graph <- structure(list(nodes = nodes, adjacencies = adjacencies,
                             edges = edges), class = .CGRAPH_CLASS)
     if (validate && !is_valid_cgraph(graph))
-        stop("Input is not a valid causality graph")
+        stop("input is not a valid causality graph.")
     return(graph)
 }
 
 #' @details \code{is_valid_cgraph} checks to see if the input is a valid
-#'   "causality.graph." Specifically, it checks that there are no duplicate
-#'    nodes, self-loops, or multiple edges between pairs of nodes.
+#'     "causality.graph." Specifically, it checks that there are no duplicate
+#'     nodes, self-loops, or multiple edges between pairs of nodes.
 #' @usage is_valid_cgraph(graph)
 #' @rdname cgraph
 #' @return \code{is_valid_cgraph} returns \code{TRUE} or \code{FALSE} depending
-#'   on whether or not the input is valid.
+#'     on whether or not the input is valid.
 #' @export
 is_valid_cgraph <- function(graph)
 {
@@ -155,36 +154,9 @@ is_valid_cgraph <- function(graph)
     return(TRUE)
 }
 
-# these hidden (lol) variables are used to assign (sub)classes to craph objects
-.CGRAPH_CLASS  <- c(                     "causality.graph")
-.DAG_CLASS     <- c("causality.dag"    , "causality.graph")
-.PDAG_CLASS    <- c("causality.pdag"   , "causality.graph")
-.PATTERN_CLASS <- c("causality.pattern", "causality.graph")
-.PAG_CLASS     <- c("causality.pag"    , "causality.graph")
-# Edge types currently used in Causality Graphs
-.DIRECTED       <- "-->"
-.UNDIRECTED     <- "---"
-.PLUSPLUS       <- "++>"
-.SQUIGGLE       <- "~~>"
-.CIRCLEDIRECTED <- "o->"
-.CIRCLECIRCLE   <- "o-o"
-.BIDIRECTED     <- "<->"
-
-# edges that show up in PAGs ~~>, ++>, o->, o-o, <->
-.LATENT_EDGE_TYPES <- c(.SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED, .CIRCLECIRCLE,
-                                   .BIDIRECTED
-                       )
-# edges that show up in PDAGs: -->, ---
-.NONLATENT_EDGE_TYPES <- c(.DIRECTED, .UNDIRECTED)
-
-# edges of the type -->, ~~>, ++>, o->
-.DIRECTED_EDGE_TYPES <- c(.DIRECTED, .SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED)
-
-.EDGE_TYPES <- c(.LATENT_EDGE_TYPES, .NONLATENT_EDGE_TYPES)
-# Casusality Graph is ----------------------------------------------------------
 #' @usage is.cgraph(graph)
 #' @details \code{is.cgraph} tests whether or not an object has the class
-#'   causality.graph
+#'     causality.graph
 #' @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
 #' @rdname cgraph
 #' @export

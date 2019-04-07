@@ -11,7 +11,7 @@ meek(graph)
 }
 \value{
 \code{meek} either returns a causality.dag, causality.pattern,
-  or causality.pdag.
+    or causality.pdag.
 }
 \description{
 \code{meek} will maximally orient the given causality.pdag, possibly turning
@@ -19,12 +19,12 @@ it into a pattern or dag.
 }
 \details{
 \code{meek} applies the meek rules to the given graph. Applying the
-  rules results in an a maximally oriented pdag. Depending on the exact
-  structure of graph, the output graph is either a dag, pattern, or pdag.
+    rules results in an a maximally oriented pdag. Depending on the exact
+    structure of graph, the output graph is either a dag, pattern, or pdag.
 }
 \note{
 You are almostly certainly better off using the function
-  \code{as.pattern}.
+    \code{as.pattern}.
 }
 \examples{
 # Create a causality.pdag
@@ -40,7 +40,7 @@ meek(graph)
 \references{
 Meek C. Causal inference and causal explanation with background knowledge.
   InProceedings of the Eleventh conference on Uncertainty in artificial
-  intelligence 1995 Aug 18 (pp. 403-410). Morgan Kaufmann Publishers Inc..
+  intelligence 1995 Aug 18 (pp. 403-410). Morgan Kaufmann Publishers Inc.
 
 Pearl, Judea. Causality. Cambridge university press, 2009.
 }

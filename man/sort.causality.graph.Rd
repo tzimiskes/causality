@@ -16,19 +16,19 @@ be in decreasing order. default is \code{FALSE}}
 \item{...}{additional parameters that can be sent through sort generic}
 }
 \value{
-A charcter vector that contains the nodes of the graph ordered
-  according to their topological order. In the event that \code{graph} is
-  cyclic, a warning is issued and \code{NULL} is returned.
+A character vector that contains the nodes of the graph ordered
+    according to their topological order. In the event that \code{graph} is
+    cyclic, a warning is issued and \code{NULL} is returned.
 }
 \description{
 \code{sort} calculates the topological ordering of graph, that is sorts it.
 }
 \details{
 \code{sort.causality.graph} generates a topological ordering of the
-  given \code{graph} by using a depth first search as described in CLRS.
-  A topological sort (or ordering) is a linear ordering of nodes in a PDAG.
-  That is if we have \eqn{x --> y}, then x < y in the sort.
-  This ordering is not unique; a PDAG may have multiple valid orderings.
+    given \code{graph} by using a depth first search as described in CLRS.
+    A topological sort (or ordering) is a linear ordering of nodes in a PDAG.
+    That is if we have \eqn{x --> y}, then x < y in the sort.
+    This ordering is not unique; a PDAG may have multiple valid orderings.
 }
 \examples{
 sort(sachs.dag)
@@ -38,10 +38,10 @@ sort(as.pattern(sachs.dag))
 }
 \references{
 Cormen, Thomas H., et al. Introduction to Algorithms. The MIT
-  Press, 2014.
+    Press, 2014.
 }
 \seealso{
 \code{sort} is used in various \code{causality} functions, including
-\code{\link{as.dag}}, \code{\link{is.cyclic}}/\code{\link{is.acyclic}}, and
-\code{\link{as.pattern}}
+    \code{\link{as.dag}}, \code{\link{is.cyclic}}/\code{\link{is.acyclic}},
+    and \code{\link{as.pattern}}
 }

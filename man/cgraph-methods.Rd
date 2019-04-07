@@ -52,8 +52,8 @@ object.
       \code{is.latent} determines whether or not \code{graph} contains
       only latent edge types
       (\code{"o->"}, \code{"o-o"}, \code{"<->"}, \code{"++>"}, \code{"~~>"}).
+    \item
+      \code{parents} and \code{children} calculates the parents and children
+      of each node in \code{graph} respectively.
 }
-
-\code{is.directed} determines if \code{graph} is directed, ie,
-  the only edge type is \code{"-->"}
 }

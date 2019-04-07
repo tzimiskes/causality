@@ -67,7 +67,11 @@ A causality DAG is a causality graph that is directed and acylic
   "causality.dag"
 }
 \examples{
-TODO
+d <- dag(c("X1", "X2", "X3"), c("X1", "X2", "-->",
+                                "X2", "X3", "-->"))
+d <- dag(c("X1", "X2", "X3"), c("X1", "X2", "-->",
+                                "X2", "X3", "-->",
+                                "X3", "X1", "-->"))
 }
 \references{
 Spirtes et al. “Causation, Prediction, and Search.”, Mit Press,

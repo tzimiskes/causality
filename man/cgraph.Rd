@@ -36,7 +36,7 @@ if the cgraph is valid before returning it. Default is \code{TRUE}}
   if the graph is invalid.
 
 \code{is_valid_cgraph} returns \code{TRUE} or \code{FALSE} depending
-  on whether or not the input is valid
+    on whether or not the input is valid.
 
 \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
 }
@@ -49,11 +49,11 @@ A causality-graph consists of three things
     \item nodes: a character vector of the nodes of the in the causal graph
     \item adjacencies: a list of character vectors that contain the
       adjacencies of each node. This is calculated when a cgraph is created.
-    \item edges: a \eqn{m x 3} character matrix which represents the edges in
-      a causal graph in the form (from, to, edge). For example, if we are
-      dealing with a causal graph regarding drug use and cancer, The edge
-      "Smoking --> Cancer" would be stored as ("Smoking", "Cancer", "-->")
-      in the edge matrix
+    \item edges: either a  \eqn{m x 3} character matrix or \eqn{3 x m}
+      character vector which represents the edges in a causal graph in the
+      form (from, to, edge). For example, if we are dealing with a causal
+      graph regarding drug use and cancer, The edge "Smoking --> Cancer"
+      would be stored as ("Smoking", "Cancer", "-->") in the edge matrix.
   }
   The valid edges types for non latent variable model graphs
   (DAGs, PDAGs, Patterns) are:
@@ -65,17 +65,17 @@ A causality-graph consists of three things
   \itemize{
     \item \code{o-o}
     \item \code{o->}
-    \item \code{++>} (in Tetrad this is known as --> dd nl)
-    \item \code{~~>} (in Tetrad this is known as --> pd nl)
+    \item \code{++>} (in Tetrad this is a green arrow)
+    \item \code{~~>} (in Tetrad this is a black arrow)
     \item \code{<->}
   }
 
 \code{is_valid_cgraph} checks to see if the input is a valid
-  "causality.graph." Specifally, it checks that there are no duplicate nodes,
-  as well as if the input is simple (no self-loops and is not a multi-graph).
+    "causality.graph." Specifically, it checks that there are no duplicate
+    nodes, self-loops, or multiple edges between pairs of nodes.
 
 \code{is.cgraph} tests whether or not an object has the class
-  causality.graph
+    causality.graph
 
 \code{summary} provides basic summary statistics about \code{graph},
   like average degree, max degree, number of directed/undirected eges etc.

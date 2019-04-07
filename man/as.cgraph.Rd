@@ -20,7 +20,7 @@ as.cgraph(graph)
 into a causality.graph}
 }
 \value{
-\code{as.cgraph} returns a causality graph object, or throws an error
+\code{as.cgraph} returns a causality graph object, or NULL.
 }
 \description{
 Coerce a graph to a Causality Graph
@@ -28,7 +28,7 @@ Coerce a graph to a Causality Graph
 \details{
 \code{as.cgraph} is an S3 generic that attempts to convert a not
   causality.cgraph to a "causalality.graph". It currently supports turning
-  "bn" objects and r-causal objects to "causality.graphs".
+  "bn" objects and rcausal graphs into causality graphs.
 }
 \seealso{
 See \code{\link{cgraph}} for the documentation of object

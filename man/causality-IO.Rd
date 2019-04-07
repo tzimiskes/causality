@@ -5,14 +5,14 @@
 \alias{read_causality_graph}
 \title{Read and write causality graphs}
 \usage{
-write_causality_graph(file, graph)
+write_causality_graph(graph, file)
 
 read_causality_graph(file)
 }
 \arguments{
-\item{file}{The file you wish to read/write \code{graph} from/to}
-
 \item{graph}{The graph you wish to save.}
+
+\item{file}{The file you wish to read/write \code{graph} from/to}
 }
 \value{
 \code{read_causality_graph} returns an object of class
@@ -31,7 +31,7 @@ read_causality_graph(file)
 be a TETRAD compatible graph if you wish to read it into R.
 }
 \examples{
-\dontrun{write_causality_graph(file = "sachs", sachs.dag)}
+\dontrun{write_causality_graph(sachs.dag, file = "sachs")}
 # Will throw an error if PATH_TO_FILE is invalid
 \dontrun{graph <-read_causality_graph(file = "PATH_TO_FILE")}
 }
