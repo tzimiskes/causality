@@ -10,9 +10,6 @@
 #include <math.h>
 #include <float.h>
 
-/* R interface to LAPACK */
-#include <R_ext/Lapack.h>
-
 #include <causality.h>
 #include <dataframe.h>
 #include <scores/scores.h>
@@ -92,16 +89,14 @@ double calculate_rss(double *cov, int m)
      * equation cov_xy**T * cov_xx^-1 * cov_xy
      */
     else {
-        int err = 0;
-        int u   = 1;
-        /* dposv solves the linear system Ax = b, where A = A^T, vAv > 0 */
-        F77_CALL(dposv)("L", &m, &u, cov_xx, &m, cov_xy, &m, &err);
+        int err = cholesky_decomp_cov3(cov_xx, m);
+        double ss = calc_quadratic_form(cov_xy, cov_xy_t, cov_xx, m);
         if (err) {
             warning("Error in LAPACK routine dposv. Error code: %i!\n", err);
             rss = DBL_MAX;
         }
         else
-            rss -= F77_CALL(ddot)(&m, cov_xy, &u, cov_xy_t, &u);
+            rss -= ss;
     }
     if (rss < 0)
         rss = DBL_MAX;

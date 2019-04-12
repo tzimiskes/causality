@@ -33,7 +33,7 @@
  * parallelization.
  */
 static int is_valid_insertion(struct cgraph *cg, struct ges_operator *op,
-                                                 int *cycle_mem)
+                                  int *cycle_mem)
 {
     return valid_fes_clique(cg, op) && !cycle_created(cg, op, cycle_mem);
 }
