@@ -1,7 +1,22 @@
+/* Author: Alexander Rix
+ * Date  : 3/8/2019
+ * Description: r_causality_dataframe.c implements an R interface to the
+ * causality dataframe structure, which is causality's internal storage for
+ * dataframes. Notably on Unix systems, prepare_dataframe uses alligned memory
+ * allocation for better loop vectorization. This is more helpful on
+ * older architectures.
+ */
+
+#ifdef __WIN32__
+#else
+#define _POSIX_C_SOURCE 200112L
+#endif
+
 #include <dataframe.h>
 #include <causality.h>
 #include <R_causality/R_causality.h>
 
+/* normalize a numeric variable */
 static void normalize(double *x, int n)
 {
     double mu = 0.0f;
@@ -54,7 +69,6 @@ struct dataframe *prepare_dataframe(SEXP Df, SEXP States)
     }
     return df;
 }
-
 
 void free_dataframe(struct dataframe *df)
 {

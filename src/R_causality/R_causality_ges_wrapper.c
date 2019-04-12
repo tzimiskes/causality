@@ -1,8 +1,3 @@
-#ifdef __WIN32__
-#else
-#define _POSIX_C_SOURCE 200112L
-#endif
-
 #include <R_causality/R_causality.h>
 
 #include <causality.h>
