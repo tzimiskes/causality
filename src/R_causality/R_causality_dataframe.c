@@ -45,35 +45,51 @@ static void normalize(double *x, int n)
 struct dataframe *prepare_dataframe(SEXP Df, SEXP States)
 {
     struct dataframe *df = malloc(sizeof(struct dataframe));
+    if (!df)
+        goto ERR;
     df->nvar   = length(Df);
     df->nobs   = length(VECTOR_ELT(Df, 0));
     df->states = INTEGER(States);
-    df->df   = malloc(df->nvar * sizeof(void *));
+    df->df   = calloc(df->nvar, sizeof(void *));
+    if (!df->df)
+        goto ERR;
     for (int i = 0; i < df->nvar; ++i) {
         SEXP Df_i = VECTOR_ELT(Df, i);
         if (df->states[i]) {
             df->df[i] = malloc(df->nobs * sizeof(int));
+            if (!df->df[i])
+                goto ERR;
             memcpy(df->df[i], INTEGER(Df_i), df->nobs * sizeof(int));
         }
         else {
             #ifdef _WIN32
             df->df[i] = malloc(df->nobs *sizeof(double));
             #else
-            if (posix_memalign(&df->df[i], 32, df->nobs * sizeof(double)))
-                CAUSALITY_ERROR("Failed to allocate memory for causality \
-                                 dataframe.");
+            posix_memalign(&df->df[i], 32, df->nobs * sizeof(double));
             #endif
+            if (!df->df[i])
+                goto ERR;
             memcpy(df->df[i], REAL(Df_i), df->nobs * sizeof(double));
             normalize(df->df[i], df->nobs);
         }
+    }
+    if (0) {
+        ERR:
+        CAUSALITY_ERROR("Failed to allocate memory for causality dataframe.");
+        if (!df)
+            return df;
+        free_dataframe(df);
+        df = NULL;
     }
     return df;
 }
 
 void free_dataframe(struct dataframe *df)
 {
-    for (int i = 0; i < df->nvar; ++i)
-      free(df->df[i]);
-    free(df->df);
+    if (df->df) {
+        for (int i = 0; i < df->nvar; ++i)
+            free(df->df[i]);
+        free(df->df);
+    }
     free(df);
 }
