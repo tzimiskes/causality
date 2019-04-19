@@ -17,15 +17,25 @@
 #define COMPELLED  DIRECTED
 #define REVERSABLE UNDIRECTED
 
-static void order_edges(struct cgraph *cg, int *sort);
+static int order_edges(struct cgraph *cg, int *sort);
 static void insertion_sort(struct edge_list *list, int *inv_sort);
-static void find_compelled(struct cgraph *cg, int *sort);
+static int find_compelled(struct cgraph *cg, int *sort);
 
 void causality_chickering(struct cgraph *cg)
 {
     int *sort = causality_sort(cg);
-    order_edges(cg, sort);
-    find_compelled(cg, sort);
+    if (sort == NULL)
+        goto ERR;
+    if (order_edges(cg, sort))
+        goto ERR;
+    if (find_compelled(cg, sort))
+        goto ERR;
+    if (0) {
+        ERR:
+        CAUSALITY_ERROR("Causality Chickering failure! Exiting...\n");
+        if (sort)
+            free(sort);
+    }
     free(sort);
 }
 
@@ -33,12 +43,13 @@ void causality_chickering(struct cgraph *cg)
  * order_edges orders the parents of cg such that the nodes are in descending
  * order according to the sort.
  */
-static void order_edges(struct cgraph *cg, int *sort)
+static int order_edges(struct cgraph *cg, int *sort)
 {
     int  n_nodes  = cg->n_nodes;
     int *inv_sort = malloc(n_nodes * sizeof(int));
     if (inv_sort == NULL) {
         CAUSALITY_ERROR("Failed to allocate memory in order edges\n");
+        return 1;
     }
     for (int i = 0; i < n_nodes; ++i)
         inv_sort[sort[i]] = i;
@@ -52,6 +63,7 @@ static void order_edges(struct cgraph *cg, int *sort)
     for (int i = 0; i < n_nodes; ++i)
         insertion_sort(parents[i], inv_sort);
     free(inv_sort);
+    return 0;
 }
 
 /*
@@ -77,7 +89,7 @@ static void insertion_sort(struct edge_list *list, int *inv_sort)
     }
 }
 
-static void find_compelled(struct cgraph *cg, int *sort)
+static int find_compelled(struct cgraph *cg, int *sort)
 {
     struct edge_list **parents = cg->parents;
     int          n_nodes = cg->n_nodes;
@@ -158,14 +170,25 @@ static void find_compelled(struct cgraph *cg, int *sort)
              * place, which would mess the parents[y] pointer
              */
             struct edge_list *cpy = copy_edge_list(parents[y]);
+            if (cpy == NULL)
+                goto ERR;
             p = cpy;
             while (p) {
                 if (p->edge == UNKNOWN)
                     unorient_directed_edge(cg, p->node, y);
                 p = p->next;
             }
-            free(cpy);
+            /* Error handling. */
+            if (0) {
+                ERR:
+                CAUSALITY_ERROR("Failed to malloc memory in find compelled.\
+                                 Exiting...\n");
+                free_edge_list(cpy);
+                return 1;
+            }
+            free_edge_list(cpy);
         }
         EOFL: ;
     }
+    return 0;
 }

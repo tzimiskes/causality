@@ -5,6 +5,7 @@
  * used exclusively by aggregate_graphs.c
  */
 
+#include <setjmp.h> /* for error handling */
 #include <stdlib.h>
 
 #include <causality.h>
@@ -12,6 +13,12 @@
 
 #define BLACK 1
 #define RED 0
+
+/*
+ * If there's a problem in insert_recursive, we need to long jump to unwind the
+ * stack and to free the tree properly
+ */
+static jmp_buf FAIL_STATE;
 
 static void single_rotation(struct tree **root, int dir)
 {
@@ -30,12 +37,13 @@ static void double_rotation(struct tree **root, int dir)
 }
 
 static void insert_recursive(struct tree **root, int node, int edge,
-                                                     double weight)
+                                 double weight)
 {
     if (*root == NULL) {
         *root = malloc(sizeof(struct tree));
+        /* Malloc failed. long jump to unwind stack and deallocate tree */
         if (*root == NULL)
-            CAUSALITY_ERROR("failed to allocate memory for root\n");
+            longjmp(FAIL_STATE, 1);
         (*root)->node = node;
         (*root)->color = RED;
         (*root)->children[LEFT]  = NULL;
@@ -70,8 +78,16 @@ static void insert_recursive(struct tree **root, int node, int edge,
 
 void insert_tree(struct tree **root, int node, int edge, double weight)
 {
-    insert_recursive(root, node, edge, weight);
-    (*root)->color = BLACK;
+    if (!setjmp(FAIL_STATE)) {
+        insert_recursive(root, node, edge, weight);
+        (*root)->color = BLACK;
+    }
+    /* If we get here, malloc failed */
+    else {
+        CAUSALITY_ERROR("Failed to malloc memory in tree.\n");
+        free_tree(*root);
+        *root = NULL;
+    }
 }
 
 int tree_size(struct tree *root)
