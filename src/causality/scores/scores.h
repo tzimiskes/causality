@@ -12,13 +12,13 @@ struct score_args {
 };
 
 typedef double (*score_func)(struct dataframe *df, int *xy, int npar,
-                                 struct score_args args);
+                                 struct score_args *args);
 
 double bdeu_score(struct dataframe *df, int *xy, int npar,
-                      struct score_args args);
+                      struct score_args *args);
 
 double bic_score(struct dataframe *df, int *xy, int npar,
-                     struct score_args args);
+                     struct score_args *args);
 
 double calculate_rss(double *cov, int m);
 #endif

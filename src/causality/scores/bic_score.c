@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include <float.h>
 
 #include <causality.h>
@@ -22,9 +23,9 @@ double calcluate_bic(double rss, double penalty, int nobs, int npar) {
 }
 
 /* TODO */
-double bic_score(struct dataframe *df, int *xy, int npar, struct score_args args)
+double bic_score(struct dataframe *df, int *xy, int npar, struct score_args *args)
 {
-    double  penalty = args.fargs[0];
+    double  penalty = args->fargs[0];
     int     nobs    = df->nobs;
     double *y      = df->df[xy[npar]];
     /* allocate memory for submatrix and fill in the columns */
@@ -38,8 +39,8 @@ double bic_score(struct dataframe *df, int *xy, int npar, struct score_args args
     double *cov_xy = mem + npar * npar;
     double *cov_xy_t = mem + npar * (npar + 1);
     memcpy(cov_xy_t, cov_xy, npar * sizeof(double));
-    dc_cov_xx(cov_xx, x, nobs, npar);
-    dc_cov_xy(cov_xy, x, y, nobs, npar);
+    calc_covariance_matrix(cov_xx, x, nobs, npar);
+    calc_covariance_xy(cov_xy, x, y, nobs, npar);
     double rss = calculate_rss(mem, npar);
     free(mem);
     return calcluate_bic(rss, penalty, nobs, npar);
@@ -76,7 +77,7 @@ double calculate_rss(double *cov, int m)
          * positive definite
          */
         if (det < ERROR_THRESH)  {
-            CAUSALITY_ERROR("determinent is too small!\n");
+            CAUSALITY_ERROR("covariance matrix not positive definite.\n");
             rss = DBL_MAX;
         }
         else
@@ -85,14 +86,14 @@ double calculate_rss(double *cov, int m)
                    - 2 * cov_xx[1] * cov_xy[0] * cov_xy[1])/det;
     }
     /*
-     * since npar > 2, we will use LAPACK to solve the
+     * since npar > 2, we will use the cholesky decomposition to solve the
      * equation cov_xy**T * cov_xx^-1 * cov_xy
      */
     else {
-        int err = cholesky_decomp_cov3(cov_xx, m);
+        int err = calc_cholesky_decomposition(cov_xx, m);
         double ss = calc_quadratic_form(cov_xy, cov_xy_t, cov_xx, m);
         if (err) {
-            warning("Error in LAPACK routine dposv. Error code: %i!\n", err);
+            CAUSALITY_ERROR("Leading minor of order %i not positive!\n", err);
             rss = DBL_MAX;
         }
         else

@@ -74,10 +74,10 @@ static void construct_aug_cov_pxp(double *aug_cov_xpx, double *aug_cov_mxp,
 
 /* TODO */
 double ges_bic_score(struct dataframe *df, int xp, int y, int *x, int nx,
-                                          struct score_args args,
+                                          struct score_args *args,
                                           struct ges_score_mem gsm)
 {
-    double  penalty = args.fargs[0];
+    double  penalty = args->fargs[0];
     double *aug_cov_mxp = malloc(nx * (nx + 2) * sizeof(double));
     double *aug_cov_pxp = malloc((nx + 1) * ((nx + 1) + 2) * sizeof(double));
     if (aug_cov_mxp == NULL)
@@ -109,7 +109,7 @@ void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs
     /* grab datafame and number of observations */
     int nobs = gs->df->nobs;
     double **df = (double **) gs->df->df;
-    double **x  = malloc(gsm.m * sizeof (double *));
+    double **x  = malloc(gsm.m * sizeof(double *));
     /* fill in x */
     int i = 0;
     while (p) {
@@ -122,8 +122,8 @@ void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs
         x[i++]      = df[s->node];
         s           = s->next;
     }
-    dc_cov_xy(gsm.cov_xy, df, df[y], nobs, n);
-    dc_cov_xx(gsm.cov_xx, x, nobs, gsm.m);
+    calc_covariance_xy(gsm.cov_xy, df, df[y], nobs, n);
+    calc_covariance_matrix(gsm.cov_xx, x, nobs, gsm.m);
     gs->gsm = gsm;
     free(x);
 }
@@ -136,5 +136,5 @@ void ges_bic_optimization2(int xp, struct ges_score *gs)
     double *x[gsm.m];
     for (int i = 0; i < gsm.m; ++i)
         x[i] = df[gsm.lbls[i]];
-    dc_cov_xy(gs->gsm.cov_xpx, x, df[xp], nobs, gsm.m);
+    calc_covariance_xy(gs->gsm.cov_xpx, x, df[xp], nobs, gsm.m);
 }

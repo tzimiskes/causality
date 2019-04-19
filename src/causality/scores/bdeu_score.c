@@ -6,10 +6,10 @@
 #include <scores/scores.h>
 
 double bdeu_score(struct dataframe *df, int *xy, int npar,
-                                         struct score_args args)
+                                         struct score_args *args)
 {
-    double sample_prior    = args.fargs[0];
-    double structure_prior = args.fargs[1];
+    double sample_prior    = args->fargs[0];
+    double structure_prior = args->fargs[1];
     int * data[npar + 1];
     for(int i = 0; i < npar + 1; ++i)
         data[i] = df->df[xy[i]];
@@ -54,7 +54,7 @@ double bdeu_score(struct dataframe *df, int *xy, int npar,
     }
     int nvar     = df->nvar;
     double score = npar * log(structure_prior/(nvar - 1))
-                    + (nvar - npar) * log(1.0f - structure_prior/(nvar - 1));
+                    + (nvar - npar) * log(1.0f - structure_prior / (nvar - 1));
     double cell_prior = sample_prior / (n_x_states * n_y_states);
     double row_prior  = sample_prior / n_x_states;
     score += n_x_states * lgamma(row_prior);

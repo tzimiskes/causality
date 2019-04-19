@@ -22,7 +22,7 @@
  * the model given the data.
  */
 double causality_score_graph(struct cgraph *cg, struct dataframe *df, score_func
-                                 score, struct score_args args)
+                                 score, struct score_args *args)
 {
     double graph_score = 0.0f;
     struct edge_list **parents     = cg->parents;
