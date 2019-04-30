@@ -7,6 +7,7 @@
 #include <scores/linearalgebra.h>
 #include <ges/ges.h>
 #include <ges/ges_internal.h>
+#include <cgraph/cgraph.h>
 #include <cgraph/edge_list.h>
 
 static double calcluate_bic_diff(double rss_p, double rss_m, double penalty,

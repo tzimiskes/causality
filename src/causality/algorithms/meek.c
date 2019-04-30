@@ -1,9 +1,9 @@
 /* Author : Alexander Rix
  * Date   : 11/30/18
  * Description:
- * meek.c implements the four meek rules found in meek(1995), as well a
- * causality c function, ccf_meek, that takes a pdag maximially orients it
- * (ie turns it into a PDAG) via the meek rules.
+ * meek.c implements the four meek rules found in meek(1995), as well
+ * the function causality_meek, that takes a pdag and maximially orients
+ * it (ie turns it into a PDAG) via repeated application of the meek rules.
  */
 
 #include <stdlib.h>

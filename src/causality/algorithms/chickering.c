@@ -21,7 +21,7 @@ static int order_edges(struct cgraph *cg, int *sort);
 static void insertion_sort(struct edge_list *list, int *inv_sort);
 static int find_compelled(struct cgraph *cg, int *sort);
 
-void causality_chickering(struct cgraph *cg)
+int causality_chickering(struct cgraph *cg)
 {
     int *sort = causality_sort(cg);
     if (sort == NULL)
@@ -30,13 +30,13 @@ void causality_chickering(struct cgraph *cg)
         goto ERR;
     if (find_compelled(cg, sort))
         goto ERR;
-    if (0) {
-        ERR:
-        CAUSALITY_ERROR("Causality Chickering failure! Exiting...\n");
-        if (sort)
-            free(sort);
-    }
     free(sort);
+    return 0;
+    ERR:
+    CAUSALITY_ERROR("Causality Chickering failure! Exiting...\n");
+    if (sort)
+        free(sort);
+    return 1;
 }
 
 /*
@@ -181,8 +181,7 @@ static int find_compelled(struct cgraph *cg, int *sort)
             /* Error handling. */
             if (0) {
                 ERR:
-                CAUSALITY_ERROR("Failed to malloc memory in find compelled.\
-                                 Exiting...\n");
+                CAUSALITY_ERROR("Malloc failed in find_compelled. Exiting.\n");
                 free_edge_list(cpy);
                 return 1;
             }

@@ -40,16 +40,17 @@ static void insert_recursive(struct tree **root, int node, int edge,
                                  double weight)
 {
     if (*root == NULL) {
-        *root = malloc(sizeof(struct tree));
+        struct tree *t = malloc(sizeof(struct tree));
         /* Malloc failed. long jump to unwind stack and deallocate tree */
-        if (*root == NULL)
+        if (t == NULL)
             longjmp(FAIL_STATE, 1);
-        (*root)->node = node;
-        (*root)->color = RED;
-        (*root)->children[LEFT]  = NULL;
-        (*root)->children[RIGHT] = NULL;
-        (*root)->edges = calloc(NUM_CAG_EDGETYPES, sizeof(double));
-        (*root)->edges[edge] = weight;
+        t->node = node;
+        t->color = RED;
+        t->children[LEFT]  = NULL;
+        t->children[RIGHT] = NULL;
+        t->edges = calloc(NUM_CAG_EDGETYPES, sizeof(double));
+        t->edges[edge] = weight;
+        *root = t;
     }
     else if ((*root)->node == node) {
         (*root)->edges[edge] += weight;

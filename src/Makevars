@@ -1,32 +1,25 @@
-PKG_CPPFLAGS = -DRCAUSALITY -I. -Icausality
-PKG_CFLAGS   = -Wall
-PKG_LIBS     =
-GES.OBJS = causality/ges/ges.o causality/ges/ges_reorient.o \
-    causality/ges/ges_utils.o causality/ges/ges_bic_score.o \
-    causality/ges/ges_heap.o causality/ges/ges_bdeu_score.o
+PKG_CPPFLAGS = -DRCAUSALITY -I. -Icausality -I/usr/share/R/include/
+PKG_CFLAGS  = -Wall
 
-SCORE.OBJS = causality/scores/bdeu_score.o causality/scores/score_graph.o \
-    causality/scores/bic_score.o causality/scores/linearalgebra.o
-
-ALG.OBJS = causality/algorithms/meek.o causality/algorithms/sort.o \
-    causality/algorithms/chickering.o causality/algorithms/pdx.o
-
-CGRAPH.OBJS = causality/cgraph/cgraph.o causality/cgraph/edge_list.o
-
-AGG.OBJS = causality/aggregate/aggregate_graphs.o causality/aggregate/tree.o
+CAUSALITY.OBJS = causality/ges.o causality/ges_reorient.o \
+    causality/ges_utils.o causality/ges_bic_score.o causality/ges_heap.o \
+    causality/ges_bdeu_score.o causality/bdeu_score.o causality/score_graph.o \
+    causality/bic_score.o causality/linearalgebra.o causality/meek.o \
+    causality/sort.o causality/chickering.o causality/pdx.o causality/cgraph.o \
+    causality/edge_list.o causality/aggregate_graphs.o causality/tree.o
 
 RCAUSALITY.OBJS = R_causality/R_causality.o R_causality/R_causality_wrappers.o \
     R_causality/R_causality_ges_wrapper.o R_causality/R_causality_aggregate.o \
     R_causality/R_causality_dataframe.o
 
-OBJECTS = $(CGRAPH.OBJS) $(GES.OBJS) $(SCORE.OBJS) $(ALG.OBJS) $(AGG.OBJS) \
-    $(RCAUSALITY.OBJS)
+OBJECTS = $(CAUSALITY.OBJS) $(RCAUSALITY.OBJS)
 
 all: $(SHLIB) clean
 
-causality/scores/linearalgebra.o:
-	@(cd causality/scores && $(MAKE) linearalgebra.o \
-        CC="$(CC)" CPPFLAGS="$(PKG_CPPFLAGS)" CFLAGS="$(CPICFLAGS)")
+$(CAUSALITY.OBJS):
+	@(cd causality && $(MAKE) objects \
+        CC="$(CC)" CPPFLAGS="$(PKG_CPPFLAGS)" CFLAGS="$(PKG_CFLAGS) $(CFLAGS)" \
+        CPICFLAGS="$(CPICFLAGS)")
 
 clean:
 	rm -f $(OBJECTS)

@@ -24,8 +24,8 @@ static void tree_to_matrix(SEXP output, const char **nodes, int n_rows, int x,
 {
     if (root == NULL)
         return;
-    int     y      = tree_node(root);
-    double *edges  = tree_edges(root);
+    int y = tree_node(root);
+    double *edges = tree_edges(root);
     SET_STRING_ELT(VECTOR_ELT(output, X), *index, mkChar(nodes[x]));
     SET_STRING_ELT(VECTOR_ELT(output, Y), *index, mkChar(nodes[y]));
     for (int i = 0; i < NUM_CAG_EDGETYPES; ++i)
@@ -44,14 +44,13 @@ static void tree_to_matrix(SEXP output, const char **nodes, int n_rows, int x,
 SEXP r_causality_aggregate_graphs(SEXP graphs, SEXP graph_weights)
 {
     SEXP graph_nodes = VECTOR_ELT(VECTOR_ELT(graphs, 0), NODES);
-    int  n_graphs = Rf_length(graphs);
-    int  n_nodes  = Rf_length(graph_nodes);
-    const char **nodes = malloc(n_nodes * sizeof (const char *));
-    for (int i = 0; i < n_nodes; ++i)
-        nodes[i] = CHAR(STRING_ELT(graph_nodes, i));
-    /* causality_aggregate_graphs will free each of these cgraphs */
-    struct cgraph **cgs = malloc(n_graphs * sizeof(struct cgraph *));
-    /* calculate the sum of the weights and invert it. */
+    int n_graphs = Rf_length(graphs);
+    int n_nodes  = Rf_length(graph_nodes);
+    struct cgraph **cgs = calloc(n_graphs, sizeof(struct cgraph *));
+    /*
+     * calculate the sum of the weights and invert it, and convert the
+     * causality graphs to cgraphs
+     */
     double *weights = REAL(graph_weights);
     double  inv_sw  = 0.0f;
     for (int i = 0; i < n_graphs; ++i) {
@@ -65,6 +64,10 @@ SEXP r_causality_aggregate_graphs(SEXP graphs, SEXP graph_weights)
     for (int i = 0; i < n_nodes; ++i)
         n_rows += tree_size(trees[i]);
     int n_cols = NUM_CAG_EDGETYPES + 2;
+    /*
+     * Allocate the R List that will be returned. The first two entries are
+     * strings, and the rest are numeric
+     */
     SEXP output = PROTECT(allocVector(VECSXP, n_cols));
     SET_VECTOR_ELT(output, X, allocVector(STRSXP, n_rows));
     SET_VECTOR_ELT(output, Y, allocVector(STRSXP, n_rows));
@@ -72,11 +75,18 @@ SEXP r_causality_aggregate_graphs(SEXP graphs, SEXP graph_weights)
         SET_VECTOR_ELT(output, i, allocVector(REALSXP, n_rows));
         memset(REAL(VECTOR_ELT(output, i)), 0, n_rows * sizeof(double));
     }
+    /* Fill in output. */
+    const char **nodes = malloc(n_nodes * sizeof(const char *));
+    for (int i = 0; i < n_nodes; ++i)
+        nodes[i] = CHAR(STRING_ELT(graph_nodes, i));
     int index = 0;
     for (int i = 0; i < n_nodes; ++i) {
         tree_to_matrix(output, nodes, n_rows, i, &index, trees[i], inv_sw);
         free_tree(trees[i]);
     }
+    for (int i = 0; i < n_graphs; ++i)
+        free_cgraph(cgs[i]);
+    free(cgs);
     free(trees);
     free(nodes);
     UNPROTECT(1);
