@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O3 -g -Wall
+CFLAGS = -std=c99 -O3 -g -Wall
 CPPFLAGS = -I.
 CPICFLAGS = -fpic
 
@@ -10,8 +10,7 @@ OBJECTS = linearalgebra.o bic_score.o bdeu_score.o score_graph.o cgraph.o \
 
 all : $(OBJECTS)
 	$(CC) $(CPPFLAGS) $(CPICFLAGS) $(CFLAGS) -shared -o libcausality.so \
-	$(OBJECTS)
-
+	$(OBJECTS) 
 objects: $(OBJECTS)
 
 clean:

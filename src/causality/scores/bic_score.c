@@ -16,7 +16,7 @@
 #include <scores/scores.h>
 #include <scores/linearalgebra.h>
 
-#define ERROR_THRESH 1e-9
+#define ERROR_THRESH 1e-12
 
 double calcluate_bic(double rss, double penalty, int nobs, int npar) {
     return nobs * log(rss) + penalty * log(nobs) * (2 * npar + 1);
@@ -25,8 +25,8 @@ double calcluate_bic(double rss, double penalty, int nobs, int npar) {
 /* TODO */
 double bic_score(struct dataframe *df, int *xy, int npar, struct score_args *args)
 {
-    double  penalty = args->fargs[0];
-    int     nobs    = df->nobs;
+    double penalty = args->fargs[0];
+    int    nobs    = df->nobs;
     double *y      = df->df[xy[npar]];
     /* allocate memory for submatrix and fill in the columns */
     double **x      = malloc(npar * sizeof(double *));
@@ -51,7 +51,7 @@ double bic_score(struct dataframe *df, int *xy, int npar, struct score_args *arg
  * log(cov_xx - cov_xy**T cov_xx^-1 * cov_xy) + log(n) * (npar + 1). The
  * first (and main step) in the rest of this function is to calcluate
  * cov_xy**T cov_xx^-1 * cov_xy.  Note that because we all variables are
- * normalized variables, cov_yy = 1
+ * normalized variables, cov[i, i] = 1
  */
 double calculate_rss(double *cov, int m)
 {
@@ -61,45 +61,34 @@ double calculate_rss(double *cov, int m)
     double rss = 1.0f;
     if (m == 0)
         return rss;
-    if (m == 1) {
-        rss -= cov_xy[0] * cov_xy[0];
-    }
-    /*
-     * In the 2x2 case
-     * we have cov_xx = |1,           0|
-     *                  |cov(x2, x1), 1|
-     */
+    else if (m == 1)
+        return rss - cov_xy[0] * cov_xy[0];
     else if (m == 2) {
-        double det = 1.0f - cov_xx[1] * cov_xx[1];
         /*
-         * For a 2x2 symmetric matrix with 1's on the diagonal, having a non
-         * positive determinent is enough to know that the matrix is not
-         * positive definite
+         * We have cov_xx = |1,           0|
+         *                  |cov(x2, x1), 1|
+         * For a 2x2 symmetric matrix A with 1's on the diagonal,
+         * det(A) <= 0 ==> A is non positive definite.
          */
-        if (det < ERROR_THRESH)  {
+        double det = 1.0f - cov_xx[1] * cov_xx[1];
+        if (det < ERROR_THRESH)
             CAUSALITY_ERROR("covariance matrix not positive definite.\n");
-            rss = DBL_MAX;
-        }
         else
-            /* formula by hand */
+        /* formula by hand */
             rss -= (cov_xy[0] * cov_xy[0] + cov_xy[1] * cov_xy[1]
-                   - 2 * cov_xx[1] * cov_xy[0] * cov_xy[1])/det;
+                   - 2 * cov_xx[1] * cov_xy[0] * cov_xy[1]) / det;
+        return rss;
     }
-    /*
-     * since npar > 2, we will use the cholesky decomposition to solve the
-     * equation cov_xy**T * cov_xx^-1 * cov_xy
-     */
     else {
+        /*
+         * for m >= 3, we use the cholesky decompoistion and forward / backward
+         * subsitution to solve the quadratic form and calculate the rss
+         */
         int err = calc_cholesky_decomposition(cov_xx, m);
-        double ss = calc_quadratic_form(cov_xy, cov_xy_t, cov_xx, m);
-        if (err) {
+        if (err)
             CAUSALITY_ERROR("Leading minor of order %i not positive!\n", err);
-            rss = DBL_MAX;
-        }
         else
-            rss -= ss;
+            rss -= calc_quadratic_form(cov_xy, cov_xy_t, cov_xx, m);
+        return rss;
     }
-    if (rss < 0)
-        rss = DBL_MAX;
-    return rss;
 }

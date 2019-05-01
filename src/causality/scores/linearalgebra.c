@@ -14,7 +14,7 @@
 
 #include <math.h>
 
-#define EPSILON 1e-6
+#define EPSILON 1e-9
 
 /*
  * calc_covariance_xy calculates the covariance between the random variable y
@@ -36,7 +36,7 @@ void calc_covariance_xy(double * restrict cov, double **x, double *y, int n,
         double sum = 0.0f;
         for (int j = 0; j < n; ++j)
             sum += x_i[j] * y[j];
-    cov[i] = sum * inv_nm1;
+        cov[i] = sum * inv_nm1;
     }
 }
 
@@ -80,7 +80,7 @@ int calc_cholesky_decomposition(double *cov, int m)
     for (int j = 1; j < m; ++j) {
         double *l_xj = cov + m * j;
         double *l_jx = cov + j;
-        double  l_jj = 1.0f;
+        double  l_jj = 1.0f + EPSILON;
         for (int k = 0; k < j; ++k)
             l_jj -= l_jx[m * k] * l_jx[m * k];
         if (l_jj < 0.0f)

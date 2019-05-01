@@ -13,8 +13,32 @@
 #include <cgraph/edge_list.h>
 #include <algorithms/meek.h>
 
-void ccf_meek(struct cgraph *cg);
-void apply_rule(struct cgraph *cg, int x, struct stack **s, meek_rule meek_rule);
+void push(struct stack **s, int node)
+{
+    struct stack *tmp = malloc(sizeof(struct stack));
+    if (!tmp) {
+        CAUSALITY_ERROR("Failed to allocate node for stack in meek rules.\n");
+        while (*s) {
+            void *p = (*s)->next;
+            free(*s);
+            *s = p;
+        }
+    }
+    tmp->next = *s;
+    tmp->node = node;
+    *s = tmp;
+}
+
+int pop(struct stack **s)
+{
+    if (*s == NULL)
+        return -1;
+    struct stack *tmp = *s;
+    int node = tmp->node;
+    *s = tmp->next;
+    free(tmp);
+    return node;
+}
 
 /*
  * meek_rules take in a PDAG and maximially orients it by repeatedly applying

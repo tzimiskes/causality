@@ -64,11 +64,12 @@ struct dataframe *prepare_dataframe(SEXP Df, SEXP States)
         else {
             #ifdef _WIN32
             df->df[i] = malloc(df->nobs *sizeof(double));
-            #else
-            posix_memalign(&df->df[i], 32, df->nobs * sizeof(double));
-            #endif
             if (!df->df[i])
                 goto ERR;
+            #else
+            if (posix_memalign(&df->df[i], 32, df->nobs * sizeof(double)))
+                goto ERR;
+            #endif
             memcpy(df->df[i], REAL(Df_i), df->nobs * sizeof(double));
             normalize(df->df[i], df->nobs);
         }

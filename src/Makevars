@@ -1,4 +1,4 @@
-PKG_CPPFLAGS = -DRCAUSALITY -I. -Icausality -I/usr/share/R/include/
+PKG_CPPFLAGS = -DRCAUSALITY -I. -Icausality -I/usr/include/R
 PKG_CFLAGS  = -Wall
 
 CAUSALITY.OBJS = causality/ges.o causality/ges_reorient.o \

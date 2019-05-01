@@ -12,7 +12,8 @@ struct ges_score_mem {
     double *cov_xx; /* m by m matrix */
     double *cov_xpx;
     int    *lbls;
-    int     m;
+    unsigned int m: 31;
+    unsigned int pc_cov: 1;
 }; /* 36 bytes */
 
 
