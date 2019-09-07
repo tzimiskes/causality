@@ -49,7 +49,11 @@ read_causality_graph <- function(file)
     tmp <- readLines(file)
     if (tmp[1] != "Graph Nodes:")
         stop("file does not contain a compatible graph.")
-    nodes <- unlist(strsplit(tmp[2], split = ","))
+    if (grepl(";", tmp[2])
+        split <- ";"
+    else 
+        split <- ","
+    nodes <- unlist(strsplit(tmp[2], split = split))
     nodes <- sort(nodes)
     if (tmp[4] != "Graph Edges:")
         stop("file does not contain a compatible graph.")
