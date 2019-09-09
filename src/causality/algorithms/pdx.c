@@ -18,7 +18,7 @@ struct cll {
     struct edge_list **children;
     struct edge_list **parents;
     struct edge_list **spouses;
-    struct cll  *next;
+    struct cll *next;
 };
 
 /* a node is a sink if it has no children */
@@ -36,7 +36,7 @@ static int is_clique(struct cll *node, struct cgraph *cg)
     struct edge_list *spouses = *(node->spouses);
     /* grab a spouse (undirected adjacent) */
     while (spouses) {
-        int          spouse = spouses->node;
+        int spouse = spouses->node;
         struct edge_list *parents = *(node->parents);
         /* make sure spouse is adjacent to the parents of node */
         while (parents) {
@@ -99,11 +99,11 @@ static void remove_node(struct cll *current, struct cll *nodes)
  */
 struct cgraph * causality_pdx(struct cgraph *cg)
 {
-    int            n_nodes = cg->n_nodes;
-    struct cgraph *cpy     = copy_cgraph(cg);
+    int n_nodes = cg->n_nodes;
+    struct cgraph *cpy = copy_cgraph(cg);
     if (cpy == NULL) {
         free_cgraph(cg);
-        CAUSALITY_ERROR("Failed to allocate memory for cpy in ccf_pdx\n");
+        CAUSALITY_ERROR("Failed to allocate memory for cpy in pdx\n");
         return NULL;
     }
     struct cll *nodes = calloc(n_nodes, sizeof(struct cll));
@@ -125,8 +125,6 @@ struct cgraph * causality_pdx(struct cgraph *cg)
     }
     struct cll *current   = nodes;
     struct cll *prev      = nodes + (n_nodes - 1);
-    int         n_checked = 0;
-    int         cll_size  = n_nodes;
     /* We iterate through the cll until it is empty, or we cycle through all
      * the nodes. If a node satisifies is_clique and is_sink, the node is
      * removed in cg and from the cll, n_checked is reset, and cll_size is
@@ -134,6 +132,8 @@ struct cgraph * causality_pdx(struct cgraph *cg)
      * After the loop condition fails we are done and either cpy is the dag
      * extension of cg, or cg does not have a dag extension.
      */
+    int n_checked = 0;
+    int cll_size  = n_nodes;
     while (cll_size > 0 && n_checked <= cll_size) {
         if (is_sink(current) && is_clique(current, cg)) {
             orient_in_cgraph(cpy, current - nodes);

@@ -12,7 +12,8 @@
 SEXP r_causality_sort(SEXP graph)
 {
     struct cgraph *cg = cgraph_from_causality_graph(graph);
-    /* Attempt to generate a topological sort of cg */
+    if (cg == NULL)
+        return R_NilValue;
     int *sort = causality_sort(cg);
     free_cgraph(cg);
     if (sort == NULL)
@@ -30,6 +31,8 @@ SEXP r_causality_sort(SEXP graph)
 SEXP r_causality_pdx(SEXP pdag)
 {
     struct cgraph *cg = cgraph_from_causality_graph(pdag);
+    if (cg == NULL)
+        return R_NilValue;
     cg = causality_pdx(cg);
     if (cg == NULL)
         return R_NilValue;
@@ -43,7 +46,11 @@ SEXP r_causality_pdx(SEXP pdag)
 SEXP r_causality_chickering(SEXP dag)
 {
     struct cgraph *cg = cgraph_from_causality_graph(dag);
-    causality_chickering(cg);
+    int err = causality_chickering(cg);
+    if (err) {
+        free_cgraph(cg);
+        return R_NilValue;
+    }
     SEXP nodes   = VECTOR_ELT(dag, NODES);
     SEXP pattern = PROTECT(causality_graph_from_cgraph(cg, nodes));
     free_cgraph(cg);
@@ -72,19 +79,18 @@ SEXP r_causality_score_graph(SEXP Graph, SEXP Df, SEXP ScoreType, SEXP States,
         score = bic_score;
     else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
         score = bdeu_score;
-    else
-        error("nope\n");
-    /*
-     * Determine the integer arguments and floating point arguments for the
-     * score function.
-     */
+    else {
+        CAUSALITY_ERROR("Score not recognized.\n");
+        return R_NilValue;
+    }
+    /* Determine the integer args and real args for the score function.*/
     if (!isNull(IntegerArgs))
         args.iargs = INTEGER(IntegerArgs);
     if (!isNull(FloatingArgs))
         args.fargs = REAL(FloatingArgs);
-    struct dataframe df = prepare_df(Df, States);
-    double graph_score = causality_score_graph(cg, df, score, args);
-    free(df.df);
+    struct dataframe *df = prepare_dataframe(Df, States);
+    double graph_score = causality_score_graph(cg, df, score, &args);
+    free_dataframe(df);
     free_cgraph(cg);
     return ScalarReal(graph_score);
 }

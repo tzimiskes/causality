@@ -62,30 +62,29 @@ pattern <- function(nodes, edges, validate = TRUE)
 #' @return \code{is_valid_pattern} returns \code{TRUE} or \code{FALSE} depending
 #'   on whether or not the input is a valid "causality.pattern".
 #' @export
-is_valid_pattern <- function(graph)
-{
-    if (!is.cgraph(graph))
-        stop("input is not a causality graph.")
-    if (!is.nonlatent(graph)) {
-        warning("graph contains latent edge types")
-        return(FALSE)
+is_valid_pattern <- function(graph) {
+  if (!is.cgraph(graph))
+    stop("Input must be a causality graph!")
+  if (!is.nonlatent(graph)) {
+    warning("graph contains latent edge types")
+    return(FALSE)
+  }
+  else if (is.cyclic(graph)) {
+    warning("graph is cylic")
+    return(FALSE)
+  }
+  else {
+    dag <- .pdx(graph)
+    if (is.null(dag)) {
+      warning("graph lacks a dag extension")
+      return(FALSE)
     }
-    else if (is.cyclic(graph)) {
-        warning("graph is cylic")
-        return(FALSE)
-    }
-    else {
-        dag <- .pdx(graph)
-        if (is.null(dag)) {
-            warning("graph cannot be a pattern")
-            return(FALSE)
-        }
     dag <- .chickering(dag)
     if (shd(graph, dag) == 0)
-        return(TRUE)
+      return(TRUE)
     warning("graph is a PDAG, not a pattern")
     return(FALSE)
-    }
+  }
 }
 
 #' @usage is.pattern(graph)
@@ -155,22 +154,10 @@ as.pattern.causality.pag <- function(graph)
 #' @export
 as.pattern.causality.graph <- function(graph)
 {
-    if (is.acyclic(graph)) {
-        if (is.directed(graph))
-            return(.chickering(graph))
-        else if (is.nonlatent(graph)) {
-            graph <- .pdx(graph)
-            if (is.null(graph)) {
-                warning("graph is a pdag that doesn't contain a dag extension.
-                    Cannot coerce graph to causality.pattern.")
-                return(NULL)
-            }
-            return(.chickering(graph))
-        }
-        warning("graph contains latent edges. Cannot coerce graph to a
-            causality.pattern.")
-        return(NULL)
-    }
-    warning("graph is cyclic. Cannot coerce graph to causality.pattern")
-    return(NULL)
+    if (is_valid_pattern(graph))
+      return(.chickering(.pdx(graph)))
+    else {
+        warning("graph cannot be coerced to a pattern")
+        NULL
+     }
 }

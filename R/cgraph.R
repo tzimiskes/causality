@@ -253,6 +253,8 @@ as.cgraph.bn <- function(graph)
     return(cgraph(nodes, matrix(edges, ncol = 3, byrow = T)))
 }
 
+#' @rdname as.cgraph
+#' @export
 as.cgraph.rcausal <- function(graph)
 {
     edges <- graph$edges

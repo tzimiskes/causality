@@ -23,10 +23,12 @@ static int reverse(int edge);
 * only added when x < y to prevent double counting.
 */
 struct tree ** causality_aggregate_graphs(struct cgraph **cgs, double *weights,
-                                                               int n_graphs)
+                                              int n_graphs)
 {
     int n_nodes = cgs[0]->n_nodes;
     struct tree **trees = calloc(n_nodes, sizeof(struct tree *));
+    if (trees == NULL)
+        goto ERR;
     for (int i = 0; i < n_graphs; ++i) {
         struct cgraph *cg = cgs[i];
         double weight     = weights[i];
@@ -35,24 +37,44 @@ struct tree ** causality_aggregate_graphs(struct cgraph **cgs, double *weights,
             while (p) {
                 int x    = p->node;
                 int edge = p->edge;
-                if (x < y)
+                if (x < y) {
                     insert_tree(&trees[x], y, edge, weight);
-                else
+                    if (trees[x] == NULL)
+                        goto ERR;
+                }
+                else {
                     insert_tree(&trees[y], x, reverse(edge), weight);
+                    if (trees[y] == NULL)
+                        goto ERR;
+                }
                 p = p->next;
             }
             p = cg->spouses[y];
             while (p) {
                 int x    = p->node;
                 int edge = p->edge;
-                if (x < y)
+                if (x < y) {
                     insert_tree(&trees[x], y, edge, weight);
+                    if (trees[x] == NULL)
+                        goto ERR;
+                }
                 p = p->next;
             }
         }
-        free_cgraph(cg);
     }
-    free(cgs);
+    /* Error handling */
+    if (0) {
+        ERR:
+        CAUSALITY_ERROR("Aggregate graphs failed. Exiting...\n");
+        if (trees) {
+            for (int i = 0; i < n_graphs; ++i) {
+                if (trees[i])
+                    free_tree(trees[i]);
+            }
+            free(trees);
+            trees = NULL;
+        }
+    }
     return trees;
 }
 
@@ -69,5 +91,5 @@ static int reverse(int edge)
         return CIRCLEARROW_REV;
     }
     CAUSALITY_ERROR("Unrecognized edgetype in causality_aggregate_graphs!\n");
-    return edge; /* hopefully will cause a crash! */
+    return UNDIRECTED; /* hopefully will cause a crash! */
 }

@@ -104,8 +104,8 @@ static inline void mark(int i, unsigned char *marked)
 int cycle_created(struct cgraph *cg, struct ges_operator *op, int *mem)
 {
     /*
-     * First, we grab memory from mem and use it for recording whether or not
-     * a node has been marked. The bytes are intrepeted as chars to save space.
+     * grab memory from mem and use it for recording whether or not a node
+     * has been marked. The bytes are intrepeted as chars to save space.
      */
     unsigned char *marked = (unsigned char *) mem;
     memset(marked, 0, cg->n_nodes / 8 + 1);
@@ -120,9 +120,9 @@ int cycle_created(struct cgraph *cg, struct ges_operator *op, int *mem)
         if (IS_TAIL_NODE(op->t, i))
             mark(op->set[i], marked);
     }
-    /* Grab memory from mem to use as a queue. We don't need to zero this. */
+    /* Grab memory from mem to use as a queue. */
     int *queue = mem + cg->n_nodes;
-    /* queue_size is bounded by n_nodes, as we only ever add a node once */
+    /* queue_size is bounded by n_nodes, as a node is only ever added once. */
     int size = 1;
     queue[0] = op->y;
     for (int i = 0; i < size; ++i) {
@@ -130,7 +130,7 @@ int cycle_created(struct cgraph *cg, struct ges_operator *op, int *mem)
         /* Add the node's unmarked spouses and children to the queue */
         struct edge_list *p = cg->children[node];
         while (p) {
-            /* If the next node is x we have found a cycle and can return 1 */
+            /* If the next node is x then a cycle has been found. */
             if (p->node == op->xp)
                 return 1;
             if (!is_marked(p->node, marked)) {
@@ -196,9 +196,6 @@ void calculate_nayx(struct cgraph *cg, struct ges_operator *op)
     *op = o;
 }
 
-/*
- * calculate_parents does what it says.
- */
 void calculate_parents(struct cgraph *cg, struct ges_operator *op)
 {
     struct edge_list *p = cg->parents[op->y];
