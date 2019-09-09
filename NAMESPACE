@@ -3,6 +3,7 @@
 S3method(as.cgraph,bn)
 S3method(as.cgraph,causality.graph)
 S3method(as.cgraph,default)
+S3method(as.cgraph,rcausal)
 S3method(as.dag,causality.graph)
 S3method(as.dag,causality.pag)
 S3method(as.dag,causality.pattern)
