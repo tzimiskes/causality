@@ -39,13 +39,13 @@ int * causality_sort(struct cgraph *cg)
     /* create an array to signify whether or not a node has been marked, */
     int *marked  = calloc(n_nodes, sizeof(int));
     if (marked == NULL) {
-        CAUSALITY_ERROR("Failed to allocate memory for marked in ccf_sort\n");
+        CAUSALITY_ERROR("Malloc failed in causality_sort. Exiting.\n");
         return NULL;
     }
 
     int *sort = malloc(n_nodes * sizeof(int));
     if (sort == NULL) {
-        CAUSALITY_ERROR("Failed to allocate memory for sort in ccf_sort\n");
+        CAUSALITY_ERROR("Malloc failed in causality_sort. Exiting.\n");
         free(marked);
         return NULL;
     }
@@ -67,7 +67,7 @@ int * causality_sort(struct cgraph *cg)
     }
     else {
         /*
-         * FAIL_STATE: Graph contains a cycle, so visiting activated a longjmp
+         * FAIL_STATE: Graph contains a cycle, so we perform a longjmp
          * here, unwinding the call stack. Now, we can deallocate the memory
          * allocated to sort and then set sort to NULL. (NULL implies that a
          * valid topological sort of the input doesn't exist).

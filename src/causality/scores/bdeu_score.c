@@ -5,20 +5,20 @@
 #include <causality.h>
 #include <scores/scores.h>
 
-double bdeu_score(struct dataframe data, int *xy, int npar,
-                                         struct score_args args)
+double bdeu_score(struct dataframe *df, int *xy, int npar,
+                                         struct score_args *args)
 {
-    double sample_prior    = args.fargs[0];
-    double structure_prior = args.fargs[1];
-    int * df[npar + 1];
+    double sample_prior    = args->fargs[0];
+    double structure_prior = args->fargs[1];
+    int * data[npar + 1];
     for(int i = 0; i < npar + 1; ++i)
-        df[i] = data.df[xy[i]];
-    int *y          = df[npar];
-    int  n_y_states = data.states[xy[npar]];
+        data[i] = df->df[xy[i]];
+    int *y          = data[npar];
+    int  n_y_states = df->states[xy[npar]];
     /* get the number of states for each x */
     int x_states[npar];
     for(int i = 0; i < npar; ++i)
-        x_states[i]  = data.states[xy[i]];
+        x_states[i]  = df->states[xy[i]];
     /* Now, we need to calcluate the total number of possible x states */
     int n_x_states  = 1;
     for(int i = 0; i < npar; ++i)
@@ -37,10 +37,10 @@ double bdeu_score(struct dataframe data, int *xy, int npar,
      * the stack is a good idea.
      */
     int x_state [npar];
-    for (int i = 0; i < data.nobs; ++i) {
+    for (int i = 0; i < df->nobs; ++i) {
         int y_state = y[i];
         for (int j = 0; j < npar; ++j)
-            x_state[j] = df[j][i];
+            x_state[j] = data[j][i];
         /* convert the macro state of x into an index (i.e. k) for n_jk */
         int k = 0;
         for (int j = 0; j < npar; ++j) {
@@ -52,9 +52,9 @@ double bdeu_score(struct dataframe data, int *xy, int npar,
         /* increment observed microstate (y) by 1 in n_j */
         n_j[k]++;
     }
-    int nvar     = data.nvar;
+    int nvar     = df->nvar;
     double score = npar * log(structure_prior/(nvar - 1))
-                    + (nvar - npar) * log(1.0f - structure_prior/(nvar - 1));
+                    + (nvar - npar) * log(1.0f - structure_prior / (nvar - 1));
     double cell_prior = sample_prior / (n_x_states * n_y_states);
     double row_prior  = sample_prior / n_x_states;
     score += n_x_states * lgamma(row_prior);

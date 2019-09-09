@@ -1,9 +1,9 @@
 /* Author : Alexander Rix
  * Date   : 11/30/18
  * Description:
- * meek.c implements the four meek rules found in meek(1995), as well a
- * causality c function, ccf_meek, that takes a pdag maximially orients it
- * (ie turns it into a PDAG) via the meek rules.
+ * meek.c implements the four meek rules found in meek(1995), as well
+ * the function causality_meek, that takes a pdag and maximially orients
+ * it (ie turns it into a PDAG) via repeated application of the meek rules.
  */
 
 #include <stdlib.h>
@@ -13,8 +13,32 @@
 #include <cgraph/edge_list.h>
 #include <algorithms/meek.h>
 
-void ccf_meek(struct cgraph *cg);
-void apply_rule(struct cgraph *cg, int x, struct stack **s, meek_rule meek_rule);
+void push(struct stack **s, int node)
+{
+    struct stack *tmp = malloc(sizeof(struct stack));
+    if (!tmp) {
+        CAUSALITY_ERROR("Failed to allocate node for stack in meek rules.\n");
+        while (*s) {
+            void *p = (*s)->next;
+            free(*s);
+            *s = p;
+        }
+    }
+    tmp->next = *s;
+    tmp->node = node;
+    *s = tmp;
+}
+
+int pop(struct stack **s)
+{
+    if (*s == NULL)
+        return -1;
+    struct stack *tmp = *s;
+    int node = tmp->node;
+    *s = tmp->next;
+    free(tmp);
+    return node;
+}
 
 /*
  * meek_rules take in a PDAG and maximially orients it by repeatedly applying

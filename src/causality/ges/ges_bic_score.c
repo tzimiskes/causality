@@ -7,6 +7,7 @@
 #include <scores/linearalgebra.h>
 #include <ges/ges.h>
 #include <ges/ges_internal.h>
+#include <cgraph/cgraph.h>
 #include <cgraph/edge_list.h>
 
 static double calcluate_bic_diff(double rss_p, double rss_m, double penalty,
@@ -73,11 +74,11 @@ static void construct_aug_cov_pxp(double *aug_cov_xpx, double *aug_cov_mxp,
 
 
 /* TODO */
-double ges_bic_score(struct dataframe df, int xp, int y, int *x, int nx,
-                                          struct score_args args,
+double ges_bic_score(struct dataframe *df, int xp, int y, int *x, int nx,
+                                          struct score_args *args,
                                           struct ges_score_mem gsm)
 {
-    double  penalty = args.fargs[0];
+    double  penalty = args->fargs[0];
     double *aug_cov_mxp = malloc(nx * (nx + 2) * sizeof(double));
     double *aug_cov_pxp = malloc((nx + 1) * ((nx + 1) + 2) * sizeof(double));
     if (aug_cov_mxp == NULL)
@@ -90,7 +91,7 @@ double ges_bic_score(struct dataframe df, int xp, int y, int *x, int nx,
     double rss_m = calculate_rss(aug_cov_mxp, nx);
     free(aug_cov_mxp);
     free(aug_cov_pxp);
-    return calcluate_bic_diff(rss_p, rss_m, penalty, df.nobs);
+    return calcluate_bic_diff(rss_p, rss_m, penalty, df->nobs);
 }
 
 
@@ -104,12 +105,12 @@ void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs
     gsm.cov_xy  = malloc(n * sizeof(double));
     gsm.cov_xx  = malloc(gsm.m * gsm.m * sizeof(double));
     gsm.cov_xpx = malloc(gsm.m * sizeof(double));
-    /* lbls stores the convariance matrix's column/row names */
+    /* lbls stores the covariance matrix's column/row names */
     gsm.lbls    = malloc(gsm.m * sizeof(int));
     /* grab datafame and number of observations */
-    double **df   = (double **) gs->df.df;
-    int      nobs = gs->df.nobs;
-    double *x[gsm.m];
+    int nobs = gs->df->nobs;
+    double **df = (double **) gs->df->df;
+    double **x  = malloc(gsm.m * sizeof(double *));
     /* fill in x */
     int i = 0;
     while (p) {
@@ -122,18 +123,19 @@ void ges_bic_optimization1(struct cgraph *cg, int y, int n, struct ges_score *gs
         x[i++]      = df[s->node];
         s           = s->next;
     }
-    dc_cov_xy(gsm.cov_xy, df, df[y], nobs, n);
-    dc_cov_xx(gsm.cov_xx, x, nobs, gsm.m);
+    calc_covariance_xy(gsm.cov_xy, df, df[y], nobs, n);
+    calc_covariance_matrix(gsm.cov_xx, x, nobs, gsm.m);
     gs->gsm = gsm;
+    free(x);
 }
 
 void ges_bic_optimization2(int xp, struct ges_score *gs)
 {
-    double **df   = (double **) gs->df.df;
-    int      nobs = gs->df.nobs;
+    double **df   = (double **) gs->df->df;
+    int      nobs = gs->df->nobs;
     struct ges_score_mem gsm = gs->gsm;
     double *x[gsm.m];
     for (int i = 0; i < gsm.m; ++i)
         x[i] = df[gsm.lbls[i]];
-    dc_cov_xy(gs->gsm.cov_xpx, x, df[xp], nobs, gsm.m);
+    calc_covariance_xy(gs->gsm.cov_xpx, x, df[xp], nobs, gsm.m);
 }

@@ -21,14 +21,13 @@
  * to construct the model x --> y, where x:= Parents(y), and then score
  * the model given the data.
  */
-double causality_score_graph(struct cgraph *cg, struct dataframe df, score_func
-                                 score, struct score_args args)
+double causality_score_graph(struct cgraph *cg, struct dataframe *df, score_func
+                                 score, struct score_args *args)
 {
-    double       graph_score = 0.0f;
-    int          n_nodes     = cg->n_nodes;
+    double graph_score = 0.0f;
     struct edge_list **parents     = cg->parents;
     struct edge_list **spouses     = cg->spouses;
-    for (int i = 0; i < n_nodes; ++i) {
+    for (int i = 0; i < cg->n_nodes; ++i) {
         struct edge_list *p = parents[i];
         struct edge_list *s = spouses[i];
         int  n  = size_edge_list(p) + size_edge_list(s);

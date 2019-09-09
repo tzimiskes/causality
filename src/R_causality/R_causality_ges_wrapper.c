@@ -1,8 +1,3 @@
-#ifdef __WIN32__
-#else
-#define _POSIX_C_SOURCE 200112L
-#endif
-
 #include <R_causality/R_causality.h>
 
 #include <causality.h>
@@ -24,26 +19,31 @@ SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States,
     double *fargs = NULL;
     if (!isNull(FloatingArgs))
         fargs = REAL(FloatingArgs);
-    struct dataframe data = prepare_df(Df, States);
     ges_score_func ges_score;
     if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BIC_SCORE))
         ges_score = ges_bic_score;
     else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
         ges_score = ges_bdeu_score;
-    else
-        error("nope\n");
+    else {
+        CAUSALITY_ERROR("Score not recognized.\n");
+        return R_NilValue;
+    }
+    struct dataframe *df = prepare_dataframe(Df, States);
+    if (!df) {
+        CAUSALITY_ERROR("Failed to prepare dataframe for GES.\n");
+        return R_NilValue;
+    }
+    struct score_args args = {fargs, iargs};
+    struct ges_score score = {ges_score, {0}, df, &args};
     /*
      * All the preprocessing work has now been done, so lets instantiate
      * an empty graph and run FGES.
      */
-    struct ges_score score = {ges_score, {0}, data, {fargs, iargs}};
-    struct cgraph *cg      = create_cgraph(data.nvar);
-    /* run GES! */
-    double graph_score     = ccf_ges(score, cg);
-    /* free dataframe */
-    for(int i = 0; i < data.nvar; ++i)
-        free(data.df[i]);
-    free(data.df);
+    struct cgraph *cg      = create_cgraph(df->nvar);
+    double graph_score = ccf_ges(score, cg);
+    free_dataframe(df);
+    if (!cg)
+        return R_NilValue;
     /* Create R causality.graph object from cg */
     SEXP Output = PROTECT(allocVector(VECSXP, 2));
     SEXP Names  = PROTECT(getAttrib(Df, R_NamesSymbol));
