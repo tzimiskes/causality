@@ -35,61 +35,52 @@ NULL
 
 #' @rdname adjacency
 #' @export
-adjacency_precision <- function(x, y) {
-  # type checking
-  if (!is.cgraph(x))
-    stop("x is not of type cgraph")
-  if (!is.cgraph(y))
-    stop("y is not of type cgraph")
-  # check to make use that the nodes are the same
-  if (!isTRUE(all.equal(sort(x$nodes), sort(x$nodes))))
-    stop("x and y need to have the same nodes")
-  # calculate the number adjacents in y
-  # return NA if there are none
-  n_y_adjs <- sum(lengths(y$adjacencies))
-  if (n_y_adjs == 0) {
-    warning("y has no adjacencies. Returning NA")
-    return(NA)
-  }
-  # calcluate the intersection of adjacencies over n_y_adjs and return the
-  # ratio
-  return(adjacency_intersect(x, y) / n_y_adjs)
+adjacency_precision <- function(x, y)
+{
+    if (!is.cgraph(x))
+        stop("x is not of type cgraph")
+    if (!is.cgraph(y))
+        stop("y is not of type cgraph")
+    # calculate the number adjacents in y. return NA if there are none
+    n.y.adjs <- sum(lengths(y$adjacencies))
+    if (n.y.adjs == 0) {
+        warning("y has no adjacencies. Returning NA")
+        return(NA)
+    }
+    # calcluate the intersection of adjacencies over y.adjs and return the ratio
+    return(adjacency_intersect(x, y) / n.y.adjs)
 }
 
 #' @rdname adjacency
 #' @export
-adjacency_recall <- function(x, y) {
-  # type checking
-  if (!is.cgraph(x))
-    stop("x is not of type cgraph")
-  if (!is.cgraph(y))
-    stop("y is not of type cgraph")
-
-  # calculate the number adjacents in x
-  # return NA if there are none
-  n_x_adjs <- sum(lengths(x$adjacencies))
-  if (n_x_adjs == 0) {
-    warning("x has no adjacencies. Returning NA")
-    return(NA)
-  }
-
-  # calcluate the intersection of adjacencies over n_x_adjs and return the
-  # ratio
-  return(adjacency_intersect(x, y) / n_x_adjs)
+adjacency_recall <- function(x, y)
+{
+    if (!is.cgraph(x))
+        stop("x is not of type cgraph")
+    if (!is.cgraph(y))
+        stop("y is not of type cgraph")
+    # calculate the number adjacents in x. return NA if there are none
+    n.x.adjs <- sum(lengths(x$adjacencies))
+    if (n.x.adjs == 0) {
+        warning("x has no adjacencies. Returning NA")
+        return(NA)
+    }
+    # calcluate the intersection of adjacencies over x.adjs and return the ratio
+    return(adjacency_intersect(x, y) / n.x.adjs)
 }
 
 # internal function that is used to cacluate the intersection of the adjacencies
 # for each node in x and y
-adjacency_intersect <- function(x, y) {
-  n_same <- 0
-  # for each node, calculate the intersection of the node's
-  # adjacencies in x and y
-  for (node in names(x$adjacencies)) {
-    # get the size for intersection of the adjacencies of 'node'
-    # in est graph and true graph
-    n_same <- n_same + length(
-      intersect(x$adjacencies[[node]], y$adjacencies[[node]])
-    )
-  }
-  return(n_same)
+adjacency_intersect <- function(x, y)
+{
+    n.same <- 0
+    # for each node, calculate the intersection of the node's
+    # adjacencies in x and y
+    for (node in names(x$adjacencies)) {
+        # get the size for intersection of the adjacencies of 'node'
+        # in est graph and true graph
+        n.same <- n.same + length(
+            intersect(x$adjacencies[[node]], y$adjacencies[[node]]))
+    }
+    return(n.same)
 }

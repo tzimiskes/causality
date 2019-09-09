@@ -40,16 +40,17 @@
 #' @seealso
 #' Other causality classes: \code{\link{cgraph}}, \code{\link{dag}}
 #' @export
-pattern <- function(nodes, edges, validate = TRUE) {
-  if (!is.logical(validate))
-    stop("validate must take on a logical value")
-  graph <- cgraph(nodes, edges, validate)
-  if (validate) {
-    if (!is_valid_pattern(graph))
-      stop("Input is not a valid causality dag")
-  }
-  class(graph) <- .PATTERN_CLASS
-  return(graph)
+pattern <- function(nodes, edges, validate = TRUE)
+{
+    if (!is.logical(validate))
+        stop("validate must take on a logical value")
+    graph <- cgraph(nodes, edges, validate)
+    if (validate) {
+        if (!is_valid_pattern(graph))
+            stop("Input is not a valid causality dag")
+    }
+    class(graph) <- .PATTERN_CLASS
+    return(graph)
 }
 
 #' @details \code{is_valid_pattern} checks to see if the input is a valid
@@ -92,22 +93,25 @@ is_valid_pattern <- function(graph) {
 #' @return \code{is.pattern} returns \code{TRUE} or \code{FALSE}.
 #' @rdname pattern
 #' @export
-is.pattern <- function(graph) {
-  if (isTRUE(all.equal(.PATTERN_CLASS, class(graph))))
-    return(TRUE)
-  else
-    return(FALSE)
+is.pattern <- function(graph)
+{
+    if (isTRUE(all.equal(.PATTERN_CLASS, class(graph))))
+        return(TRUE)
+    else
+        return(FALSE)
 }
 
 #' @rdname pattern
 #' @export
-as.pattern <- function(graph) {
+as.pattern <- function(graph)
+{
   UseMethod("as.pattern")
 }
 
 #' @rdname pattern
 #' @export
-as.pattern.default <- function(graph) {
+as.pattern.default <- function(graph)
+{
   if (is.pattern(graph))
     return(graph)
   if (!is.cgraph(graph))
@@ -116,42 +120,44 @@ as.pattern.default <- function(graph) {
 
 #' @rdname pattern
 #' @export
-as.pattern.causality.dag <- function(graph) {
-  if (!is.dag(graph))
-    stop("input is not a dag")
-  return(.chickering(graph))
+as.pattern.causality.dag <- function(graph)
+{
+    if (!is.dag(graph))
+        stop("input is not a dag")
+    return(.chickering(graph))
 }
 
 #' @rdname pattern
 #' @export
-as.pattern.causality.pdag <- function(graph) {
-  if (!is.pdag(graph))
-    stop("input is not a pdag")
-  # test to if graph can be turned into a dag
-  dag <- .pdx(graph)
-  if(is.null(dag)) {
-     warning("graph cannot be coerced to a pattern")
-    return(NULL)
-  }
-  return(.chickering(pdag))
+as.pattern.causality.pdag <- function(graph)
+{
+    if (!is.pdag(graph))
+        stop("input is not a pdag")
+    dag <- .pdx(graph)
+    if (is.null(dag)) {
+        warning("graph cannot be coerced to a pattern.")
+        return(NULL)
+    }
+    return(.chickering(pdag))
 }
 
 #' @rdname pattern
 #' @export
-as.pattern.causality.pag <- function(graph) {
-  if (!is.pag(graph))
-    stop("Input is not a pag")
-  stop("Not Implemented")
+as.pattern.causality.pag <- function(graph)
+{
+    if (!is.pag(graph))
+        stop("Input is not a pag")
+    stop("Not Implemented")
 }
 
 #' @rdname pattern
 #' @export
-as.pattern.causality.graph <- function(graph) {
-  if (is_valid_pattern(graph)) {
-    return(.chickering(.pdx(graph)))
-  }
-  else {
-    warning("graph cannot be coerced to a pattern")
-    return(NULL)
-  }
+as.pattern.causality.graph <- function(graph)
+{
+    if (is_valid_pattern(graph))
+      return(.chickering(.pdx(graph)))
+    else {
+        warning("graph cannot be coerced to a pattern")
+        NULL
+     }
 }

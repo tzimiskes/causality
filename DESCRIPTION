@@ -1,6 +1,6 @@
 Package: causality
 Type: Package
-Title: Discover The Underlying Causal Structure of Data
+Title: Examine The Causal Structure of Data
 Version: 0.0.1
 Authors@R: person("Alexander", "Rix", email = "alexanderjrix@gmail.com",
   role = c("aut", "cre"))

@@ -18,11 +18,11 @@
 #'     \item nodes: a character vector of the nodes of the in the causal graph
 #'     \item adjacencies: a list of character vectors that contain the
 #'       adjacencies of each node. This is calculated when a cgraph is created.
-#'     \item edges: a \eqn{m x 3} character matrix which represents the edges in
-#'       a causal graph in the form (from, to, edge). For example, if we are
-#'       dealing with a causal graph regarding drug use and cancer, The edge
-#'       "Smoking --> Cancer" would be stored as ("Smoking", "Cancer", "-->")
-#'       in the edge matrix
+#'     \item edges: either a  \eqn{m x 3} character matrix or \eqn{3 x m}
+#'       character vector which represents the edges in a causal graph in the
+#'       form (from, to, edge). For example, if we are dealing with a causal
+#'       graph regarding drug use and cancer, The edge "Smoking --> Cancer"
+#'       would be stored as ("Smoking", "Cancer", "-->") in the edge matrix.
 #'   }
 #'   The valid edges types for non latent variable model graphs
 #'   (DAGs, PDAGs, Patterns) are:
@@ -34,8 +34,8 @@
 #'   \itemize{
 #'     \item \code{o-o}
 #'     \item \code{o->}
-#'     \item \code{++>} (in Tetrad this is known as --> dd nl)
-#'     \item \code{~~>} (in Tetrad this is known as --> pd nl)
+#'     \item \code{++>} (in Tetrad this is a green arrow)
+#'     \item \code{~~>} (in Tetrad this is a black arrow)
 #'     \item \code{<->}
 #'   }
 #'
@@ -71,113 +71,101 @@
 #' Other causality classes: \code{\link{dag}}, \code{\link{pattern}}
 #' coercing non causality graphs to causality.graphs : \code{\link{as.cgraph}}
 #' @export
-cgraph <- function(nodes, edges, validate = TRUE) {
-  if (!is.logical(validate))
-    stop("validate must take on a logical value")
-  adjacencies <- .calculate_adjacencies(edges, nodes)
-
-  graph <- structure(
-    list(nodes = nodes, adjacencies = adjacencies, edges = edges),
-    class = .CGRAPH_CLASS)
-  if (validate) {
-    if (!is_valid_cgraph(graph))
-      stop("Input is not a valid causality graph")
-  }
-  return(graph)
+cgraph <- function(nodes, edges, validate = TRUE)
+{
+    if (!is.character(nodes))
+        stop("nodes is not a character vector.")
+    if (!is.character(edges))
+        stop("edges is not a character vector.")
+    if (!is.matrix(edges)) {
+        if (length(edges) %% 3 == 0)
+            edges <- matrix(edges, ncol = 3 , byrow = T)
+        else
+            stop ("edges cannot be converted to a n x 3 character matrix.")
+    }
+    if (dim(edges)[2] != 3)
+        stop("graph edges does not have three columns.")
+    for (edge in edges[, 3])
+        if (!(edge %in% .EDGE_TYPES))
+            stop(sprintf("Unrecognized edge type %s.\n", edge))
+    if (!is.logical(validate))
+        stop("validate must take on a logical value.")
+    adjacencies <- .calculate_adjacencies(edges, nodes)
+    graph <- structure(list(nodes = nodes, adjacencies = adjacencies,
+                            edges = edges), class = .CGRAPH_CLASS)
+    if (validate && !is_valid_cgraph(graph))
+        stop("input is not a valid causality graph.")
+    return(graph)
 }
 
 #' @details \code{is_valid_cgraph} checks to see if the input is a valid
-#'   "causality.graph." Specifally, it checks that there are no duplicate nodes,
-#'   as well as if the input is simple (no self-loops and is not a multi-graph).
+#'     "causality.graph." Specifically, it checks that there are no duplicate
+#'     nodes, self-loops, or multiple edges between pairs of nodes.
 #' @usage is_valid_cgraph(graph)
 #' @rdname cgraph
 #' @return \code{is_valid_cgraph} returns \code{TRUE} or \code{FALSE} depending
-#'   on whether or not the input is valid
+#'     on whether or not the input is valid.
 #' @export
-is_valid_cgraph <- function(graph) {
-  # check to make sure it has valid fields (in the right order)
-  if (!isTRUE(all.equal(c("nodes", "adjacencies","edges"), names(graph)))) {
-    message("graph does not contain the appropriate fields")
-    return(FALSE)
-  }
-  if (!(is.character(graph$edges)) & ncol(graph$edges) == 3) {
-    message("graph edges is not a character matrix")
-    return(FALSE)
-  }
-  if (!is.character(graph$nodes)) {
-    message("graph nodes is not a character array")
-    return(FALSE)
-  }
-  # check to make sure that there are no duplicate nodes
-  nodes <- sort(graph$nodes)
-  for (i in 1:(length(nodes) - 1)) {
-    if ( nodes[i] == nodes[i + 1]) {
-      message("graph contains duplicate nodes")
-      return(FALSE)
+is_valid_cgraph <- function(graph)
+{
+    # check to make sure it has valid fields (in the right order)
+    if (!isTRUE(all.equal(c("nodes", "adjacencies", "edges"), names(graph)))) {
+        warning("graph does not contain the appropriate fields")
+        return(FALSE)
     }
-  }
-
-  # determine whether the graph is simple (No self-loops, no multi-edges)
-  # as well as making sure all nodes in the edges show up in nodes
-  n_edges <- nrow(graph$edges)
-  parents <- list() # this should probably be renamed; unclear
-  for (i in 1:n_edges) {
-    edge <- graph$edges[i,]
-    if (edge[1] == edge[2]) {
-      message("graph contains a self loop")
-      return(FALSE)
+    if (!is.character(graph$edges) || !is.matrix(graph$edges)) {
+        warning("graph edges is not a character matrix.")
+        return(FALSE)
     }
-    if (!is.null(as.list(parents[[edge[2]]])[[edge[1]]])) {
-      message("graph is a multigraph")
-      return(FALSE)
+    if (dim(graph$edges)[2] != 3) {
+        warning("graph edges does not have three columns.")
+        return(FALSE)
     }
-    else # if the edge isn't in the list, add it
-      parents[[edge[2]]][[edge[1]]] <- 1
-    if (!(edge[1] %in% graph$nodes) || (!edge[2] %in% graph$nodes)) {
-      message("graph contains nodes that are not in the node list")
-      return(FALSE)
+    if (!is.character(graph$nodes)) {
+        warning("graph nodes is not a character array.")
+        return(FALSE)
     }
-  }
-  return(TRUE)
+    # check to make sure that there are no duplicate nodes
+    if (length(unique(graph$nodes)) < length(graph$nodes)) {
+        warning("graph contains duplicate nodes.")
+        return(FALSE)
+    }
+    # determine whether the graph is simple (No self-loops, no multi-edges)
+    # as well as making sure all nodes in the edges show up in nodes
+    n_edges <- nrow(graph$edges)
+    parents <- list()
+    for (i in 1:n_edges) {
+        edge <- graph$edges[i,]
+        if (edge[1] == edge[2]) {
+            message("graph contains a self loop")
+            return(FALSE)
+        }
+        if (!is.null(as.list(parents[[edge[2]]])[[edge[1]]])) {
+            message("graph is a multigraph")
+            return(FALSE)
+        }
+        else # if the edge isn't in the list, add it
+        parents[[edge[2]]][[edge[1]]] <- 1
+        if (!(edge[1] %in% graph$nodes) || (!edge[2] %in% graph$nodes)) {
+            message("graph contains nodes that are not in the node list")
+            return(FALSE)
+        }
+    }
+    return(TRUE)
 }
 
-# these hidden (lol) variables are used to assign (sub)classes to craph objects
-.CGRAPH_CLASS  <- c(                     "causality.graph")
-.DAG_CLASS     <- c("causality.dag"    , "causality.graph")
-.PDAG_CLASS    <- c("causality.pdag"   , "causality.graph")
-.PATTERN_CLASS <- c("causality.pattern", "causality.graph")
-.PAG_CLASS     <- c("causality.pag"    , "causality.graph")
-# Edge types currently used in Causality Graphs
-.DIRECTED       <- "-->"
-.UNDIRECTED     <- "---"
-.PLUSPLUS       <- "++>"
-.SQUIGGLE       <- "~~>"
-.CIRCLEDIRECTED <- "o->"
-.CIRCLECIRCLE   <- "o-o"
-.BIDIRECTED     <- "<->"
-
-# edges that show up in PAGs ~~>, ++>, o->, o-o, <->
-.LATENT_EDGE_TYPES <- c(.SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED, .CIRCLECIRCLE,
-                                   .BIDIRECTED
-                       )
-# edges that show up in PDAGs: -->, ---
-.NONLATENT_EDGE_TYPES <- c(.DIRECTED, .UNDIRECTED)
-
-# edges of the type -->, ~~>, ++>, o->
-.DIRECTED_EDGE_TYPES <- c(.DIRECTED, .SQUIGGLE, .PLUSPLUS, .CIRCLEDIRECTED)
-
-# Casusality Graph is ----------------------------------------------------------
 #' @usage is.cgraph(graph)
 #' @details \code{is.cgraph} tests whether or not an object has the class
-#'   causality.graph
+#'     causality.graph
 #' @return \code{is.cgraph} returns \code{TRUE} or \code{FALSE}.
 #' @rdname cgraph
 #' @export
-is.cgraph <- function(graph) {
-  if (.CGRAPH_CLASS %in% class(graph))
-    return(TRUE)
-  else
-    return(FALSE)
+is.cgraph <- function(graph)
+{
+    if (.CGRAPH_CLASS %in% class(graph))
+        return(TRUE)
+    else
+        return(FALSE)
 }
 
 # Casusality Graph summary -----------------------------------------------------
@@ -188,101 +176,108 @@ is.cgraph <- function(graph) {
 #'   like average degree, max degree, number of directed/undirected eges etc.
 #' @rdname cgraph
 #' @export
-summary.causality.graph <- function(object, ...) {
-  if (!is.cgraph(object))
-    stop("object is not a causality.graph!")
-  summary <- list()
-  summary$n.nodes            <- length(object$nodes)
-  summary$n.edges            <- nrow(object$edges)
-  summary$n.directed.edges   <- sum(object$edge[,3] %in% .DIRECTED_EDGE_TYPES)
-  summary$n.undirected.edges <- summary$n.edges - summary$n.directed.edges
-  summary$average.degree     <- 2 * summary$n.edges / summary$n.nodes
-  summary$max.degree         <- max(unlist(lapply(object$adjacencies, length)))
-  summary$max.indegree       <- max(unlist(lapply(parents(object), length)))
-  summary$max.outdegree      <- max(unlist(lapply(children(object), length)))
-  return(summary)
+summary.causality.graph <- function(object, ...)
+{
+    if (!is.cgraph(object))
+        stop("object is not a causality.graph!")
+    summary <- list()
+    summary$n.nodes <- length(object$nodes)
+    summary$n.edges <- nrow(object$edges)
+    summary$n.directed.edges   <- sum(object$edge[,3] %in% .DIRECTED_EDGE_TYPES)
+    summary$n.undirected.edges <- summary$n.edges - summary$n.directed.edges
+    summary$average.degree     <- 2 * summary$n.edges / summary$n.nodes
+    summary$max.degree    <- max(unlist(lapply(object$adjacencies, length)))
+    summary$max.indegree  <- max(unlist(lapply(parents(object), length)))
+    summary$max.outdegree <- max(unlist(lapply(children(object), length)))
+    return(summary)
 }
 
-
-# Causality Graph as.cgraph Functions ------------------------------------------
+# Causality Graph as.cgraph Functions -----------------------------------------
 #' Coerce a graph to a Causality Graph
 #' @param graph A (non causality.graph) graph you'd like to attempt to convert
 #'   into a causality.graph
 #' @details \code{as.cgraph} is an S3 generic that attempts to convert a not
 #'   causality.cgraph to a "causalality.graph". It currently supports turning
-#'   "bn" objects and r-causal objects to "causality.graphs".
+#'   "bn" objects and rcausal graphs into causality graphs.
 #' @usage as.cgraph(graph)
-#' @return \code{as.cgraph} returns a causality graph object, or throws an error
+#' @return \code{as.cgraph} returns a causality graph object, or NULL.
 #' @seealso See \code{\link{cgraph}} for the documentation of object
 #' @export
-as.cgraph <- function(graph) {
+as.cgraph <- function(graph)
+{
     UseMethod("as.cgraph")
 }
+
 #' @rdname as.cgraph
 #' @export
-as.cgraph.causality.graph <- function(graph) {
-  return(graph)
-}
-#' @rdname as.cgraph
-#' @export
-as.cgraph.default <- function(graph) {
-  if (is_valid_cgraph(graph)) {
-    class(graph) <- .CGRAPH_CLASS
+as.cgraph.causality.graph <- function(graph)
+{
     return(graph)
-  }
-  else
-    stop("Cannot coerce input to causality.graph")
 }
 
 #' @rdname as.cgraph
 #' @export
-as.cgraph.bn <- function(graph) {
-  if (!(class(graph) == "bn"))
-    stop("Input is not of class bn!")
-  nodes <- names(graph$nodes)
-  edges <- c()
-  for (node in nodes) {
-    parents <- graph[["nodes"]][[node]][["parents"]]
-    children <- graph[["nodes"]][[node]][["children"]]
-    nbr <- graph[["nodes"]][[node]][["nbr"]]
-    spouses <- setdiff(nbr, c(parents, children))
-    for (parent in graph[["nodes"]][[node]][["parents"]])
-      edges <- c(edges, c(parent, node, .DIRECTED))
-    for (spouse in spouses) {
-      if (node < spouse)
-        edges <- c(edges, c(spouse, node, .UNDIRECTED))
+as.cgraph.default <- function(graph)
+{
+    if (isTRUE(all.equal(names(graph), c("graph", "nodes", "edges"))))
+        return(as.cgraph.rcausal(graph))
+    if (is_valid_cgraph(graph)) {
+        class(graph) <- .CGRAPH_CLASS
+        return(graph)
     }
-  }
-  return(cgraph(nodes, matrix(edges, ncol = 3, byrow = T)))
+    else
+        warning("Cannot coerce input to causality.graph, returning NULL")
+    return(NULL)
 }
 
 #' @rdname as.cgraph
 #' @export
-as.cgraph.rcausal <- function(graph) {
-
-  edges <- graph$edges
-  if (length(edges) == 0) {
-      warning("'graph' does not contain any edges. Returning NULL.")
-      return(NULL)
-  }
-  new_edges <- matrix("", nrow = length(edges), ncol = 3)
-
-  for (i in 1:length(edges)) {
-    edge <- strsplit(edges[i], " ")[[1]]
-    new_edges[i, 1] <- edge[1]
-    new_edges[i, 2] <- edge[3]
-    if (length(edge) == 3)
-      new_edges[i, 3] <- edge[2]
-    else {
-      # tetrad use X1 --> X2 nl pd/dd to mark unconfounded paths in pags
-      # I think this is stupid, so we use ++>/ ~~> for dd/pd
-      if(edge[5] == "dd")
-        new_edges[i, 3] <- .PLUSPLUS # ++>
-      else
-        new_edges[i, 3] <- .SQUIGGLE # ~~>
+as.cgraph.bn <- function(graph)
+{
+    if (class(graph) != "bn")
+        stop("graph is not of class bn.")
+    nodes <- names(graph$nodes)
+    edges <- c()
+    for (node in nodes) {
+        parents  <- graph[["nodes"]][[node]][["parents"]]
+        children <- graph[["nodes"]][[node]][["children"]]
+        nbr      <- graph[["nodes"]][[node]][["nbr"]]
+        spouses  <- setdiff(nbr, c(parents, children))
+        for (parent in graph[["nodes"]][[node]][["parents"]])
+        edges <- c(edges, c(parent, node, .DIRECTED))
+        for (spouse in spouses) {
+            if (node < spouse)
+                edges <- c(edges, c(spouse, node, .UNDIRECTED))
+        }
     }
-  }
-  cgraph <- cgraph(graph$nodes, new_edges)
+    return(cgraph(nodes, matrix(edges, ncol = 3, byrow = T)))
+}
 
-  return(cgraph)
+#' @rdname as.cgraph
+#' @export
+as.cgraph.rcausal <- function(graph)
+{
+    edges <- graph$edges
+    if (length(edges) == 0) {
+        warning("'graph' does not contain any edges. Returning NULL.")
+        return(NULL)
+    }
+    new_edges <- matrix("", length(edges), 3)
+    for (i in 1:length(edges)) {
+        edge <- strsplit(edges[i], " ")[[1]]
+        new_edges[i, 1] <- edge[1]
+        new_edges[i, 2] <- edge[3]
+        if (length(edge) == 3)
+            new_edges[i, 3] <- edge[2]
+        else {
+            # tetrad uses X1 --> X2 nl pd/dd to mark unconfounded paths in pags
+            # causality uses ++>/ ~~> for dd/pd
+            if (edge[5] == "dd")
+                new_edges[i, 3] <- .PLUSPLUS # ++>
+            else
+                new_edges[i, 3] <- .SQUIGGLE # ~~>
+            }
+    }
+    cgraph <- cgraph(graph$nodes, new_edges)
+    return(cgraph)
 }
