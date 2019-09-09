@@ -256,6 +256,10 @@ as.cgraph.bn <- function(graph)
 as.cgraph.rcausal <- function(graph)
 {
     edges <- graph$edges
+    if (length(edges) == 0) {
+        warning("'graph' does not contain any edges. Returning NULL.")
+        return(NULL)
+    }
     new_edges <- matrix("", length(edges), 3)
     for (i in 1:length(edges)) {
         edge <- strsplit(edges[i], " ")[[1]]
