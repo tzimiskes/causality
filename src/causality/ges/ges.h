@@ -36,5 +36,9 @@ double ges_bic_score(struct dataframe *df, int xp, int y, int *x, int nx,
 double ges_bdeu_score(struct dataframe *df, int x, int y, int *ypar, int npar,
                           struct score_args *args, struct ges_score_mem gsm);
 
+double ges_discrete_bic_score(struct dataframe *df, int x, int y, int *ypar,
+                                  int npar,struct score_args *args,
+                                  struct ges_score_mem gsm);
+
 double ccf_ges(struct ges_score score, struct cgraph *cg);
 #endif

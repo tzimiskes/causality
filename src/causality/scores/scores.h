@@ -5,6 +5,7 @@
 
 #define BIC_SCORE "bic"
 #define BDEU_SCORE "bdeu"
+#define DISCRETE_BIC_SCORE "discrete-bic"
 
 struct score_args {
     double *fargs;
@@ -16,6 +17,9 @@ typedef double (*score_func)(struct dataframe *df, int *xy, int npar,
 
 double bdeu_score(struct dataframe *df, int *xy, int npar,
                       struct score_args *args);
+
+double discrete_bic_score(struct dataframe *df, int *xy, int npar,
+                              struct score_args *args);
 
 double bic_score(struct dataframe *df, int *xy, int npar,
                      struct score_args *args);

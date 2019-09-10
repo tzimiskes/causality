@@ -23,14 +23,14 @@
 #' ges(ecoli.df, "bic", penalty = 2)
 #' @useDynLib causality r_causality_ges
 #' @export
-ges <- function(df, score = c("bic", "bdue"), penalty = 1.0,
+ges <- function(df, score = c("bic", "bdue", "discrete-bic"), penalty = 1.0,
                     sample.prior = 1.0, structure.prior = 1.0)
 {
     if (!is.data.frame(df))
         stop("df must be a data.frame")
     if (any(is.na(df)))
         stop("df must not contain any missing values.")
-    score <- match.arg(score, c("bic", "bdeu"))
+    score <- match.arg(score, c("bic", "bdeu", "discrete-bic"))
     ncol       <- ncol(df)
     dimensions <- rep(0L, ncol)
     for (j in 1:ncol) {
@@ -67,8 +67,10 @@ ges <- function(df, score = c("bic", "bdue"), penalty = 1.0,
         floating.args <- c(sample.prior, structure.prior)
         integer.args  <- c()
     }
-    else if (score == "cg")
-        stop("not implemented")
+    else if (score == "discrete-bic") {
+        floating.args <- c(penalty)
+        integer.args  <- c()
+    }
     else
         stop("error")
     score.func.args <- switch(score,

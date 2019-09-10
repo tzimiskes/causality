@@ -8,7 +8,8 @@ GES.OBJS = causality/ges/ges.o causality/ges/ges_reorient.o \
     causality/ges/ges_heap.o causality/ges/ges_bdeu_score.o
 
 SCORE.OBJS = causality/scores/bdeu_score.o causality/scores/score_graph.o \
-    causality/scores/bic_score.o causality/scores/linearalgebra.o
+    causality/scores/bic_score.o causality/scores/discrete_bic.o \
+    causality/scores/linearalgebra.o
 
 ALG.OBJS = causality/algorithms/meek.o causality/algorithms/sort.o \
     causality/algorithms/chickering.o causality/algorithms/pdx.o

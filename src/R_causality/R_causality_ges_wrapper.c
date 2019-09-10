@@ -24,6 +24,8 @@ SEXP r_causality_ges(SEXP Df, SEXP ScoreType, SEXP States,
         ges_score = ges_bic_score;
     else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), BDEU_SCORE))
         ges_score = ges_bdeu_score;
+    else if (!strcmp(CHAR(STRING_ELT(ScoreType, 0)), DISCRETE_BIC_SCORE))
+        ges_score = ges_discrete_bic_score;
     else {
         CAUSALITY_ERROR("Score not recognized.\n");
         return R_NilValue;
