@@ -25,7 +25,7 @@ double discrete_bic_score(struct dataframe *df, int *xy, int npar,
 
     /* Now, we need to calcluate the total number of possible x states */
     int n_x_states  = 1;
-    for(int i = 0; i < npar; ++i)
+    for (int i = 0; i < npar; ++i)
         n_x_states *= x_states[i];
 
     /*
@@ -33,8 +33,13 @@ double discrete_bic_score(struct dataframe *df, int *xy, int npar,
      * The matrix will populated in row major format.
      */
     int *alloced_mem = calloc(n_x_states * (n_y_states + 1), sizeof(int));
-    if (alloced_mem == NULL)
-        CAUSALITY_ERROR("Failed to allocate enough memory for bdeu_score\n");
+    if (alloced_mem == NULL) {
+        CAUSALITY_ERROR("Failed to allocate enough memory for discrete_bic,\
+        memory requested: %i %i \n", n_x_states, n_y_states);
+        for (int j = 0; j < npar; ++j)
+        CAUSALITY_ERROR("%i:%i ", xy[j], x_states[j]);
+        CAUSALITY_ERROR("\n");
+    }
 
     int *n_jk = alloced_mem;
     int *n_j  = alloced_mem + n_x_states * n_y_states;
@@ -42,22 +47,22 @@ double discrete_bic_score(struct dataframe *df, int *xy, int npar,
      * x_state stores the observed microstate (x). Unsure if it declaring it on
      * the stack is a good idea.
      */
-    int x_state [npar];
     for (int i = 0; i < df->nobs; ++i) {
-        int y_state = y[i];
-        for (int j = 0; j < npar; ++j)
-            x_state[j] = data[j][i];
-
-        /* convert the macro state of x into an index (i.e. k) for n_jk */
+        /* convert the state of x into an index (i.e. k) for n_jk */
         int k = 0;
         for (int j = 0; j < npar; ++j) {
-            k *= x_states[j];
-            k += x_state[j];
+
+            k = k * x_states[j] + data[j][i];
         }
 
         /* increment the observed microstate (x,y) by 1 in n_jk */
-        n_jk[k * n_y_states + y_state]++;
+        n_jk[k * n_y_states + y[i]]++;
         /* increment observed microstate (y) by 1 in n_j */
+        if (k >= n_x_states) {
+            for (int j = 0; j < npar; ++j)
+                CAUSALITY_ERROR("%i:%i:%i ", xy[j], x_states[j], data[j][i]);
+            CAUSALITY_ERROR("::%i %iBAD!\n", k, n_x_states);
+        }
         n_j[k]++;
     }
 
@@ -65,9 +70,9 @@ double discrete_bic_score(struct dataframe *df, int *xy, int npar,
     for (int j = 0; j < n_x_states; ++j)
         for (int k = 0; k < n_y_states; ++k)
             if (n_jk[j * n_y_states + k])
-                lik += n_jk[j * n_y_states +k ] *
+                lik += n_jk[j * n_y_states + k ] *
                          log(n_jk[j * n_y_states + k] / (double) n_j[j]);
 
-
+    free(alloced_mem);
     return -2.0 * lik + penalty * (n_x_states * (n_y_states - 1)) * log(df->nobs);
 }
