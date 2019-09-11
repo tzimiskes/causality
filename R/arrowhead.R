@@ -32,16 +32,14 @@ arrowhead_precision <- function(x, y)
         stop("x contains latent edges.")
     if (!is.nonlatent(y))
         stop("y contains latent edges.")
-    n.y.arrows <- 0
-    for (i in 1:nrow(y$edges)) {
-        if (y$edges[i, 3] == .DIRECTED)
-            n.y.arrows <- n.y.arrows + 1
-    }
+
+    n.y.arrows <- sum(y$edges[, 3] == .DIRECTED)
     if (n.y.arrows == 0) {
         warning("y contains no oriented edges. Returning NA")
         return(NA)
     }
-    return(arrow_intersect(x, y) / n.y.arrows)
+
+    arrow_intersect(x, y) / n.y.arrows
 }
 
 #' Determine how many arrows in graph 1 are in graph2.
@@ -66,20 +64,21 @@ arrowhead_recall <- function(x, y)
         stop("x contains latent edges.")
     if (!is.nonlatent(y))
         stop("y contains latent edges.")
-    n.x.arrows <- 0
-    for (i in 1:nrow(x$edges)) {
-        if (x$edges[i, 3] == .DIRECTED)
-            n.x.arrows <- n.x.arrows + 1
-    }
+
+    n.x.arrows <- sum(x$edges[,3] == .DIRECTED)
     if (n.x.arrows == 0) {
         warning("x contains no oriented edges. Returning NA")
         return(NA)
     }
-    return(arrow_intersect(x, y) / n.x.arrows)
+
+    arrow_intersect(x, y) / n.x.arrows
 }
 
 arrow_intersect <- function(x, y)
 {
+    if (is.empty(x) || is.empty(y))
+        return(0)
+        
     n.same <- 0
     # index over the edges in the x graph and estimated graph. Recall that an
     # edge is a vector that consists of (origin, destination, edge_type) eg

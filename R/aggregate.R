@@ -127,5 +127,6 @@ coalesce <- function(aggregated.graph)
   edges <- c()
   for (i in 1:length(arrows))
     edges <- rbind(edges, edge(table$x[i], table$y[i], arrows[i]))
-  return(cgraph(nodes, edges))
+
+  cgraph(nodes, edges)
 }

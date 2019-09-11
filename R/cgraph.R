@@ -75,8 +75,14 @@ cgraph <- function(nodes, edges, validate = TRUE)
 {
     if (!is.character(nodes))
         stop("nodes is not a character vector.")
+
+    if (is.null(edges))
+        return(structure(list(nodes = nodes, adjacencies = NULL, edges = NULL),
+               class = .CGRAPH_CLASS))
+
     if (!is.character(edges))
-        stop("edges is not a character vector.")
+      stop("edges is not a character vector.")
+
     if (!is.matrix(edges)) {
         if (length(edges) %% 3 == 0)
             edges <- matrix(edges, ncol = 3 , byrow = T)
@@ -180,8 +186,15 @@ summary.causality.graph <- function(object, ...)
 {
     if (!is.cgraph(object))
         stop("object is not a causality.graph!")
-    summary <- list()
-    summary$n.nodes <- length(object$nodes)
+
+    summary <- list(n.nodes = length(object$nodes), n.edges = 0,
+                n.directed.edges = NA, n.undirected.edges = NA,
+                average.degree = NA, max.degree = NA, max.indegree = NA,
+                max.outdegree = NA)
+
+    if (is.empty(object))
+        return(summary)
+
     summary$n.edges <- nrow(object$edges)
     summary$n.directed.edges   <- sum(object$edge[,3] %in% .DIRECTED_EDGE_TYPES)
     summary$n.undirected.edges <- summary$n.edges - summary$n.directed.edges

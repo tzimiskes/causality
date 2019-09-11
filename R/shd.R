@@ -26,6 +26,14 @@ shd <- function(x, y)
         stop("x is not a causality.graph.")
     if (!is.cgraph(y))
         stop("y is not a causality.graph.")
+
+    if (is.empty(x) && is.empty(y))
+        return(0)
+    if (is.empty(x))
+        return((nrow(y$edges)))
+    if (is.empty(y))
+        return((nrow(x$edges)))
+        
     # generate the adjacency list of the children of x
     pat1_children <- list()
     for (i in 1:nrow(x$edges)) {

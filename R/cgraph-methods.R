@@ -73,13 +73,8 @@ is.nonlatent <- function(graph)
 {
     if (!is.cgraph(graph))
         stop("input is not a causality.graph")
-    edge_types <- graph$edges[, 3]
-    n_edges <- length(edge_types)
-    for (i in 1:n_edges) {
-        if (!(edge_types[i] %in% .NONLATENT_EDGE_TYPES))
-            return(FALSE)
-    }
-    return(TRUE)
+
+    !any((graph$edges[, 3] %in% .LATENT_EDGE_TYPES))
 }
 
 #' @rdname cgraph-methods
@@ -90,13 +85,8 @@ is.latent <- function(graph)
         stop("input is not a cgraph")
     if (is.pag(graph))
         return(TRUE)
-    edge_types <- graph$edges[, 3]
-    n_edges <- length(edge_types)
-    for (i in 1:n_edges) {
-        if (!(edge_types[i] %in% .LATENT_EDGE_TYPES))
-            return(FALSE)
-    }
-    return(TRUE)
+
+    any(graph$edges[, 3] %in% .LATENT_EDGE_TYPES)
 }
 
 #' @rdname cgraph-methods
@@ -125,4 +115,14 @@ children <- function(graph)
             children[[edge[1]]] <- c(edge[2], children[[edge[1]]])
     }
     return(children)
+}
+
+#' @rdname cgraph-methods
+#' @export
+is.empty <- function(graph)
+{
+    if (!is.cgraph(graph))
+        stop("'graph' is not a cgraph")
+
+    is.null(graph$edges)
 }
