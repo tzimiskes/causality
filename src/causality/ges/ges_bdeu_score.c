@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 #include <ges/ges.h>
+#include <causality.h>
 
 double ges_bdeu_score(struct dataframe *df, int x, int y, int *ypar, int npar,
                                              struct score_args *args,
@@ -14,6 +15,7 @@ double ges_bdeu_score(struct dataframe *df, int x, int y, int *ypar, int npar,
     double score_plus  = bdeu_score(df, xy, npar + 1, args);
     double score_minus = bdeu_score(df, xy + 1, npar, args);
     free(xy);
+
     return score_plus - score_minus;
 }
 
@@ -28,6 +30,7 @@ double ges_discrete_bic_score(struct dataframe *df, int x, int y, int *ypar,
         xy[i + 1] = ypar[i];
     double score_plus  = discrete_bic_score(df, xy, npar + 1, args);
     double score_minus = discrete_bic_score(df, xy + 1, npar, args);
+
     free(xy);
-    return score_plus - score_minus;
+    return score_plus - score_minus + 1e-9;
 }

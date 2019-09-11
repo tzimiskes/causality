@@ -5,6 +5,9 @@
 #include <causality.h>
 #include <scores/scores.h>
 
+#define EPSILON 1e-6
+
+
 double discrete_bic_score(struct dataframe *df, int *xy, int npar,
                             struct score_args *args)
 {
@@ -17,7 +20,6 @@ double discrete_bic_score(struct dataframe *df, int *xy, int npar,
 
     int *y          = data[npar];
     int  n_y_states = df->states[xy[npar]];
-
     /* get the number of states for each x */
     int x_states[npar];
     for(int i = 0; i < npar; ++i)
@@ -36,17 +38,10 @@ double discrete_bic_score(struct dataframe *df, int *xy, int npar,
     if (alloced_mem == NULL) {
         CAUSALITY_ERROR("Failed to allocate enough memory for discrete_bic,\
         memory requested: %i %i \n", n_x_states, n_y_states);
-        for (int j = 0; j < npar; ++j)
-        CAUSALITY_ERROR("%i:%i ", xy[j], x_states[j]);
-        CAUSALITY_ERROR("\n");
     }
 
     int *n_jk = alloced_mem;
     int *n_j  = alloced_mem + n_x_states * n_y_states;
-    /*
-     * x_state stores the observed microstate (x). Unsure if it declaring it on
-     * the stack is a good idea.
-     */
     for (int i = 0; i < df->nobs; ++i) {
         /* convert the state of x into an index (i.e. k) for n_jk */
         int k = 0;
@@ -58,11 +53,6 @@ double discrete_bic_score(struct dataframe *df, int *xy, int npar,
         /* increment the observed microstate (x,y) by 1 in n_jk */
         n_jk[k * n_y_states + y[i]]++;
         /* increment observed microstate (y) by 1 in n_j */
-        if (k >= n_x_states) {
-            for (int j = 0; j < npar; ++j)
-                CAUSALITY_ERROR("%i:%i:%i ", xy[j], x_states[j], data[j][i]);
-            CAUSALITY_ERROR("::%i %iBAD!\n", k, n_x_states);
-        }
         n_j[k]++;
     }
 
@@ -73,6 +63,8 @@ double discrete_bic_score(struct dataframe *df, int *xy, int npar,
                 lik += n_jk[j * n_y_states + k ] *
                          log(n_jk[j * n_y_states + k] / (double) n_j[j]);
 
+    double params = n_x_states * (n_y_states - 1);
     free(alloced_mem);
-    return -2.0 * lik + penalty * (n_x_states * (n_y_states - 1)) * log(df->nobs);
+
+    return -2.0 * lik + penalty * params * log(df->nobs) + EPSILON;
 }

@@ -79,23 +79,38 @@ aggregate_graphs <- function(graphs, filter = .1, weights = NULL)
   names(acg) <- acg.names
 
   for (col in names(acg)[-(1:2)])
-    if (sum(acg[[col]]) == 0) acg[[col]] <- NULL
-  acg <- acg[(rowSums(acg[, -(1:2)]) >= filter),]
+    if (sum(acg[[col]]) == 0)
+      acg[[col]] <- NULL
+
+  if (ncol(acg[,-(1:2), drop = F]) == 0)
+    return(structure(list(nodes = base$nodes, edge.table = NULL),
+                    class = "aggregated.causality.graph"))
+
+  acg <- acg[(rowSums(acg[, -(1:2), drop = F]) >= filter),]
   row.names(acg) <- 1:nrow(acg)
-  output <- list(nodes = base$nodes, edge.table = acg)
-  class(output) <- "aggregated.causality.graph"
-  return(output)
+  output <- structure(list(nodes = base$nodes, edge.table = acg),
+              class = "aggregated.causality.graph")
+
+  output
 }
 
 #' @rdname aggregate-graphs
 #' @export
-coalesce <- function(aggregated.graph) {
+coalesce <- function(aggregated.graph)
+{
+
   if (class(aggregated.graph) != "aggregated.causality.graph")
-  stop("aggregated.graph must be an aggregated.causality.graph")
+    stop("aggregated.graph must be an aggregated.causality.graph")
+
+
   nodes     <- aggregated.graph$nodes
   table     <- aggregated.graph$edge.table
-  table[[" "]] <- 1 - rowSums(table[, -(1:2)])
-  arrows    <- names(table[, -(1:2)])[max.col(table[, -(1:2)])]
+  if (is.null(table))
+    table[[" "]] <- 1
+  else
+    table[[" "]] <- 1 - rowSums(table[, -(1:2), drop = F])
+
+  arrows    <- names(table[, -(1:2)])[max.col(table[, -(1:2), drop = F])]
   edge      <- function(node1, node2, arrow) {
     if (arrow == "<--")
       return(c(node2, node1, "-->"))

@@ -37,7 +37,9 @@ ges <- function(df, score = c("bic", "bdue", "discrete-bic"), penalty = 1.0,
         col <- df[[j]]
         if (is.integer(col)) {
             dimensions[j] <- length(unique(col))
-            df[[j]]       <- col - min(col)
+
+            col     <- factor(col, labels = 0:(dimensions[j] - 1))
+            df[[j]] <- as.integer(paste(col))
         }
         else if (is.factor(col)) {
             dimensions[j] <- nlevels(col)
@@ -50,10 +52,9 @@ ges <- function(df, score = c("bic", "bdue", "discrete-bic"), penalty = 1.0,
             df[[j]]       <- as.integer(col) - 1L
         }
         if (score == "bic" && is.integer(col)) {
-            dimensions[j] <- 0
             col <- as.double(col)
         }
-        if (score == "bdeu" && is.double(col)) {
+        if ((score == "bdeu" || score == "discrete-bic") && is.double(col)) {
             stop("bdeu scoring cannot be used in conjuction with continuous data.
             Use bic or cg")
         }
