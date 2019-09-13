@@ -6,25 +6,17 @@ can convert dags to patterns and patterns to dags, and you can employ
 causality's (BETA) implementation of greedy equivalence search (GES) to learn
 bayesian networks. You can also export the graphs to latex so you can put them in papers.
 
-## Development Roadmap
+## Installation
 
-Testing:
-- GES (single threaded, continuous)
-- exporting causality.graphs to LaTeX
+You can install `casuality` via the R package `devtools`
 
-Future major features:
-- GES with BDeu scoring for discrete data
-- GES with CG scoring for mixed data
-- Multithreaded GES
-- Latent Variable Models
-- FCI /GFCI
-- FOFC/FTFC
+```
+# install.packages("devtools")
+devtools::install_github("tzimiskes/causality", build_opts = c())
+```
 
-Future minor features
-- function to remove cycles from cgraphs
-- mutators to safely add and delete edges/nodes from graphs
-- d-separation test
-- markov boundary/blanket calculation
-- partial correlations (needed for G/FCI)
+You will need a C compiler that supports C99. This can be accomplished by installing Rtools on Windows and Xcode
+on MacOS.
+
 
 If you have any feedback ( suggestions, bugs, feature requests), let me know so I can address it!
