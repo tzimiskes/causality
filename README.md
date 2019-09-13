@@ -4,7 +4,7 @@
 You can agregrate graphs into order to access the stabiliity of algorithms, you
 can convert dags to patterns and patterns to dags, and you can employ
 causality's (BETA) implementation of greedy equivalence search (GES) to learn
-bayesian networks. You can also export the graphs to latex so you can put them in papers.
+bayesian networks. `ges` current contains support for continuous BIC, discrete BIC, and BDeu scoring.
 
 ## Installation
 
